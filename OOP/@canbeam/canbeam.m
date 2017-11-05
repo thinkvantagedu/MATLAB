@@ -31,9 +31,10 @@ classdef canbeam < beam
         %%
         function obj = gaussian(obj, shift, sig, unit_amp, debugMode)
             
-            % generate Gaussian function. x is the x-axis, which contains length of
-            % gap; shift is the length shift to left or right; sig is the coefficient
-            % sigma; unit_amp decides whether the amplitude is normalized or not.
+            % generate Gaussian function. x is the x-axis, which contains 
+            % length of gap; shift is the length shift to left or right; 
+            % sig is the coefficient sigma; unit_amp decides whether the 
+            % amplitude is normalized or not.
             % - shift moves the curve to right.
             % small sig = small width.
             
@@ -69,7 +70,8 @@ classdef canbeam < beam
             obj = gaussian(obj, 0.03, sig, 1, debugMode);
             
             obj.fce.val(obj.fce.dof, 1:length(obj.fce.gaus)) = ...
-                obj.fce.val(obj.fce.dof, 1:length(obj.fce.gaus)) + obj.fce.gaus;
+                obj.fce.val(obj.fce.dof, 1:length(obj.fce.gaus)) + ...
+                obj.fce.gaus;
             
         end
         %%

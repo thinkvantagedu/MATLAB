@@ -24,6 +24,7 @@ obj.pmExpo.I2 = log10(obj.pmVal.I2.space(:, 2));
 obj.pmVal.i.space = {obj.pmVal.I1.space obj.pmVal.I2.space};
 obj.pmExpo.i = {obj.pmVal.I1 obj.pmVal.I2};
 
-obj.no.dom.discretisation = cellfun(@(v) size(v, 1), obj.pmVal.i.space, 'un', 0);
+obj.no.dom.discretisation = cellfun(@(v) size(v, 1), obj.pmVal.i.space, ...
+    'un', 0);
 
 obj.no.dom.discretisation = cell2mat(obj.no.dom.discretisation);

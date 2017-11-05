@@ -7,7 +7,7 @@ figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
 oopPath = strcat(route, '/MATLAB/OOP');
 addpath(genpath(oopPath));
 %% data for beam class.
-trialName = 'l2h1';
+trialName = 'l9h2SingleInc';
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
 noIncl = 2;
@@ -55,67 +55,66 @@ refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 
 gridSwitch = 0;
 nConsEnd = 1;
-
 %% trial solution
-% use subclass: canbeam to create cantilever beam.
-canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, ...
+% use subclass: canbeam to create fixed beam.
+fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, ...
     domLeng1, domLeng2, domLengs, bondL1, bondR1, bondL2, bondR2, ...
-    trial, noIncl, tMax, tStep, mid1, mid2, errLowBond, errMaxValInit, errRbCtrl, ...
-    errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol,...
-    fNode, ftime, nConsEnd);
+    trial, noIncl, tMax, tStep, mid1, mid2, errLowBond, errMaxValInit, ...
+    errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
+    drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix, 2 = 2d.
-canti.readMTX2DOF(nDofPerNode);
+fixie.readMTX2DOF(nDofPerNode);
 
 % read constraint infomation, 2 = 2d.
-canti.readINPconsCanti(nDofPerNode);
+fixie.readINPconsFixie(nDofPerNode);
 
 % read geometric information.
-canti.readINPgeo;
+fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-canti.generatePmSpace;
+fixie.generatePmSpaceMultiDim;
 
 % read stiffness matrices, 2 = 2d.
-canti.readMTX2DOFBCMod(nDofPerNode);
+fixie.readMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
-canti.pmTrial;
+fixie.pmTrial;
 
 % initialise damping, velocity, displacement input.
-canti.damMtx;
-canti.velInpt;
-canti.disInpt;
+fixie.damMtx;
+fixie.velInpt;
+fixie.disInpt;
 
 % generate nodal force.
 debugMode = 0;
-canti.generateNodalFce(nDofPerNode, 0.5, debugMode);
+fixie.generateNodalFce(nDofPerNode, 0.5, debugMode);
 
 % quantity of interest
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 nQoiT = 2;
 manual = 1;
-canti.qoiSpaceTime(nQoiT, nDofPerNode, manual);
+fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 
 % compute initial exact solution.
-canti.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
+fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
 nPhiInitial = 1;
 nPhiEnrich = 1;
-canti.rbInitial(nPhiInitial);
-disp(canti.countGreedy)
-canti.reducedMatrices;
+fixie.rbInitial(nPhiInitial);
+disp(fixie.countGreedy)
+fixie.reducedMatrices;
 reductionRatio = 0.9; 
 
 % initialise interpolation samples.
-canti.initHatPm;
-canti.refineGridLocalwithIdx('initial');
+fixie.initHatPm;
+fixie.refineGridLocalwithIdx('initial');
 
 % set types
 refindicator = 0;
@@ -127,126 +126,134 @@ normType = 'fro';
 svdSwitch = 0;
 % prepare essential storage for error and responses.
 nRespSVD = 2;
-canti.otherPrepare(nRespSVD);
-canti.errPrepareRemain;
-canti.impPrepareRemain;
-canti.respStorePrepareRemain(svdType, timeType);
+fixie.otherPrepare(nRespSVD);
+fixie.errPrepareRemain;
+fixie.impPrepareRemain;
+fixie.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
 
-canti.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
+fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 %% main while loop
-while canti.err.max.val.slct > canti.err.lowBond
+while fixie.err.max.val.slct > fixie.err.lowBond
     %% OFFLINE
     %     disp('offline start')
     
-    canti.errPrepareSetZero;
+    fixie.errPrepareSetZero;
     
-    canti.impGenerate;
+    fixie.impGenerate;
     
-    canti.respTdiffComputation(svdSwitch);
-        
+    fixie.respTdiffComputation(svdSwitch);
+    
+    %     canti.resptoErrPreCompPartTime(qoiSwitchTime, qoiSwitchSpace);
+    
     switch timeType
         
         case 'allTime'
             
-            canti.respTimeShift(qoiSwitchTime, qoiSwitchSpace);
+            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace);
             
             switch svdType
                 
                 case 'noSVD'
                     % CHANGE SIGN in this method!
-                    rvSvdSwitch = 1;
-                    canti.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
+                    rvSvdSwitch = 0;
+                    fixie.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
+                    
             end
     end
-    % disp('offline end')
-    % store reduced variable.
-    for iIter = 1:nIter
-        
-        canti.reducedVar(iIter);
-        canti.rvPrepare;
-        canti.reducedVarStore(iIter);
-
-    end
-    canti.reducedVarSVD;
-    
+    %     disp('offline end')
     %% ONLINE
     
     %     disp('online start')
+    
     for iIter = 1:nIter
         
-        canti.conditionalItplProdRvPmSVD(iIter);
+        fixie.reducedVar(iIter);
+        
+        fixie.pmPrepare;
+        
+        fixie.rvPrepare;
+        
+        %         canti.exactErrwithRB(qoiSwitchTime, qoiSwitchSpace); %
+        
+        fixie.conditionalItplProdRvPm(iIter);
+        
+        fixie.errStoreSurfs('diff');
+        
+        %         canti.errStoreSurfs(iIter, 'errwRb'); %
         
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
     
-    a = zeros(25, 25);
-    for i = 1:25
-        a = a + sqrt(canti.err.store.svdSingle{i}) ./ norm(canti.dis.qoi.trial, 'fro');
-        keyboard
-    end
+    %     disp('online end')
+    %     canti.clearmemory;
+    %% extract error information
+    %     canti.extractErrorInfo('errwRb');
     
-    keyboard
-    % disp('online end')
-    %% extract error information    
-    canti.extractErrorInfo('hhat');
-    canti.extractErrorInfo('hat');
+    fixie.extractErrorInfo('hhat');
+    fixie.extractErrorInfo('hat');
     
-    canti.err.max.val.slct = canti.err.max.val.hhat; %
+    fixie.err.max.val.slct = fixie.err.max.val.hhat; %
     
-    canti.refiCond('maxSurf');
+    fixie.refiCond('maxSurf');
     % this line extracts parameter values of maximum error and
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    canti.extractPmInfo(canti.err.max.loc.hhat, canti.err.max.loc.hhat);
+    fixie.extractPmInfo(fixie.err.max.loc.hhat, fixie.err.max.loc.hhat);
     
     %% local h-refinement.
     if canti.refinement.condition <= canti.refinement.thres
         
-        canti.refiCondDisplay('noRefi');
-        canti.maxErrorDisplay('hhat');
+        %         disp('ehhat')
+        %         disp(fixie.err.store.surf.hhat)
+        fixie.refiCondDisplay('noRefi');
+        fixie.maxErrorDisplay('hhat');
         
-        canti.storeErrorInfo('hhat');
-        canti.storeErrorInfo('hat');
         
-%         figure(3)
-        canti.err.max.pass = canti.err.max.val.hhat;
-        canti.err.store.pass = canti.err.store.surf.hhat;
-%         canti.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
+        %         fixie.storeErrorInfo('errwRb'); % exact error with new rb. %
+        fixie.storeErrorInfo('hhat');
+        fixie.storeErrorInfo('hat');
+        %         if fixie.countIter == 1
+        %             axisLim = fixie.err.max.val.slct;
+        %         end
+        figure(3)
         
-        if canti.countGreedy >= drawRow * drawCol
+        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
+        
+        if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')
             break
         end
         
-        canti.exactSolution('Greedy');
+        fixie.exactSolution('Greedy');
         % rbEnrichment set the indicators.
         ratioSwitch = 0;
         singularSwitch = 0;
-        canti.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
-        canti.reducedMatrices;
-        disp(canti.countGreedy)
+        fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
+            ratioSwitch);
+        fixie.reducedMatrices;
+        disp(fixie.countGreedy)
         
-    elseif canti.refinement.condition > canti.refinement.thres
+    elseif fixie.refinement.condition > fixie.refinement.thres
         
-        canti.refiCondDisplay('refi');
+        fixie.refiCondDisplay('refi');
         % localHrefinement set the indicators.
-        canti.localHrefinement;
+        fixie.localHrefinement;
         
-        canti.extractPmAdd;
+        fixie.extractPmAdd;
         % only compute exact solutions regarding external force
         % when pm domain is refined.
-        canti.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
+        fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
         
     end
     
 end
 
 % figure(4)
-% canti.plotMaxErrorDecay(canti.err.store.max.hhat);
+% fixie.plotMaxErrorDecay(fixie.err.store.max.hhat);
 %
 % figNameSurf = strcat(trialName, 'SVDallVec');
 % figPathSurf = strcat(figRoute, figNameSurf);

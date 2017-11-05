@@ -223,8 +223,8 @@ classdef beam < handle
                 end
                 
             end
-            % element may contains multiple locations, but only takes the first 2
-            % locations.
+            % element may contains multiple locations, but only takes the 
+            % first 2 locations.
             lineElem = lineElem(1:2);
             lineInc = reshape(lineInc, [2, length(lineInc) / 2]);
             strtext = char(celltext(2:(length(celltext) - 1)));
@@ -305,15 +305,18 @@ classdef beam < handle
             obj.pmVal.comb.space = obj.pmVal.comb.space';
             
             if obj.no.inc > 1
-                obj.pmVal.comb.space(:, [2, 3]) = obj.pmVal.comb.space(:, [3, 2]);
+                obj.pmVal.comb.space(:, [2, 3]) = obj.pmVal.comb.space...
+                    (:, [3, 2]);
             end
             pmValIspace = cellfun(@(v) v', pmValIspace, 'un', 0);
             
             obj.pmVal.i.space = pmValIspace;
             
-            obj.pmExpo.i = cellfun(@(v) log10(v(:, 2)), obj.pmVal.i.space, 'un', 0);
+            obj.pmExpo.i = cellfun(@(v) log10(v(:, 2)), obj.pmVal.i.space, ...
+                'un', 0);
             
-            obj.no.dom.discretisation = cellfun(@(v) size(v, 1), pmValIspace, 'un', 0);
+            obj.no.dom.discretisation = cellfun(@(v) size(v, 1), ...
+                pmValIspace, 'un', 0);
             
             obj.no.dom.discretisation = cell2mat(obj.no.dom.discretisation);
             
@@ -474,7 +477,8 @@ classdef beam < handle
         %%
         function obj = rbCtrlInitial(obj, rbCtrlThres)
             obj.no.nEnrich = 0;
-            % Error controlled scheme for initial reduced basis from trial point.
+            % Error controlled scheme for initial reduced basis from trial 
+            % point.
             while obj.err.rbCtrl > rbCtrlThres
                 
                 [obj] = SVDoop(obj, 'rbCtrlInitial');
@@ -563,7 +567,8 @@ classdef beam < handle
                         obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, :);
                         
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                        obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, obj.qoi.t);
+                        obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, ...
+                            obj.qoi.t);
                         
                     end
                 case 'Greedy'

@@ -125,8 +125,8 @@ elseif gridSwitch == 0
         elseif obj.no.inc == 2
             txtPlotPrevMax = sprintf('[%d %d, %g]', ...
                 eLocPrevMax{1}, eLocPrevMax{2}, eValPrevMaxCurrent);
-            text(pmExpoPrev(1), pmExpoPrev(2), eValPrevMaxCurrent, txtPlotPrevMax, ...
-                'color', '[0 0 0]', 'Fontsize', 12);
+            text(pmExpoPrev(1), pmExpoPrev(2), eValPrevMaxCurrent, ...
+                txtPlotPrevMax, 'color', '[0 0 0]', 'Fontsize', 12);
             axis(hAx,'square')
             axis(hAx,'tight', 'manual')
         else
