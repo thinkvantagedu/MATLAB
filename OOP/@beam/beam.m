@@ -180,7 +180,7 @@ classdef beam < handle
         end
         %%
         function obj = readINPgeoMultiInc(obj)
-            % read INP file, extract node and element informations, 
+            % read INP file, extract node and element informations,
             % read random number of inclusions.
             % outputs are cells.
             lineNode = [];
@@ -298,7 +298,7 @@ classdef beam < handle
                 
                 pmValIspace{i} = ...
                     [(1:length(pmValIspace{i})); pmValIspace{i}];
-                                
+                
             end
             
             obj.pmVal.comb.space = combvec(pmValIspace{:});
@@ -527,26 +527,30 @@ classdef beam < handle
             stiIcell = obj.sti.mtxCell(1:end - 1);
             switch type
                 case 'initial'
-                    
                     pmIcell = mat2cell(obj.pmVal.i.trial', ...
                         ones(obj.no.inc, 1), 1);
-                    stiItrialCell = cellfun(@(u, v) u * v, stiIcell, pmIcell, 'un', 0);
-                    stiStrial = obj.sti.mtxCell{end} * obj.pmVal.s.fix;
-                    stiImtx = cell2mat(stiItrialCell);
-                    stiItrial = sparse(obj.no.dof, obj.no.dof);
-                    for i = 1:obj.no.inc
-                        
-                        stiItrial = stiItrial + stiImtx((i - 1) * obj.no.dof + 1 : ...
-                            i * obj.no.dof, :);
-                        
-                    end
-                    
-                    obj.sti.trial = stiItrial + stiStrial;
-                    
-                    % compute trial solution
-                    obj.sti.full = obj.sti.trial;
-                    obj.fce.pass = obj.fce.val;
-                    obj.NewmarkBetaReducedMethodOOP('full');
+                case 'Greedy'
+                    pmIcell = mat2cell(obj.pmVal.max', ones(obj.no.inc, 1), 1);
+            end
+            stiIcell = cellfun(@(u, v) u * v, stiIcell, ...
+                pmIcell, 'un', 0);
+            stiS = obj.sti.mtxCell{end} * obj.pmVal.s.fix;
+            stiImtx = cell2mat(stiIcell);
+            stiI = sparse(obj.no.dof, obj.no.dof);
+            for i = 1:obj.no.inc
+                
+                stiI = stiI + stiImtx((i - 1) * obj.no.dof + 1 : ...
+                    i * obj.no.dof, :);
+                
+            end
+            obj.sti.sum = stiI + stiS;
+            % compute trial solution
+            obj.sti.full = obj.sti.sum;
+            obj.fce.pass = obj.fce.val;
+            obj.NewmarkBetaReducedMethodOOP('full');
+            
+            switch type
+                case 'initial'
                     obj.dis.trial = obj.dis.full;
                     
                     if qoiSwitchTime == 0 && qoiSwitchSpace == 0
@@ -563,18 +567,9 @@ classdef beam < handle
                         
                     end
                 case 'Greedy'
-                    keyboard
-                    pmIcell = mat2cell();
-                    obj.sti.maxPm = obj.sti.mtxCell{1} * obj.pmVal.max(1) + ...
-                        obj.sti.mtxCell{2} * obj.pmVal.max(2) + ...
-                        obj.sti.mtxCell{3} * obj.pmVal.s.fix;
-                    % compute Greedy exact solution at max point.
-                    obj.sti.full = obj.sti.maxPm;
-                    obj.fce.pass = obj.fce.val;
-                    obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     obj.dis.rbEnrich = obj.dis.full;
-                    
             end
+            
         end
         %%
         function obj = pmTrial(obj)
@@ -589,8 +584,8 @@ classdef beam < handle
             
             pmCombRow = obj.pmVal.comb.space(pmCombIdx, :);
             obj.pmVal.i.trial = pmCombRow(obj.no.inc + 1 : end);
-%             obj.pmVal.I1.trial = pmCombRow(:, 3);
-%             obj.pmVal.I2.trial = pmCombRow(:, 4);
+            %             obj.pmVal.I1.trial = pmCombRow(:, 3);
+            %             obj.pmVal.I2.trial = pmCombRow(:, 4);
         end
         
         %%
@@ -1335,10 +1330,10 @@ classdef beam < handle
             % here the index follows the refind grid sequence, not a
             % sequencial sequence.
             % this method compute eTe, results in a square full symmetric
-            % matrix, to be interpolated. 
+            % matrix, to be interpolated.
             % reason of using eTe is size of eTe is decided by nt * nj *
             % nr. At least this is not related to nd. Cannot use anyting
-            % relate to nd. 
+            % relate to nd.
             
             if obj.indicator.enrichment == 1 && obj.indicator.refinement == 0
                 % indicator for non-zero part of eTe.
@@ -1798,8 +1793,8 @@ classdef beam < handle
             rvL = rvL * rvSig;
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
-            % rvL' * eTe * rvL * rvR') = domain size * domain size 
-            % (rvL * rvR' = origin), and truncation can be performed. 
+            % rvL' * eTe * rvL * rvR') = domain size * domain size
+            % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
             
             for i = 1:obj.no.pre.hhat
@@ -1842,7 +1837,7 @@ classdef beam < handle
         end
         %%
         function obj = pmPrepare(obj)
-            % This method prepares parameter values to fit and multiply 
+            % This method prepares parameter values to fit and multiply
             % related reduced variables.
             % The interpolated responses need to be saved for each
             % iteration in order to multiply corresponding reduced
@@ -1871,7 +1866,7 @@ classdef beam < handle
             % Repeat for nt times to fit length of pre-computed
             % responses.
             
-            % size of original rv is nr * nt. 
+            % size of original rv is nr * nt.
             rvAcc = obj.acc.re.reVar;
             rvVel = obj.vel.re.reVar;
             rvDis = obj.dis.re.reVar;
@@ -2720,7 +2715,7 @@ classdef beam < handle
             if plotMeshSwitch == 1
                 % plot mesh with all inclusions
                 nnode = size(obj.node.all, 1);
-                x = obj.node.all(:, 2); 
+                x = obj.node.all(:, 2);
                 y = obj.node.all(:, 3);
                 cs = trisurf(obj.elem.all(:,2:4), x, y, zeros(nnode, 1));
                 set(cs, 'FaceColor', colorStruct, 'CDataMapping', 'scaled');
