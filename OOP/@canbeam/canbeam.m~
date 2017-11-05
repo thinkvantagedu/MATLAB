@@ -1,0 +1,133 @@
+classdef canbeam < beam
+    
+    properties
+        
+        cons
+        fce
+        
+    end
+    
+    methods
+        
+        function obj = canbeam(masFile, damFile, stiFile, ...
+                locStart, locEnd, INPname, domLength1, domLength2, ...
+                domLengths, bondL1, bondR1, bondL2, bondR2, trial, noIncl, ...
+                tMax, tStep, mid1, mid2, errLowBond, errMaxVal, errRbCtrl, ...
+                errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
+                drawRow, drawCol, fNode, ftime, nConsEnd)
+            
+            obj = obj@beam(masFile, damFile, stiFile, locStart, ...
+                locEnd, INPname, domLength1, domLength2, ...
+                domLengths, bondL1, bondR1, bondL2, bondR2, trial, noIncl, ...
+                tMax, tStep, mid1, mid2, errLowBond, errMaxVal, errRbCtrl, ...
+                errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
+                drawRow, drawCol); % only base class properties
+            
+            obj.fce.time = ftime;
+            obj.fce.node = fNode;
+            obj.no.consEnd = nConsEnd;
+            
+        end
+        %%
+        function obj = gaussian(obj, shift, sig, unit_amp, debugMode)
+            
+            % generate Gaussian function. x is the x-axis, which contains length of
+            % gap; shift is the length shift to left or right; sig is the coefficient
+            % sigma; unit_amp decides whether the amplitude is normalized or not.
+            % - shift moves the curve to right.
+            % small sig = small width.
+            
+            if debugMode == 1
+                % if in debug mode, use xaxis of fce with shift to generate
+                % efunc.
+                efunc = - (obj.fce.xaxis - shift) .^ 2 / 2 / sig ^ 2;
+                obj.fce.gaus = 1 / sqrt(2 * pi * sig ^ 2) * exp(efunc);
+            elseif debugMode == 0
+                % if not in debug mode, use a wide range without shift to
+                % generate efunc. 
+                xRange = linspace(-1, 1, obj.no.t_step);
+                efunc = - xRange .^ 2 / 2 / sig ^ 2;
+                obj.fce.gaus = 1 / sqrt(2 * pi * sig ^ 2) * exp(efunc);
+                idx = obj.fce.gaus > 1e-5;
+                obj.fce.gaus = obj.fce.gaus(idx);
+                obj.fce.gaus = obj.fce.gaus - obj.fce.gaus(1);
+            end
+            
+            if unit_amp == 1
+                obj.fce.gaus = obj.fce.gaus / max(obj.fce.gaus);
+            end
+            
+        end
+        
+        %%
+        function obj = generateNodalFce(obj, ndofPerNode, sig, debugMode)
+            % works for both 2d and 3d.
+            obj.fce.dof = ndofPerNode * obj.fce.node;
+            obj.fce.val = sparse(obj.no.dof,  obj.no.t_step);
+            obj.fce.xaxis = (0 : obj.time.step : obj.fce.time);
+            % gaussian(obj, shift, sig, unit_amp)
+            obj = gaussian(obj, 0.03, sig, 1, debugMode);
+            
+            obj.fce.val(obj.fce.dof, 1:length(obj.fce.gaus)) = ...
+                obj.fce.val(obj.fce.dof, 1:length(obj.fce.gaus)) + obj.fce.gaus;
+            
+        end
+        %%
+        function obj = readINPconsCanti(obj, dim)
+            % read constraint information from INP file.
+            
+            line_cons_start = [];
+            line_cons_end = [];
+            fid = fopen(obj.INPname);
+            tline = fgetl(fid);
+            line_NO = 1;
+            
+            while ischar(tline)
+                line_NO = line_NO + 1;
+                tline = fgetl(fid);
+                celltext{line_NO} = tline;
+                for i = 1:obj.no.consEnd
+                    line_cons1 = strfind(tline, obj.str.locStart{i});
+                    location = isempty(line_cons1);
+                    if location == 0
+                        line_cons_start = [line_cons_start; line_NO];
+                    end
+                    
+                    line_cons2 = strfind(tline, obj.str.locEnd);
+                    location = isempty(line_cons2);
+                    if location == 0
+                        line_cons_end = [line_cons_end; line_NO];
+                    end
+                end
+            end
+            
+            %
+            strtext = char(celltext(2:(length(celltext)-1)));
+            
+            fclose(fid);
+            
+            text_cons1 = strtext((line_cons_start(1) : line_cons_end(1) - 2), :);
+            trim_cons = strtrim(text_cons1);
+            obj.cons.node=[];
+            for i_cons = 1 : size(trim_cons, 1)
+                
+                cons0 = str2num(trim_cons(i_cons, :));
+                obj.cons.node = [obj.cons.node; cons0'];
+                
+            end
+            obj.no.cons = length(obj.cons.node);
+            
+            obj.cons.dof = zeros(dim * obj.no.cons, 1);
+            
+            for i = 1:obj.no.cons
+                obj.cons.dof(i * dim - (dim - 1) : i * dim) = ...
+                    obj.cons.dof(i * dim - (dim - 1) : i * dim) + ...
+                    (dim * obj.cons.node(i) - (dim - 1): dim * obj.cons.node(i))';
+            end
+            obj.cons.dof = {obj.cons.dof};
+            obj.cons.node = {obj.cons.node};
+        end
+        
+        
+    end
+end

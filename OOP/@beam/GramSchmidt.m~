@@ -1,0 +1,27 @@
+function [obj]=GramSchmidt(obj)
+
+inpt = obj.phi.val;
+
+[m, n]=size(inpt);
+otpt=zeros(m, n);
+otpt(:, 1)=inpt(:, 1);
+otpt(:, 1)=otpt(:, 1)/norm(otpt(:, 1));
+
+for i_otpt=2:n
+    
+    otpt(:, i_otpt)=otpt(:, i_otpt)+inpt(:, i_otpt);
+    
+    for j_otpt=1:(i_otpt-1)
+        
+        a=dot(otpt(:, j_otpt), inpt(:, i_otpt));
+        b=norm(otpt(:, j_otpt))^2;
+        
+        otpt(:, i_otpt)=otpt(:, i_otpt)-((a/b)*otpt(:, j_otpt));
+        
+    end
+    
+    otpt(:, i_otpt)=otpt(:, i_otpt)/norm(otpt(:, i_otpt));
+    
+end
+
+obj.phi.val = otpt;

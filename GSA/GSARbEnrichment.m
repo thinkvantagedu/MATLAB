@@ -1,0 +1,19 @@
+function [phi] = GSARbEnrichment(summation, ...
+    pmVal, MTX_K, phi, MTX_M, MTX_C, fce, NMcoef, time, Dis, Vel, Nphi)
+%% this function compute the next exact solution and add a new basis vector.
+%% compute the next exact solution.
+
+MTX_Kexact = summation...
+    (MTX_K.I1120S0, MTX_K.I1021S0, MTX_K.I1020S1, ...
+    pmVal.max.I1, pmVal.max.I2, pmVal.fix.I3);
+
+[~, ~, ~, Disiterexact, ~, ~, ~, ~] = ...
+    NewmarkBetaReducedMethod...
+    (phi.ident, MTX_M.mtx, MTX_C.mtx, MTX_Kexact, ...
+    fce.val, NMcoef, time.step, time.max, Dis.inpt, Vel.inpt);
+
+%% new basis from error (current exact - previous appro).
+erriterstore = Disiterexact - Dis.all.appr;
+[phiERR, ~, ~] = SVDmod(erriterstore, Nphi.iter);
+phi.fre.all = [phi.fre.all phiERR];
+phi.fre.all = GramSchmidtNew(phi.fre.all);

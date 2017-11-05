@@ -1,0 +1,10 @@
+clear all; clc;
+filename='C:\Temp\L3H2_dynamics1.inp';
+inserted_filename='C:\Temp\Inserted_INP.inp';
+loc_str='** -----------------';
+loc_num=20;
+text_insert={'** ';
+'*STEP, name=exportmatrix ';
+'*MATRIX GENERATE, STIFFNESS, MASS';
+'*MATRIX OUTPUT, STIFFNESS, MASS, FORMAT=MATRIX INPUT';
+'*END STEP '};

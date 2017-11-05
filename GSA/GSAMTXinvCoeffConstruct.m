@@ -1,0 +1,23 @@
+function [coeff_store] = GSAMTXinvCoeffConstruct(pm_pre_loc_block, MTX_K_fre_OR_I11_I20_IS0, ...
+    MTX_K_fre_OR_I10_I21_IS0, MTX_K_fre_OR_I10_I20_IS1, MTX_C_fre_OR_trial_loop, MTX_M_fre_OR_all, a1, a2, I3)
+% construct [4*DOF, DOF] size of MTX inverse
+% coefficients for use of linear Lag interpolation. 
+coeff_store = zeros(4*numel(pm_pre_loc_block)*length(MTX_K_fre_OR_I11_I20_IS0), ...
+    length(MTX_K_fre_OR_I11_I20_IS0));
+%         generate matrix inverse from pre-computed
+%         inverses using Lag_interpolation, MTX inverse
+%         should be computed within each block.
+for i_block = 1:numel(pm_pre_loc_block)
+    pm_pre_val_block = 10.^pm_pre_loc_block{i_block};
+%     assemble exact mtx inverse for each block
+    [MTX_pre_ori_asmbl_block] = GSAAssembleMTXInverse(pm_pre_val_block, ...
+        MTX_K_fre_OR_I11_I20_IS0, MTX_K_fre_OR_I10_I21_IS0, ...
+        MTX_K_fre_OR_I10_I20_IS1, MTX_C_fre_OR_trial_loop, MTX_M_fre_OR_all, a1, a2, I3);
+%     find stored coefficient matrix for each block
+    [coeff] = LagInterpolationCoeff(pm_pre_val_block, MTX_pre_ori_asmbl_block);
+%     put all 4 coefficient matrix together
+    coeff_store(4*(i_block-1)*length(MTX_K_fre_OR_I11_I20_IS0)+1:...
+        4*i_block*length(MTX_K_fre_OR_I11_I20_IS0), :) = ...
+        coeff_store(4*(i_block-1)*length(MTX_K_fre_OR_I11_I20_IS0)+1:...
+        4*i_block*length(MTX_K_fre_OR_I11_I20_IS0), :)+coeff;
+end

@@ -1,0 +1,13 @@
+function [re_rows_num]=DisplacementRows2Cols(rows_num, node_no)
+
+re_se_rows_num1=zeros(size(rows_num, 1), size(rows_num, 2)-1);
+% each 3 cols are node_no*0+i_rearrange+1:node_no*2+i_rearrange+1, i.e.
+% 31*0+2:31*2+2
+for i_rearrange=1:node_no
+    re_se_rows_num1(:, i_rearrange*3-2:i_rearrange*3)=...
+        re_se_rows_num1(:, i_rearrange*3-2:i_rearrange*3)+...
+        [rows_num(:, node_no*0+i_rearrange+1), ...
+        rows_num(:, node_no*1+i_rearrange+1), ...
+        rows_num(:, node_no*2+i_rearrange+1)];
+end
+re_rows_num=re_se_rows_num1';
