@@ -55,7 +55,7 @@ refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 1;
+drawCol = 3;
 
 gridSwitch = 0;
 nConsEnd = 1;

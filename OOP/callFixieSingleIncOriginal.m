@@ -15,9 +15,9 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter.
-domLeng1 = 5;
-domLeng2 = 5;
-domLengs = 5;
+domLeng1 = 25;
+domLeng2 = 25;
+domLengs = 25;
 bondL1 = 1;
 bondR1 = 2;
 bondL2 = 1;
@@ -55,7 +55,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 
 gridSwitch = 0;
 
