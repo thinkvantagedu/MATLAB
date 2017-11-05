@@ -72,7 +72,7 @@ elseif gridSwitch == 0
     
     
     if obj.no.inc == 1
-        hold on
+        
         % for single inclusion case, plot error response curve.
         hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'k');
         % text of current maximum error.
@@ -82,6 +82,8 @@ elseif gridSwitch == 0
         errTxt = text(obj.pmExpo.max, errMax, txtPlotCurrentMax, ...
             'color', '[0 0 1]', 'Fontsize', 12);
         xlabel('Inclusion')
+        hold on
+        
     elseif obj.no.inc == 2
         hAx = subplot(drawRow, drawCol, obj.countGreedy);
         % for double inclusion case, plot error response surface.
