@@ -16,8 +16,8 @@ errStore = obj.err.store.pass;
 if gridSwitch == 1 % plot refined grid.
     iplot = 3 * obj.countGreedy - 2;
     hAx = subplot(drawRow, drawCol * 3, iplot);
-    surf(linspace(obj.domBond.I1.L, obj.domBond.I1.R, obj.domLeng.I1), ...
-        linspace(obj.domBond.I2.L, obj.domBond.I2.R, obj.domLeng.I2), ...
+    surf(linspace(obj.domBond.I1.L, obj.domBond.I1.R, obj.domLeng.i(1)), ...
+        linspace(obj.domBond.I2.L, obj.domBond.I2.R, obj.domLeng.i(2)), ...
         errStore');
     view(3)
     txtPlotCurrentMax = sprintf('[%d %d]', obj.pmLoc.max(1), obj.pmLoc.max(2));
@@ -69,12 +69,11 @@ elseif gridSwitch == 0
             eSurf = obj.err.store.surf.hhat;
     end
     
-    
-    
     if obj.no.inc == 1
         
         % for single inclusion case, plot error response curve.
         hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'k');
+        
         % text of current maximum error.
         txtPlotCurrentMax = sprintf('[%d %g]', obj.pmLoc.max, ...
             obj.err.max.val.slct);
@@ -83,12 +82,13 @@ elseif gridSwitch == 0
             'color', '[0 0 1]', 'Fontsize', 12);
         xlabel('Inclusion')
         hold on
+        axis square
         
     elseif obj.no.inc == 2
         hAx = subplot(drawRow, drawCol, obj.countGreedy);
         % for double inclusion case, plot error response surface.
-        surf(linspace(obj.domBond.I1.L, obj.domBond.I1.R, obj.domLeng.I1), ...
-            linspace(obj.domBond.I2.L, obj.domBond.I2.R, obj.domLeng.I2), ...
+        surf(linspace(obj.domBond.I1.L, obj.domBond.I1.R, obj.domLeng.i(1)), ...
+            linspace(obj.domBond.I2.L, obj.domBond.I2.R, obj.domLeng.i(2)), ...
             errStore');
         % text of current maximum error.
         txtPlotCurrentMax = sprintf('[%d %d, %g]', ...
@@ -101,6 +101,8 @@ elseif gridSwitch == 0
         set(hAx,'zscale','log')
         view(3)
         colorbar('northoutside');
+        axis(hAx,'square')
+        axis(hAx,'tight', 'manual')
     else
         disp('number of inclusions exceeds 2')
     end
@@ -129,6 +131,7 @@ elseif gridSwitch == 0
                 txtPlotPrevMax, 'color', '[0 0 0]', 'Fontsize', 12);
             axis(hAx,'square')
             axis(hAx,'tight', 'manual')
+            
         else
             disp('number of inclusions exceeds 2')
         end

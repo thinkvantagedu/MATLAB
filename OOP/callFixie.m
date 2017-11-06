@@ -10,19 +10,18 @@ addpath(genpath(oopPath));
 trialName = 'l9h2SingleInc';
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
-noIncl = 2;
+noIncl = 1;
 dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class.
-domLeng1 = 5;
-domLeng2 = 5;
+domLengi = 5;
 domLengs = 5;
 bondL1 = 1;
 bondR1 = 2;
 bondL2 = 1;
 bondR2 = 2;
-nIter = domLeng1 * domLeng2;
+nIter = prod(domLengi);
 % mid 1 and 2 are used for refinement, middle points are needed for the
 % initial refinements.
 mid1 = (bondL1 + bondR1) / 2;
@@ -34,11 +33,11 @@ tStep = 0.01;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
-fNode = 4;
+fNode = 9;
 ftime = 0.02;
 
 %% parameter data for trial iteration.
-trial = [1, 1];
+trial = 1;
 
 %% error informations
 errLowBond = 1e-12;
@@ -58,11 +57,11 @@ drawRow = 1;
 drawCol = 3;
 
 gridSwitch = 0;
-nConsEnd = 1;
+nConsEnd = 2;
 %% trial solution
 % use subclass: canbeam to create fixed beam.
-fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, ...
-    domLeng1, domLeng2, domLengs, bondL1, bondR1, bondL2, bondR2, ...
+fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
+    domLengs, bondL1, bondR1, bondL2, bondR2, ...
     trial, noIncl, tMax, tStep, mid1, mid2, errLowBond, errMaxValInit, ...
     errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
     drawRow, drawCol, fNode, ftime, nConsEnd);

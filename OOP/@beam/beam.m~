@@ -48,7 +48,7 @@ classdef beam < handle
     methods
         
         function obj = beam(masFile, damFile, stiFile, ...
-                locStart, locEnd, INPname, domLengi, domLengs, ...
+                locStart, locEnd, INPname, domLeng, domLeng1, domLeng2, domLengs, ...
                 bondL1, bondR1, bondL2, bondR2, trial, noIncl, tMax, tStep, ...
                 mid1, mid2, errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
@@ -62,7 +62,9 @@ classdef beam < handle
             obj.str.locEnd = locEnd;
             obj.INPname = INPname;
             
-            obj.domLeng.i = domLengi;
+            obj.domLeng.i = domLeng;
+            obj.domLeng.I1 = domLeng1;
+            obj.domLeng.I2 = domLeng2;
             obj.domLeng.s = domLengs;
             obj.domBond.I1.L = bondL1;
             obj.domBond.I1.R = bondR1;
@@ -288,6 +290,8 @@ classdef beam < handle
         %%
         function obj = generatePmSpaceMultiDim(obj)
             % generate n-D parameter space, n = number of inclusions.
+            
+            obj.domLeng.i = obj.domLeng.s * ones(1, obj.no.inc);
             
             for i = 1:obj.no.inc
                 
@@ -2257,14 +2261,16 @@ classdef beam < handle
                     
                     if randomSwitch == 1
                         if obj.countGreedy == 1
-                            obj.err.max.loc = pmValRow(:, 1:obj.no.inc);
+                            obj.err.max.loc = pmValRow(:, 1:2);
                         elseif obj.countGreedy > 1
+                            obj.err.max.loc = ...
+                                [randi([1 obj.domLeng.I1], 1), ...
+                                randi([1 obj.domLeng.I1], 1)];
                             eMlocRand = [];
                             for i = 1:obj.no.inc
-                                eMlocRand = [eMlocRand ...
-                                    randi([1 obj.domLeng.i(i)], 1)];
+                                eMlocRand = [eMlocRand ];
                             end
-                            obj.err.max.loc = eMlocRand;
+                            keyboard
                         end
                     else
                         obj.err.max.loc = pmValRow(:, 1:obj.no.inc);
