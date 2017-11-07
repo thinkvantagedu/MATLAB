@@ -48,8 +48,8 @@ classdef beam < handle
     methods
         
         function obj = beam(masFile, damFile, stiFile, ...
-                locStart, locEnd, INPname, domLengi, domLengs, ...
-                bondL1, bondR1, bondL2, bondR2, trial, noIncl, tMax, tStep, ...
+                locStart, locEnd, INPname, domLengi, domLengs, domBondi, ...
+                trial, noIncl, tMax, tStep, ...
                 mid1, mid2, errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
                 drawRow, drawCol)
@@ -62,12 +62,9 @@ classdef beam < handle
             obj.str.locEnd = locEnd;
             obj.INPname = INPname;
             
+            obj.domBond.i = domBondi;
             obj.domLeng.i = domLengi;
             obj.domLeng.s = domLengs;
-            obj.domBond.I1.L = bondL1;
-            obj.domBond.I1.R = bondR1;
-            obj.domBond.I2.L = bondL2;
-            obj.domBond.I2.R = bondR2;
             obj.pmVal.s.fix = 1000;
             obj.pmVal.comb.trial = trial;
             
@@ -222,7 +219,7 @@ classdef beam < handle
                 end
                 
             end
-            % element may contains multiple locations, but only takes the 
+            % element may contains multiple locations, but only takes the
             % first 2 locations.
             lineElem = lineElem(1:2);
             lineInc = reshape(lineInc, [2, length(lineInc) / 2]);
@@ -291,9 +288,8 @@ classdef beam < handle
             
             for i = 1:obj.no.inc
                 
-                pmValIspace(i) = {logspace(obj.domBond.I1.L, ...
-                    obj.domBond.I1.R, obj.domLeng.i(i))};
-                
+                pmValIspace(i) = {logspace(obj.domBond.i{i}(1), ...
+                    obj.domBond.i{i}(2), obj.domLeng.i(i))};
                 pmValIspace{i} = ...
                     [(1:length(pmValIspace{i})); pmValIspace{i}];
                 
@@ -475,7 +471,7 @@ classdef beam < handle
         %%
         function obj = rbCtrlInitial(obj, rbCtrlThres)
             obj.no.nEnrich = 0;
-            % Error controlled scheme for initial reduced basis from trial 
+            % Error controlled scheme for initial reduced basis from trial
             % point.
             while obj.err.rbCtrl > rbCtrlThres
                 
@@ -600,16 +596,21 @@ classdef beam < handle
             obj.sti.trial = obj.sti.mtxCell{1} * pm1 + ...
                 obj.sti.mtxCell{2} * pm2 + obj.sti.mtxCell{3} * pms;
             
-            
         end
         
         %%
         function obj = initHatPm(obj)
             % initialize exponential itpl parameter domain.
-            obj.pmExpo.hat = [(1:4)' [obj.domBond.I1.L obj.domBond.I2.L; ...
-                obj.domBond.I1.R obj.domBond.I2.L; ...
-                obj.domBond.I1.L obj.domBond.I2.R; ...
-                obj.domBond.I1.R obj.domBond.I2.R]];
+            pmIdx = (1:2 ^ obj.no.inc)';
+            pmDom = cell(obj.no.inc, 1);
+            if obj.no.inc == 1
+                pmDom = {(obj.domBond.i{:})'};
+            else
+                [pmDom{1:obj.no.inc}] = ndgrid(obj.domBond.i{:});
+            end
+            pmCoord = cellfun(@(v) v(:), pmDom, 'un', 0);
+            pmCoord = [pmCoord{:}];
+            obj.pmExpo.hat = [pmIdx pmCoord];
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
             obj.pmExpo.temp.inpt = obj.pmExpo.hat;
             
@@ -2036,14 +2037,17 @@ classdef beam < handle
                 switch type
                     case 'hhat'
                         obj.err.norm{1} = ...
-                            sqrt(abs(ePreSqrt)) / norm(obj.dis.qoi.trial, 'fro');
+                            sqrt(abs(ePreSqrt)) / ...
+                            norm(obj.dis.qoi.trial, 'fro');
                     case 'hat'
                         obj.err.norm{2} = ...
-                            sqrt(abs(ePreSqrt)) / norm(obj.dis.qoi.trial, 'fro');
+                            sqrt(abs(ePreSqrt)) / ...
+                            norm(obj.dis.qoi.trial, 'fro');
                     case 'add'
                         % only apply to hhat, cause refined blocks are in ehhat.
                         obj.err.norm{1} = ...
-                            sqrt(abs(ePreSqrt)) / norm(obj.dis.qoi.trial, 'fro');
+                            sqrt(abs(ePreSqrt)) / ...
+                            norm(obj.dis.qoi.trial, 'fro');
                 end
                 
             elseif rvSvdSwitch == 1
@@ -2070,7 +2074,7 @@ classdef beam < handle
                 
             elseif obj.no.block.hat > 1
                 
-                % when there is a refinement, only interpolate the refined block.
+                % when there is a refinement, only itpl the refined block.
                 obj.inAddBlockIndicator;
                 
                 if any(obj.indicator.inBlock) == 1
@@ -2721,7 +2725,6 @@ classdef beam < handle
         %%
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);
-        obj = generatePmSpace(obj);
         obj = NewmarkBetaReducedMethodOOP(obj, type);
         obj = gridtoBlockwithIndx(obj, type);
         obj = refineGridLocalwithIdx(obj, type);

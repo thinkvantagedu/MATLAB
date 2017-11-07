@@ -17,16 +17,18 @@ nDofPerNode = 2;
 %% data for parameter.
 domLengi = 25;
 domLengs = 25;
+nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
 bondL2 = 1;
 bondR2 = 2;
-nIter = prod(domLengi);
+domBondi = {[bondL1 bondR1]};
 nConsEnd = 2;
 % mid 1 and 2 are used for refinement, middle points are needed for the
 % initial refinements.
 mid1 = (bondL1 + bondR1) / 2;
 mid2 = (bondL2 + bondR2) / 2;
+domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 %% data for time.
 tMax = 0.03;
 tStep = 0.01; 
@@ -61,7 +63,7 @@ gridSwitch = 0;
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, bondL1, bondR1, bondL2, bondR2, ...
+    domLengs, domBondi, ...
     trial, noIncl, tMax, tStep, mid1, mid2, errLowBond, errMaxValInit, ...
     errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
     drawRow, drawCol, fNode, ftime, nConsEnd);

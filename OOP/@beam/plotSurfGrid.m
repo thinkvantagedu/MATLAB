@@ -16,9 +16,10 @@ errStore = obj.err.store.pass;
 if gridSwitch == 1 % plot refined grid.
     iplot = 3 * obj.countGreedy - 2;
     hAx = subplot(drawRow, drawCol * 3, iplot);
-    surf(linspace(obj.domBond.I1.L, obj.domBond.I1.R, obj.domLeng.i(1)), ...
-        linspace(obj.domBond.I2.L, obj.domBond.I2.R, obj.domLeng.i(2)), ...
-        errStore');
+    surf(linspace(obj.domBond.i{1}(1), obj.domBond.i{1}(2), ...
+        obj.domLeng.i(1)), ...
+        linspace(obj.domBond.i{2}(1), obj.domBond.i{2}(2), ...
+        obj.domLeng.i(2)), errStore');
     view(3)
     txtPlotCurrentMax = sprintf('[%d %d]', obj.pmLoc.max(1), obj.pmLoc.max(2));
     text(obj.pmExpo.max(1), obj.pmExpo.max(2), errMax, txtPlotCurrentMax, ...
@@ -54,7 +55,8 @@ if gridSwitch == 1 % plot refined grid.
     scatHhatPos(4) = scatHhatPos(4) * 0.5;
     set(scatHhatHand, 'position', scatHhatPos)
     grid on
-    axis([obj.domBond.I1.L obj.domBond.I1.R obj.domBond.I2.L obj.domBond.I2.R])
+    axis([obj.domBond.i{1}(1) obj.domBond.i{1}(2) ...
+        obj.domBond.i{2}(1) obj.domBond.i{2}(2)]);
     
 elseif gridSwitch == 0
     
@@ -87,9 +89,10 @@ elseif gridSwitch == 0
     elseif obj.no.inc == 2
         hAx = subplot(drawRow, drawCol, obj.countGreedy);
         % for double inclusion case, plot error response surface.
-        surf(linspace(obj.domBond.I1.L, obj.domBond.I1.R, obj.domLeng.i(1)), ...
-            linspace(obj.domBond.I2.L, obj.domBond.I2.R, obj.domLeng.i(2)), ...
-            errStore');
+        surf(linspace(obj.domBond.i{1}(1), obj.domBond.i{1}(2), ...
+            obj.domLeng.i(1)), ...
+            linspace(obj.domBond.i{2}(1), obj.domBond.i{2}(2), ...
+            obj.domLeng.i(2)), errStore');
         % text of current maximum error.
         txtPlotCurrentMax = sprintf('[%d %d, %g]', ...
             obj.pmLoc.max(1), obj.pmLoc.max(2), obj.err.max.val.slct);
@@ -113,7 +116,7 @@ elseif gridSwitch == 0
         % switch to index.
         eLocIdx = sub2ind(size(eSurf), eLocPrevMax{:});
         % value of previous maximum error location on current response
-        % surface. 
+        % surface.
         eValPrevMaxCurrent = eSurf(eLocIdx);
         pmExpoPrev = [];
         for i = 1:obj.no.inc

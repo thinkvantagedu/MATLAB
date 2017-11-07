@@ -115,8 +115,8 @@ pmExpoPass(iRec) = [];
 obj.pmExpo.block.hhat = [pmExpoPass; obj.pmExpo.temp.otpt];
 
 % find the pm with indices in asending order.
-pmExpOtptPm = cell2mat(obj.pmExpo.block.hhat);
-pmExpOtptTemp = sortrows(pmExpOtptPm);
+pmEXP_tptPm = cell2mat(obj.pmExpo.block.hhat);
+pmExpOtptTemp = sortrows(pmEXP_otptPm);
 obj.pmExpo.hhat = unique(pmExpOtptTemp, 'rows');
 obj.pmVal.hhat = 10 .^ obj.pmExpo.hhat(:, 2:3);
 obj.pmVal.hhat = [obj.pmExpo.hhat(:, 1) obj.pmVal.hhat];
