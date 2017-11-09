@@ -41,7 +41,7 @@ else
         otptNidx{iRte}(3, :) = otptTemp(4, :);
         otptNidx{iRte}(4, :) = otptTemp(3, :);
     end
-    
+    keyboard
     % make otpt carry the original index.
     otpt = cell(numel(otptNidx), 1);
     for iEq = 1:numel(otptNidx)
@@ -50,11 +50,12 @@ else
             for kEq = 1:length(otptBlk)
                 if isequal(otptBlk(kEq, 2:3), inpt(jEq, 2:3)) == 1
                     otptBlk(kEq, :) = [inpt(jEq, 1) otptBlk(kEq, 2:3)];
+                    otpt(iEq) = {otptBlk};
                 end
             end
         end
-        otpt(iEq) = {otptBlk};
     end
+    keyboard
     obj.pmExpo.temp.otpt = otpt;
 end
 end

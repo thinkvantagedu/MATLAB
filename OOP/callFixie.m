@@ -28,7 +28,7 @@ nConsEnd = 2;
 % initial refinements.
 mid1 = (bondL1 + bondR1) / 2;
 mid2 = (bondL2 + bondR2) / 2;
-
+domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 %% data for time
 tMax = 0.03;
 tStep = 0.01;
@@ -62,10 +62,9 @@ gridSwitch = 0;
 %% trial solution
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, domBondi, ...
-    trial, noIncl, tMax, tStep, mid1, mid2, errLowBond, errMaxValInit, ...
-    errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
-    drawRow, drawCol, fNode, ftime, nConsEnd);
+    domLengs, domBondi, domMid, trial, noIncl, tMax, tStep, mid1, mid2, ...
+    errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, errRbCtrlTNo, ...
+    cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix, 2 = 2d.
 fixie.readMTX2DOF(nDofPerNode);
