@@ -5,7 +5,6 @@ function [obj] = gridtoBlockwithIndx(obj)
 
 % clear variables; clc;
 % inpt = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0];
-% inpt = [1 -1 -1; 2 -1 1; 3 1 -1; 4 1 1; 5 -1 0; 6 0 -1; 7 0 0; 8 0 1; 9 1 0];
 
 % inpt = [-1 -1; -1 1; 1 -1; 1 1];
 % inpt = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0; ...
@@ -17,12 +16,13 @@ function [obj] = gridtoBlockwithIndx(obj)
 
 inpt = obj.pmExpo.temp.inpt;
 xyCellIdx = cellfun(@unique, num2cell(inpt, 1), 'UniformOutput', false);
-xy = [xyCellIdx{2:obj.no.inc + 1}];
-
 x = xyCellIdx{2};
 if obj.no.inc == 1
+    for xidx = 1 : numel(x) - 1
+        otptNidx{xidx} = repmat(x(xidx:xidx+1), obj.no.inc, 1);
+    end
     
-else
+elseif obj.no.inc == 2
     y = xyCellIdx{3};
     % create output
     otptNidx = cell(numel(y) - 1, numel(x) - 1);
@@ -30,8 +30,8 @@ else
     % iterate through the grid and fill output.
     for xidx = 1 : numel(x) - 1
         for yidx = 1 : numel(y) - 1
-            otptNidx{yidx, xidx} = [repmat(x(xidx:xidx+1), 2, 1), ...
-                repelem(y(yidx:yidx+1), 2)];
+            otptNidx{yidx, xidx} = [repmat(x(xidx:xidx+1), obj.no.inc, 1), ...
+                repelem(y(yidx:yidx+1), obj.no.inc)];
         end
     end
     
@@ -41,20 +41,29 @@ else
         otptNidx{iRte}(3, :) = otptTemp(4, :);
         otptNidx{iRte}(4, :) = otptTemp(3, :);
     end
-    
-    % make otpt carry the original index.
-    otpt = cell(numel(otptNidx), 1);
-    for iEq = 1:numel(otptNidx)
-        otptBlk = [zeros(4, 1) otptNidx{iEq}];
-        for jEq = 1:length(inpt)
-            for kEq = 1:length(otptBlk)
-                if isequal(otptBlk(kEq, 2:3), inpt(jEq, 2:3)) == 1
-                    otptBlk(kEq, :) = [inpt(jEq, 1) otptBlk(kEq, 2:3)];
-                end
+elseif obj.no.inc == 3
+    dim = size(inpt, 2) - 1;
+    L = (dec2bin(0:2 ^ dim - 1) - '0') * 2 - 1;
+    N = size(L,1);
+    otptNidx = cell(1, 1);
+    T = inpt(:, 2:end);
+    for i = 1:N
+        idx = all(bsxfun(@times, T, L(i,:)) >= 0, 2);
+        otptNidx{i}=T(idx,:);
+    end
+end
+% make otpt carry the original index.
+otpt = cell(numel(otptNidx), 1);
+for iEq = 1:numel(otptNidx)
+    otptBlk = [zeros(length(otptNidx{iEq}), 1) otptNidx{iEq}];
+    for jEq = 1:length(inpt)
+        for kEq = 1:length(otptBlk)
+            if isequal(otptBlk(kEq, 2:obj.no.inc + 1), inpt(jEq, 2:obj.no.inc + 1)) == 1
+                otptBlk(kEq, :) = [inpt(jEq, 1) otptBlk(kEq, 2:obj.no.inc + 1)];
             end
         end
-        otpt(iEq) = {otptBlk};
     end
-    obj.pmExpo.temp.otpt = otpt;
+    otpt(iEq) = {otptBlk};
 end
+obj.pmExpo.temp.otpt = otpt;
 end

@@ -2159,7 +2159,7 @@ classdef beam < handle
                     obj.err.store.surf(sub2ind(surfSize, pmLocIter{:})) = ...
                         obj.err.store.surf(sub2ind(surfSize, pmLocIter{:})) + ...
                         obj.err.val;
-                    
+                    keyboard
             end
             
         end
@@ -2806,13 +2806,15 @@ classdef beam < handle
                 pmExpOtptTemp(pmIdx, :) = [];
                 
                 for iComp1 = 1:length(pmExpInptPmTemp)
-                    b = ismember(pmExpOtptSpecVal, pmExpInptPmTemp(iComp1, 2:3), 'rows');
+                    b = ismember(pmExpOtptSpecVal, ...
+                        pmExpInptPmTemp(iComp1, 2:3), 'rows');
                     if b == 1
                         pmExpOtptSpecIdx = pmExpInptPmTemp(iComp1, 1);
                     end
                 end
                 
-                obj.pmExpo.block.hhat = [[pmExpOtptSpecIdx pmExpOtptSpecVal]; ...
+                obj.pmExpo.block.hhat = [[pmExpOtptSpecIdx ...
+                    pmExpOtptSpecVal]; ...
                     [(1:idxToAdd)' + length(pmEXPinptRaw) pmExpOtptTemp]];
                 
             else
@@ -2820,7 +2822,8 @@ classdef beam < handle
                 idxToAdd = 5;
                 
                 obj.pmExpo.block.hhat = ...
-                    [(1:idxToAdd)' + length(pmEXPinptRaw) obj.pmExpo.block.hhat];
+                    [(1:idxToAdd)' + length(pmEXPinptRaw) ...
+                    obj.pmExpo.block.hhat];
                 
             end
             
@@ -2829,14 +2832,16 @@ classdef beam < handle
             % NOTE: if only consider refined block, the number of added 
             % points do not need to be considered; however, if index is 
             % included, or total number of grid points is considered, 
-            % then number of added points needs to be
-            % calculated. Principle: same size & same location block: +4; different size
+            % then number of added points needs to be calculated. 
+            % Principle: same size & same location block: +4; different size
             % block: +5.
-            obj.pmExpo.temp.inpt = [obj.pmExpo.block.hat{iRec}; obj.pmExpo.block.hhat];
+            obj.pmExpo.temp.inpt = [obj.pmExpo.block.hat{iRec}; ...
+                obj.pmExpo.block.hhat];
             obj.gridtoBlockwithIndx;
             
-            % delete original block which needs to be refined, put final data together.
-            % pass value to a tmp var in case the origin (obj.pmExpo.block.hat) is modified.
+            % delete original block which needs to be refined, put final 
+            % data together. pass value to a tmp var in case the 
+            % origin (obj.pmExpo.block.hat) is modified.
             
             pmExpoPass = obj.pmExpo.block.hat;
             pmExpoPass(iRec) = [];
@@ -2852,6 +2857,19 @@ classdef beam < handle
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
+        end
+        %% 
+        function obj = polyRotation(obj, direction)
+            % this method rotate polygon tip coordinates into clockwise
+            % (cw) or counter-clockwise (ccw).
+            switch direction
+                case 'cw'
+                    
+                case 'ccw'
+                    
+            end
+            
+            
         end
         %%
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);

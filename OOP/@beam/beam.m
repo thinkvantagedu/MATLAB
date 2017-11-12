@@ -2750,13 +2750,13 @@ classdef beam < handle
             end
             
             pmExpInptPmTemp = cell2mat(obj.pmExpo.block.hat);
-            pmExpInptPm = pmExpInptPmTemp(:, 2:3);
+            pmExpInptPm = pmExpInptPmTemp(:, 2:obj.no.inc + 1);
             pmEXPinptRaw = unique(pmExpInptPm, 'rows');
             nBlk = length(obj.pmExpo.block.hat);
             % find which block max pm point is in, refine.
             
             for iBlk = 1:nBlk
-                
+                keyboard
                 if inpolygon(pmExpMax1, pmExpMax2, ...
                         obj.pmExpo.block.hat{iBlk}(:, 2), ...
                         obj.pmExpo.block.hat{iBlk}(:, 3)) == 1
@@ -2858,6 +2858,7 @@ classdef beam < handle
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
         end
+        
         %%
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);

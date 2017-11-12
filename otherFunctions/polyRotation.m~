@@ -1,0 +1,18 @@
+function otpt = polyRotation(inpt, direction)
+% this function rotate polygon tip coordinates into clockwise
+% (cw) or counter-clockwise (ccw).
+switch direction
+    case 'cw'
+        x = inpt(:, 1);
+        y = inpt(:, 2);
+        mx = mean(x);
+        my = mean(y);
+        ang = atan2(y - my, x - mx);
+        [~, order] = sort(ang);
+        
+    case 'ccw'
+        
+end
+
+
+end

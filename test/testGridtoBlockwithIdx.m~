@@ -4,101 +4,86 @@
 
 clear variables; clc;
 
-nInc = 3;
+nInc = 2;
 
 if nInc == 1 % the 1D case
-    inpt = [1 1.5 2 2.5 3 3.5]';
+    coords = [1 1.5 2 2.5 3 3.5]';
 elseif nInc == 2 % the 2D case
-    inpt = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0];
+%     coords = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0];
+    %     coords = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0; 2 0; 2 1; ...
+    %         0 2; -1 2; -2 0; -2 -1];
+    %     coords = [-1 -1; -1 1; 1 -1; 1 1];
+    coords = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0; ...
+        -1 -0.5; -0.5, 0; 0 -0.5; -0.5 -1; -0.5 -0.5; ...
+        0.5 0; 1 -0.5; 0.5 -1; 0.5 -0.5; ...
+        0.5 1; 1 0.5; 0.5 0.5; 0 0.5; -0.5 0.5; -0.5 1; -1 0.5];
 elseif nInc == 3 % the 3D case
     inptCell = cell(3, 1);
     [inptCell{:}] = meshgrid(-1:1, -1:1, -1:1);
-    inpt = [];
+    coords = [];
     for i = 1:nInc
-        inpt = [inpt inptCell{i}(:)];
+        coords = [coords inptCell{i}(:)];
     end
 end
+coords = [(1:length(coords))' coords];
 
-inpt = [(1:length(inpt))' inpt];
-xyCellIdx = cellfun(@unique, num2cell(inpt, 1), 'UniformOutput', false);
+% dim = size(coords, 2) - 1;
+% L = (dec2bin(0:2 ^ dim - 1) - '0') * 2 - 1;
+% N = size(L,1);
+% otNid = cell(1, 1);
+% T = coords(:, 2:end);
+% for i = 1:N
+%     idx = all(bsxfun(@times, T, L(i,:)) >= 0, 2);
+%     otNid{i}=T(idx,:);
+% end
+% 
+% % make otpt carry the original index.
+% otpt = cell(numel(otNid), 1);
+% for iEq = 1:numel(otNid)
+%     otptBlk = [zeros(length(otNid{iEq}), 1) otNid{iEq}];
+%     for jEq = 1:length(coords)
+%         for kEq = 1:length(otptBlk)
+%             if isequal(coords(jEq, 2:nInc + 1), otptBlk(kEq, 2:nInc + 1)) == 1
+%                 otptBlk(kEq, 1) = coords(jEq, 1);
+%                 
+%             end
+%         end
+%     end
+%     otpt(iEq) = {otptBlk};
+% end
+
+
+xyCellIdx = cellfun(@unique, num2cell(coords, 1), 'UniformOutput', false);
 xy = [xyCellIdx{2:nInc + 1}];
-x = xyCellIdx{2};
-nId = size(xy, 1) - 1;
 
-if nInc == 1
-    otNid = cell(nId, 1);
-    
-    for i = 1 : nId
-        otNid{i} = repmat(x(i:i+1), 1, 1);
-    end
-    
-elseif nInc == 2
-    y = xyCellIdx{3};
-    % create output
-    
-    otNid = cell(nId, nId);
-    
-    % iterate through the grid and fill output. Otpt is already the output
-    % of refined coordinates.
-    mtxSize = size(otNid);
-    test = cell(nId ^ 2, 1);
-    %     for idx = 1:nId ^ 2
-    %         [indx{1:nInc}] = ind2sub(mtxSize, idx);
-    %         otNid(sub2ind(mtxSize, indx{:})) = {[]};
-    %     end
-    for i = 1 : nId
-        for j = 1 : nId
-            otNid{j, i} = [repmat(x(i:i+1), 2, 1), ...
-                repelem(y(j:j+1), 2)];
-        end
-    end
-    
-    % make node route of each block anti-clockwise. Current is lu, ru, ll, rl.
-    for iRte = 1:numel(otNid)
-        otptTemp = otNid{iRte};
-        otNid{iRte}(3, :) = otptTemp(4, :);
-        otNid{iRte}(4, :) = otptTemp(3, :);
-    end
-elseif nInc == 3
-    y = xyCellIdx{3};
-    z = xyCellIdx{4};
-    % create output
-    
-    otNid = cell(nId, nId, nId);
-    
-    % iterate through the grid and fill output. Otpt is already the output
-    % of refined coordinates.
-    mtxSize = size(otNid);
-    test = cell(nId ^ nInc, 1);
-    %     for idx = 1:nId ^ nInc
-    %         [indx{1:nInc}] = ind2sub(mtxSize, idx);
-    %         otNid(sub2ind(mtxSize, indx{:})) = {[]};
-    %     end
-    for i = 1 : nId
-        for j = 1 : nId
-            for k = 1:nId
-                otNid{k, j, i} = [repmat(x(i:i+1), 4, 1), ...
-                    repelem(y(j:j+1), 4), ...
-                    repelem(z(k:k+1), 4)];
-            end
-        end
-    end
-    
-    % make node route of each block anti-clockwise. Current is lu, ru, ll, rl.
-    for iRte = 1:numel(otNid)
-        otptTemp = otNid{iRte};
-        otNid{iRte}(3, :) = otptTemp(4, :);
-        otNid{iRte}(4, :) = otptTemp(3, :);
+x = xyCellIdx{2};
+y = xyCellIdx{3};
+% create output
+otptNidx = cell(numel(y) - 1, numel(x) - 1);
+
+% iterate through the grid and fill output.
+for xidx = 1 : numel(x) - 1
+    for yidx = 1 : numel(y) - 1
+        otptNidx{yidx, xidx} = [repmat(x(xidx:xidx+1), 2, 1), ...
+            repelem(y(yidx:yidx+1), 2)];
     end
 end
+
+% make node route of each block anti-clockwise. Current is lu, ru, ll, rl.
+for iRte = 1:numel(otptNidx)
+    otptTemp = otptNidx{iRte};
+    otptNidx{iRte}(3, :) = otptTemp(4, :);
+    otptNidx{iRte}(4, :) = otptTemp(3, :);
+end
+
 % make otpt carry the original index.
-otpt = cell(numel(otNid), 1);
-for iEq = 1:numel(otNid)
-    otptBlk = [zeros(nInc * 2, 1) otNid{iEq}];
-    for jEq = 1:length(inpt)
+otpt = cell(numel(otptNidx), 1);
+for iEq = 1:numel(otptNidx)
+    otptBlk = [zeros(4, 1) otptNidx{iEq}];
+    for jEq = 1:length(c)
         for kEq = 1:length(otptBlk)
-            if isequal(otptBlk(kEq, 2:nInc + 1), inpt(jEq, 2:nInc + 1)) == 1
-                otptBlk(kEq, :) = [inpt(jEq, 1) otptBlk(kEq, 2:nInc + 1)];
+            if isequal(otptBlk(kEq, 2:3), coords(jEq, 2:3)) == 1
+                otptBlk(kEq, :) = [inpt(jEq, 1) otptBlk(kEq, 2:3)];
             end
         end
     end
