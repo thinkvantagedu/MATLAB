@@ -2328,7 +2328,7 @@ classdef beam < handle
                 
             end
             obj.pmVal.max = pmValMax;
-            obj.pmExpo.max = log10(obj.pmVal.max);
+            obj.pmExpo.max = num2cell(log10(obj.pmVal.max));
             
         end
         %%
@@ -2739,39 +2739,50 @@ classdef beam < handle
                 
                 case 'initial'
                     
-                    pmExpMax1 = obj.pmExpo.mid1;
-                    pmExpMax2 = obj.pmExpo.mid2;
-                    
+                    pmExptoTest1 = obj.pmExpo.mid1;
+                    pmExptoTest2 = obj.pmExpo.mid2;
+                    pmExptoTest = obj.pmExpo.mid;
                 case 'iteration'
                     
-                    pmExpMax1 = obj.pmExpo.max(1);
-                    pmExpMax2 = obj.pmExpo.max(2);
+                    pmExptoTest1 = obj.pmExpo.max{1};
+                    pmExptoTest2 = obj.pmExpo.max{2};
+                    pmExptoTest = obj.pmExpo.max;
                     
             end
             
-            pmExpInptPmTemp = cell2mat(obj.pmExpo.block.hat);
-            pmExpInptPm = pmExpInptPmTemp(:, 2:obj.no.inc + 1);
-            pmEXPinptRaw = unique(pmExpInptPm, 'rows');
+            pmExpInpPmTemp = cell2mat(obj.pmExpo.block.hat);
+            pmExpInpPm = pmExpInpPmTemp(:, 2:obj.no.inc + 1);
+            pmExpInpRaw = unique(pmExpInpPm, 'rows');
             nBlk = length(obj.pmExpo.block.hat);
             % find which block max pm point is in, refine.
-            
             for iBlk = 1:nBlk
-                keyboard
-                if inpolygon(pmExpMax1, pmExpMax2, ...
-                        obj.pmExpo.block.hat{iBlk}(:, 2), ...
-                        obj.pmExpo.block.hat{iBlk}(:, 3)) == 1
-                    obj = refineGrid(obj, iBlk);
-                    iRec = iBlk;
+                
+                if obj.no.inc == 1
+                    if inBetweenTwoPoints(pmExptoTest{:}, ...
+                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc + 1)) == 1
+                        obj = refineGrid(obj, iBlk);
+                        iRec = iBlk;
+                    end
+                elseif obj.no.inc == 2
+                    if inpolygon(pmExptoTest1, pmExptoTest2, ...
+                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc), ...
+                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc + 1)) == 1
+                        obj = refineGrid(obj, iBlk);
+                        iRec = iBlk;
+                    end
+                else
+                    disp('dimension >= 3')
                 end
                 
             end
             
             % delete repeated point with the chosen block.
             jRec = [];
-            for iDel = 1:4
+            for iDel = 1:2 ^ obj.no.inc
                 for jDel = 1:length(obj.pmExpo.block.hhat)
                     
-                    if isequal(obj.pmExpo.block.hat{iRec}(iDel, 2:3), ...
+                    if isequal(obj.pmExpo.block.hat{iRec}...
+                            (iDel, 2:obj.no.inc + 1), ...
                             obj.pmExpo.block.hhat(jDel, :)) == 1
                         
                         jRec = [jRec; jDel];
@@ -2788,7 +2799,7 @@ classdef beam < handle
             aRec = [];
             for iComp = 1:size(pmExpOtptTemp, 1)
                 
-                a = ismember(pmExpOtptTemp(iComp, :), pmEXPinptRaw, 'rows');
+                a = ismember(pmExpOtptTemp(iComp, :), pmExpInpRaw, 'rows');
                 aRec = [aRec; a];
                 if a == 1
                     pmIdx = iComp;
@@ -2805,24 +2816,24 @@ classdef beam < handle
                 
                 pmExpOtptTemp(pmIdx, :) = [];
                 
-                for iComp1 = 1:length(pmExpInptPmTemp)
+                for iComp1 = 1:length(pmExpInpPmTemp)
                     b = ismember(pmExpOtptSpecVal, ...
-                        pmExpInptPmTemp(iComp1, 2:3), 'rows');
+                        pmExpInpPmTemp(iComp1, 2:3), 'rows');
                     if b == 1
-                        pmExpOtptSpecIdx = pmExpInptPmTemp(iComp1, 1);
+                        pmExpOtptSpecIdx = pmExpInpPmTemp(iComp1, 1);
                     end
                 end
                 
                 obj.pmExpo.block.hhat = [[pmExpOtptSpecIdx ...
                     pmExpOtptSpecVal]; ...
-                    [(1:idxToAdd)' + length(pmEXPinptRaw) pmExpOtptTemp]];
+                    [(1:idxToAdd)' + length(pmExpInpRaw) pmExpOtptTemp]];
                 
             else
                 % if there is no repeated point, add 5 indices.
                 idxToAdd = 5;
-                
+                keyboard
                 obj.pmExpo.block.hhat = ...
-                    [(1:idxToAdd)' + length(pmEXPinptRaw) ...
+                    [(1:idxToAdd)' + length(pmExpInpRaw) ...
                     obj.pmExpo.block.hhat];
                 
             end
@@ -2851,12 +2862,13 @@ classdef beam < handle
             pmExpOtptPm = cell2mat(obj.pmExpo.block.hhat);
             pmExpOtptTemp = sortrows(pmExpOtptPm);
             obj.pmExpo.hhat = unique(pmExpOtptTemp, 'rows');
-            obj.pmVal.hhat = 10 .^ obj.pmExpo.hhat(:, 2:3);
+            obj.pmVal.hhat = 10 .^ obj.pmExpo.hhat(:, 2:obj.no.inc + 1);
             obj.pmVal.hhat = [obj.pmExpo.hhat(:, 1) obj.pmVal.hhat];
-            obj.pmVal.hat = 10 .^ obj.pmExpo.hat(:, 2:3);
+            obj.pmVal.hat = 10 .^ obj.pmExpo.hat(:, 2:obj.no.inc + 1);
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
+            keyboard
         end
         
         %%

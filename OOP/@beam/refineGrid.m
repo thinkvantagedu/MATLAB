@@ -1,73 +1,87 @@
-function [obj] = refineGrid(obj, i_block)
+function [obj] = refineGrid(obj, iBlk)
 % use in refineGridLocalwithIdx.
-% pm_inpt is 4 by 2 matrix representing 4 corner coordinate (in a column way). 
-% pm_comb_otpt is 5 by 2 matrix representing the computed 5 midpoints. 
+% pmInp is 4 by 2 matrix representing 4 corner coordinate (in a column way).
 % This function is able to compute any number of given blocks, not just one
-% block. 
+% block.
+% all given blocks will be refined, nOtptBlk = 4 * nInptBlk.
+% inpt is a matrix, otpt is also a matrix, not suitable for cell.
 
-% inpt is a matrix, otpt is also a matrix, not suitable for cell. 
-
-pm_inpt = obj.pmExpo.block.hat{i_block}(:, 2:3);
-obj.pmExpo.block.hhat = [];
-
-% add rows of pm_inpt in a sequential way.
-
-for i_1 = 1:length(pm_inpt)-1
-    
-   for j_1 = i_1+1:length(pm_inpt)
-       
-      obj.pmExpo.block.hhat = [obj.pmExpo.block.hhat; pm_inpt(i_1, :)+pm_inpt(j_1, :)]; 
-       
-   end
-    
-end
-
-% determine if there is repeated columns and delete it.
-
-j_cnt = [];
-
-for i_2 = 1:length(obj.pmExpo.block.hhat)-1
-    
-    for j_2 = i_2+1:length(obj.pmExpo.block.hhat)
+pmInp = obj.pmExpo.block.hat{iBlk}(:, 2:obj.no.inc + 1);
+pmExpoHhat = [];
+if obj.no.inc == 1
+    pmInpUni = unique(pmInp);
+    nPmUni = length(pmInpUni);
+    pmCell = cell(nPmUni - 1, 1);
+    for i = 1:nPmUni - 1
         
-        if isequal(obj.pmExpo.block.hhat(i_2, :), obj.pmExpo.block.hhat(j_2, :)) == 1
+        pmCell(i) = {[pmInpUni(i) pmInpUni(i + 1)]};
+        
+    end
+    pmExpoHhat = cellfun(@(v) sum(v) / 2, pmCell, 'un', 0);
+    pmExpoHhat = cell2mat(pmExpoHhat);
+elseif obj.no.inc == 2
+    % add rows of pmInp in a sequential way.
+    
+    for i1 = 1:length(pmInp)-1
+        
+        for j1 = i1+1:length(pmInp)
             
-            j_cnt = [j_cnt; j_2];
+            pmExpoHhat = [pmExpoHhat; pmInp(i1, :) + pmInp(j1, :)];
             
         end
         
     end
     
-    obj.pmExpo.block.hhat(j_cnt, :) = [];
+    % determine if there is repeated columns and delete it.
     
-    j_cnt = [];
+    jCnt = [];
+    
+    for i2 = 1:length(pmExpoHhat)-1
+        
+        for j2 = i2+1:length(pmExpoHhat)
+            
+            if isequal(pmExpoHhat(i2, :), pmExpoHhat(j2, :)) == 1
+                
+                jCnt = [jCnt; j2];
+                
+            end
+            
+        end
+        
+        pmExpoHhat(jCnt, :) = [];
+        
+        jCnt = [];
+        
+    end
+    
+    % divide into half.
+    
+    pmExpoHhat = pmExpoHhat / 2;
+    
+    % determine if there is repeated points with pm_inpt and delete them.
+    
+    kInt = [];
+    
+    for i3 = 1:length(pmInp)
+        
+        for j3 = 1:length(pmExpoHhat)
+            
+            if isequal(pmInp(i3, :), pmExpoHhat(j3, :)) == 1
+                
+                kInt = [kInt; j3];
+                
+            end
+            
+        end
+        
+    end
+    
+    pmExpoHhat(kInt, :) = [];
 
+else
+    disp('number of inclusions > 2')
 end
 
-% divide into half.
-
-obj.pmExpo.block.hhat = obj.pmExpo.block.hhat/2;
-
-% determine if there is repeated points with pm_inpt and delete them.
-
-k_int = [];
-
-for i_3 = 1:length(pm_inpt)
-    
-   for j_3 = 1:length(obj.pmExpo.block.hhat)
-       
-      if isequal(pm_inpt(i_3, :), obj.pmExpo.block.hhat(j_3, :)) == 1 
-       
-         k_int = [k_int; j_3]; 
-         
-      end
-      
-   end
-   
-end
-
-obj.pmExpo.block.hhat(k_int, :) = [];
-
-%% assemble inpt and otpt together.
-obj.pmExpo.block.hhat = [pm_inpt; obj.pmExpo.block.hhat];
-
+% assemble inpt and otpt together.
+pmExpoHhat = [pmInp; pmExpoHhat];
+obj.pmExpo.block.hhat = pmExpoHhat;

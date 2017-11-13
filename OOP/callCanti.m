@@ -29,6 +29,8 @@ nConsEnd = 1;
 mid1 = (bondL1 + bondR1) / 2;
 mid2 = (bondL2 + bondR2) / 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
+domMid = domMid';
+
 %% data for time
 tMax = 0.03;
 tStep = 0.01;
