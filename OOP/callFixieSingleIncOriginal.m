@@ -11,6 +11,9 @@ trialName = 'l9h2SingleInc';
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
 noIncl = 1;
+noStruct = 1;
+noMas = 1;
+noDam = 1;
 dam = 0;
 nDofPerNode = 2;
 
@@ -26,8 +29,6 @@ domBondi = {[bondL1 bondR1]};
 nConsEnd = 2;
 % mid 1 and 2 are used for refinement, middle points are needed for the
 % initial refinements.
-mid1 = (bondL1 + bondR1) / 2;
-mid2 = (bondL2 + bondR2) / 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 %% data for time.
 tMax = 0.03;
@@ -63,9 +64,10 @@ gridSwitch = 0;
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, domBondi, domMid, trial, noIncl, tMax, tStep, mid1, mid2, ...
-    errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, errRbCtrlTNo, ...
-    cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam,...
+    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, ...
+    errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, ...
+    fNode, ftime, nConsEnd);
 
 % read mass matrix. 
 fixie.readMTX2DOF(nDofPerNode);

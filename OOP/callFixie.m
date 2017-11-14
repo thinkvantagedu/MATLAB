@@ -11,6 +11,9 @@ trialName = 'l9h2SingleInc';
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
 noIncl = 1;
+noStruct = 1;
+noMas = 1;
+noDam = 1;
 dam = 0;
 nDofPerNode = 2;
 
@@ -62,9 +65,10 @@ gridSwitch = 0;
 %% trial solution
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, domBondi, domMid, trial, noIncl, tMax, tStep, mid1, mid2, ...
-    errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, errRbCtrlTNo, ...
-    cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
+    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, ...
+    nConsEnd);
 
 % read mass matrix, 2 = 2d.
 fixie.readMTX2DOF(nDofPerNode);
@@ -104,7 +108,7 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 1;
+nPhiInitial = 2;
 nPhiEnrich = 1;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)

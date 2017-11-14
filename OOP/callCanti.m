@@ -11,6 +11,9 @@ trialName = 'l2h1';
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
 noIncl = 2;
+noStruct = 1;
+noMas = 1;
+noDam = 1;
 dam = 0;
 nDofPerNode = 2;
 
@@ -26,8 +29,6 @@ domBondi = {[bondL1 bondR1]; [bondL2 bondR2]};
 nConsEnd = 1;
 % mid 1 and 2 are used for refinement, middle points are needed for the
 % initial refinements.
-mid1 = (bondL1 + bondR1) / 2;
-mid2 = (bondL2 + bondR2) / 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
@@ -58,15 +59,16 @@ refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 3;
+drawCol = 2;
 
 gridSwitch = 0;
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
 canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, domBondi, domMid, trial, noIncl, tMax, tStep, mid1, mid2, ...
-    errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, errRbCtrlTNo, ...
-    cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
+    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, ...
+    errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
+    drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix, 2 = 2d.
 canti.readMTX2DOF(nDofPerNode);

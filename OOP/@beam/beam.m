@@ -49,8 +49,8 @@ classdef beam < handle
         
         function obj = beam(masFile, damFile, stiFile, ...
                 locStart, locEnd, INPname, domLengi, domLengs, domBondi, ...
-                domMid, trial, noIncl, tMax, tStep, ...
-                mid1, mid2, errLowBond, errMaxValInit, errRbCtrl, ...
+                domMid, trial, noIncl, noStruct, noMas, noDam, tMax, tStep, ...
+                errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
                 drawRow, drawCol)
             
@@ -70,15 +70,14 @@ classdef beam < handle
             obj.pmVal.comb.trial = trial;
             
             obj.no.inc = noIncl;
-            obj.no.phy = noIncl + 2;
+            obj.no.struct = noStruct;
+            obj.no.phy = noIncl + noStruct + noMas + noDam;
             obj.no.t_step = length((0:tStep:tMax));
             obj.no.Greedy = drawRow * drawCol;
             
             obj.time.step = tStep;
             obj.time.max = tMax;
             obj.phi.ident = [];
-            obj.pmExpo.mid1 = mid1;
-            obj.pmExpo.mid2 = mid2;
             obj.pmExpo.mid = domMid;
             
             obj.err.lowBond = errLowBond;
@@ -986,18 +985,19 @@ classdef beam < handle
             mtxAsemb = cell(obj.no.phy, 1);
             mtxAsemb(1) = {obj.mas.mtx};
             mtxAsemb(2) = {obj.dam.mtx};
-            mtxAsemb(3:5) = obj.sti.mtxCell;
+            mtxAsemb(3:3 + obj.no.inc) = obj.sti.mtxCell;
             obj.asemb.imp.cel = cell(obj.no.phy, 1);
             
             if obj.indicator.refinement == 0 && obj.indicator.enrichment == 1
-                
-                obj.asemb.imp.cel = cellfun(@(v) v * obj.phi.val, mtxAsemb, ...
-                    'un', 0);
+                % impulse is system matrices multiply reduced basis
+                % vectors.
+                obj.asemb.imp.cel = cellfun(@(v) v * obj.phi.val, ...
+                    mtxAsemb, 'un', 0);
                 obj.asemb.imp.apply = cell(2, 1);
                 
                 for i = 1:obj.no.phy
                     for j = 1:2
-                        % only generate responses reagrding the newly added
+                        % only generate responses regarding the newly added
                         % basis vectors.
                         for k = obj.no.rb - obj.no.phiAdd + 1:obj.no.rb
                             impMtx = sparse(obj.no.dof, obj.no.t_step);
@@ -1007,7 +1007,6 @@ classdef beam < handle
                         end
                     end
                 end
-                
             end
         end
         %%
@@ -1016,28 +1015,37 @@ classdef beam < handle
             if obj.indicator.refinement == 0 && obj.indicator.enrichment == 1
                 % if no refinement, only enrich, force related responses does
                 % not change since it's not related to new basis vectors.
-                for i_pre = 1:obj.no.pre.hhat
-                    obj.sti.pre = ...
-                        obj.sti.mtxCell{1} * obj.pmVal.hhat(i_pre, 2) + ...
-                        obj.sti.mtxCell{2} * obj.pmVal.hhat(i_pre, 3) + ...
-                        obj.sti.mtxCell{3} * obj.pmVal.s.fix;
-                    obj.sti.full = obj.sti.pre;
+                for iPre = 1:obj.no.pre.hhat
+                    
+                    pmValI = obj.pmVal.hhat(iPre, 2:obj.no.inc + 1);
+                    pmValHhat = [pmValI obj.pmVal.s.fix];
+                    pmValCell = num2cell(pmValHhat');
+                    
+                    stiPreCell = cellfun(@(u, v) u * v, ...
+                        pmValCell, obj.sti.mtxCell, 'un', 0);
+                    stiPre = sparse(obj.no.dof, obj.no.dof);
+                    for i = 1:length(stiPreCell)
+                        
+                        stiPre = stiPre + stiPreCell{i};
+                        
+                    end
+                    obj.sti.full = stiPre;
                     obj.fce.pass = obj.fce.val;
                     obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{i_pre} = obj.dis.full(:);
+                            obj.resp.store.fce.hhat{iPre} = obj.dis.full(:);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
                             tempdis = obj.dis.full(:, obj.qoi.t);
-                            obj.resp.store.fce.hhat{i_pre} = tempdis(:);
+                            obj.resp.store.fce.hhat{iPre} = tempdis(:);
                             
                         elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
                             tempdis = obj.dis.full(obj.qoi.dof, :);
-                            obj.resp.store.fce.hhat{i_pre} = tempdis(:);
+                            obj.resp.store.fce.hhat{iPre} = tempdis(:);
                             
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
                             tempdis = obj.dis.full(obj.qoi.dof, obj.qoi.t);
-                            obj.resp.store.fce.hhat{i_pre} = tempdis(:);
+                            obj.resp.store.fce.hhat{iPre} = tempdis(:);
                         end
                     elseif svdSwitch == 1
                         % if SVD is not on-the-fly, comment this.
@@ -1046,7 +1054,7 @@ classdef beam < handle
                         uFcel = uFcel * uFcesig;
                         uFcel = uFcel(:, 1:obj.no.respSVD);
                         uFcer = uFcer(:, 1:obj.no.respSVD);
-                        obj.resp.store.fce.hhat{i_pre} = ...
+                        obj.resp.store.fce.hhat{iPre} = ...
                             [{uFcel}; {uFcer}];
                     end
                 end
@@ -1055,26 +1063,26 @@ classdef beam < handle
                     obj.indicator.enrichment == 0
                 % if refine, no enrichment, only compute force related
                 % responses regarding the new interpolation samples.
-                for i_pre = 1:obj.no.itplAdd
+                for iPre = 1:obj.no.itplAdd
                     obj.sti.pre = ...
-                        obj.sti.mtxCell{1} * obj.pmVal.add(i_pre, 2) + ...
-                        obj.sti.mtxCell{2} * obj.pmVal.add(i_pre, 3) + ...
+                        obj.sti.mtxCell{1} * obj.pmVal.add(iPre, 2) + ...
+                        obj.sti.mtxCell{2} * obj.pmVal.add(iPre, 3) + ...
                         obj.sti.mtxCell{3} * obj.pmVal.s.fix;
                     obj.sti.full = obj.sti.pre;
                     obj.fce.pass = obj.fce.val;
                     obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{obj.no.iExist + i_pre} = ...
+                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
                                 obj.dis.full(:);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{obj.no.iExist + i_pre} = ...
+                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
                                 obj.dis.full(:, obj.qoi.t);
                         elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                            obj.resp.store.fce.hhat{obj.no.iExist + i_pre} = ...
+                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, :);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                            obj.resp.store.fce.hhat{obj.no.iExist + i_pre} = ...
+                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, obj.qoi.t);
                         end
                     elseif svdSwitch == 1
@@ -1084,7 +1092,7 @@ classdef beam < handle
                         uFcel = uFcel * uFcesig;
                         uFcel = uFcel(:, 1:obj.no.respSVD);
                         uFcer = uFcer(:, 1:obj.no.respSVD);
-                        obj.resp.store.fce.hhat{obj.no.iExist + i_pre} = ...
+                        obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
                             [{uFcel}; {uFcer}];
                     end
                 end
@@ -1151,7 +1159,7 @@ classdef beam < handle
         %%
         function obj = respTdiffComputation(obj, svdSwitch)
             % this method compute 2 responses for each interpolation
-            % sample, each affin term, each basis vector.
+            % sample, each affine term, each basis vector.
             % only compute responses regarding newly added basis vectors,
             % but store all responses regarding all basis vectors.
             
@@ -1159,17 +1167,23 @@ classdef beam < handle
                 % if no refinement, enrich basis: compute the new exact
                 % solutions regarding the newly added basis vectors.
                 for iPre = 1:obj.no.pre.hhat
-                    obj.sti.pre = ...
-                        obj.sti.mtxCell{1} * obj.pmVal.hhat(iPre, 2) + ...
-                        obj.sti.mtxCell{2} * obj.pmVal.hhat(iPre, 3) + ...
-                        obj.sti.mtxCell{3} * obj.pmVal.s.fix;
+                    pmPre = obj.pmVal.hhat(iPre, 2:obj.no.inc + 1);
+                    pmPre = [pmPre obj.pmVal.s.fix];
+                    pmPre  = num2cell(pmPre');
+                    stiPreCell = cellfun(@(u, v) u * v, ...
+                        pmPre, obj.sti.mtxCell, 'un', 0);
+                    
+                    stiPre = sparse(obj.no.dof, obj.no.dof);
+                    for i = 1:length(stiPreCell)
+                        stiPre = stiPre + stiPreCell{i} * pmPre{i};
+                    end
                     for iPhy = 1:obj.no.phy
                         for iTdiff = 1:2
                             % only compute exact solutions regarding the
                             % newly added basis vectors.
                             for iRb = obj.no.rb - obj.no.phiAdd + 1:obj.no.rb
                                 impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
-                                obj.sti.full = obj.sti.pre;
+                                obj.sti.full = stiPre;
                                 obj.fce.pass = impPass;
                                 obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                                 if svdSwitch == 0
@@ -1867,7 +1881,7 @@ classdef beam < handle
             rvDisRow = rvDisRow';
             
             %
-            rvDisRepRow = repmat(rvDisRow, obj.no.inc, 1);
+            rvDisRepRow = repmat(rvDisRow, obj.no.inc + 1, 1);
             
             rvAllRow = [rvAccRow; rvVelRow; rvDisRepRow];
             rvAllCol = rvAllRow(:);
@@ -1884,47 +1898,75 @@ classdef beam < handle
             switch type
                 
                 case 'hhat'
-                    nblk = length(obj.pmExpo.block.hhat);
+                    nBlk = length(obj.pmExpo.block.hhat);
                     pmBlk = obj.pmExpo.block.hhat;
                 case 'hat'
-                    nblk = length(obj.pmExpo.block.hat);
+                    nBlk = length(obj.pmExpo.block.hat);
                     pmBlk = obj.pmExpo.block.hat;
-                case 'add' % only for newly added blocks
-                    nblk = 4;
+                case 'add' % this is the number of the newly divided blocks.
+                    nBlk = 2 ^ obj.no.inc;
                     pmBlk = obj.pmExpo.block.add;
                     
             end
-            for i = 1:nblk
-                
-                if inpolygon(obj.pmExpo.iter{1}, obj.pmExpo.iter{2}, ...
-                        pmBlk{i}(:, 2), pmBlk{i}(:, 3)) == 1
-                    
-                    xl = min(pmBlk{i}(:, 2));
-                    xr = max(pmBlk{i}(:, 2));
-                    yl = min(pmBlk{i}(:, 3));
-                    yr = max(pmBlk{i}(:, 3));
-                    [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
-                    gridx = 10 .^ gridxVal;
-                    gridy = 10 .^ gridyVal;
-                    switch type
-                        case 'hhat'
-                            gridzVal = obj.err.pre.hhat(pmBlk{i}(:, 1), 3);
-                            
-                        case 'hat'
-                            gridzVal = obj.err.pre.hat(pmBlk{i}(:, 1), 3);
-                            
-                        case 'add'
-                            % pmBlk is the added block now.
-                            pmAdd = pmBlk{i};
-                            gridzVal = obj.err.pre.hhat(pmAdd(:, 1), 3);
-                            
+            for i = 1:nBlk
+                pmIter = obj.pmExpo.iter(1:obj.no.inc);
+                pmBlkDom = pmBlk{i}(:, 2:obj.no.inc + 1);
+                pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
+                    ones(size(pmBlkDom, 2), 1));
+                % generate x-y (1 inclusion) or x-y-z (2 inclusions) domain.
+                if obj.no.inc == 1
+                    if inBetweenTwoPoints(pmIter{:}, pmBlkCell{:}) == 1
+                        xl = pmBlk{i}(1, 2);
+                        xr = pmBlk{i}(2, 2);
+                        switch type
+                            case 'hhat'
+                                gridyVal = obj.err.pre.hhat(pmBlk{i}(:, 1), 3);
+                            case 'hat'
+                                gridyVal = obj.err.pre.hat(pmBlk{i}(:, 1), 3);
+                            case 'add'
+                                % pmBlk is the added block now.
+                                pmAdd = pmBlk{i};
+                                gridyVal = ...
+                                    obj.err.pre.hhat(pmAdd(:, 1), 3);
+                        end
+                        keyboard
                     end
-                    
-                    gridz = [gridzVal(1) gridzVal(2); ...
-                        gridzVal(4) gridzVal(3)];
-                    
-                    obj.LagItpl2Dmtx(gridx, gridy, gridz);
-                    
+                elseif obj.no.inc == 2
+                    if inpolygon(pmIter{:}, pmBlkCell{:}) == 1
+                        
+                        xl = min(pmBlk{i}(:, 2));
+                        xr = max(pmBlk{i}(:, 2));
+                        yl = min(pmBlk{i}(:, 3));
+                        yr = max(pmBlk{i}(:, 3));
+                        
+                        [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
+                        gridx = 10 .^ gridxVal;
+                        gridy = 10 .^ gridyVal;
+                        switch type
+                            case 'hhat'
+                                gridzVal = ...
+                                    obj.err.pre.hhat(pmBlk{i}(:, 1), 3);
+                                
+                            case 'hat'
+                                gridzVal = ...
+                                    obj.err.pre.hat(pmBlk{i}(:, 1), 3);
+                                
+                            case 'add'
+                                % pmBlk is the added block now.
+                                pmAdd = pmBlk{i};
+                                gridzVal = ...
+                                    obj.err.pre.hhat(pmAdd(:, 1), 3);
+                                
+                        end
+                        
+                        gridz = [gridzVal(1) gridzVal(2); ...
+                            gridzVal(4) gridzVal(3)];
+                        
+                        obj.LagItpl2Dmtx(gridx, gridy, gridz);
+                        
+                    end
+                else
+                    disp('dimension > 2')
                 end
                 
             end
@@ -2159,7 +2201,7 @@ classdef beam < handle
                     obj.err.store.surf(sub2ind(surfSize, pmLocIter{:})) = ...
                         obj.err.store.surf(sub2ind(surfSize, pmLocIter{:})) + ...
                         obj.err.val;
-                    keyboard
+                    
             end
             
         end
@@ -2726,26 +2768,22 @@ classdef beam < handle
         end
         %%
         function obj = refineGridLocalwithIdx(obj, type)
-            % Refine locally, only refine the block which surround the 
-            % pm_maxLoc. input is 4 by 2 matrix representing 4 corner 
-            % coordinate (in a column way). output is 5 by 2 matrix 
-            % representing the computed 5 midpoints. This function is able 
+            % Refine locally, only refine the block which surround the
+            % pm_maxLoc. input is 4 by 2 matrix representing 4 corner
+            % coordinate (in a column way). output is 5 by 2 matrix
+            % representing the computed 5 midpoints. This function is able
             % to compute any number of given blocks, not just one block.
-            % input is a matrix, output is also a matrix, not suitable for 
-            % cell. input hat block and maximum point, output hhat points, 
+            % input is a matrix, output is also a matrix, not suitable for
+            % cell. input hat block and maximum point, output hhat points,
             % hhat blocks. example: see testGSALocalRefiFunc.m
             
             switch type
                 
                 case 'initial'
                     
-                    pmExptoTest1 = obj.pmExpo.mid1;
-                    pmExptoTest2 = obj.pmExpo.mid2;
                     pmExptoTest = obj.pmExpo.mid;
                 case 'iteration'
                     
-                    pmExptoTest1 = obj.pmExpo.max{1};
-                    pmExptoTest2 = obj.pmExpo.max{2};
                     pmExptoTest = obj.pmExpo.max;
                     
             end
@@ -2764,7 +2802,7 @@ classdef beam < handle
                         iRec = iBlk;
                     end
                 elseif obj.no.inc == 2
-                    if inpolygon(pmExptoTest1, pmExptoTest2, ...
+                    if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
                             obj.pmExpo.block.hat{iBlk}(:, obj.no.inc), ...
                             obj.pmExpo.block.hat{iBlk}(:, obj.no.inc + 1)) == 1
                         obj = refineGrid(obj, iBlk);
@@ -2794,66 +2832,75 @@ classdef beam < handle
             obj.pmExpo.block.hhat(jRec, :) = [];
             pmExpOtptTemp = obj.pmExpo.block.hhat;
             
-            % compare pmEXP_otptTemp with pmEXP_inptRaw, only to find whether 
-            % there is a repeated pm point.
-            aRec = [];
-            for iComp = 1:size(pmExpOtptTemp, 1)
-                
-                a = ismember(pmExpOtptTemp(iComp, :), pmExpInpRaw, 'rows');
-                aRec = [aRec; a];
-                if a == 1
-                    pmIdx = iComp;
-                end
-                
-            end
             
-            if any(aRec) == 1
-                % if there is a repeated pm point, add 4 indices to new pm 
-                % points and put the old pm point at the beginning.
-                idxToAdd = 4;
-                
-                pmExpOtptSpecVal = obj.pmExpo.block.hhat(pmIdx, :);
-                
-                pmExpOtptTemp(pmIdx, :) = [];
-                
-                for iComp1 = 1:length(pmExpInpPmTemp)
-                    b = ismember(pmExpOtptSpecVal, ...
-                        pmExpInpPmTemp(iComp1, 2:3), 'rows');
-                    if b == 1
-                        pmExpOtptSpecIdx = pmExpInpPmTemp(iComp1, 1);
+            
+            if obj.no.inc == 1
+                % if dimension = 1, always add 1 itpl point each refinement;
+                obj.pmExpo.block.hhat = [length(obj.pmExpo.block.hat{1}) + 1 ...
+                    obj.pmExpo.block.hhat];
+            elseif obj.no.inc == 2
+                % compare pmEXP_otptTemp with pmEXP_inptRaw, only to find
+                % whether there is a repeated pm point.
+                % elseif dimension = 2, may add 4 or 5 itpl points each
+                % refinement, depending on whether there is a repeated pm
+                % point.
+                aRec = [];
+                for iComp = 1:size(pmExpOtptTemp, 1)
+                    
+                    a = ismember(pmExpOtptTemp(iComp, :), pmExpInpRaw, 'rows');
+                    aRec = [aRec; a];
+                    if a == 1
+                        pmIdx = iComp;
                     end
+                    
                 end
                 
-                obj.pmExpo.block.hhat = [[pmExpOtptSpecIdx ...
-                    pmExpOtptSpecVal]; ...
-                    [(1:idxToAdd)' + length(pmExpInpRaw) pmExpOtptTemp]];
-                
-            else
-                % if there is no repeated point, add 5 indices.
-                idxToAdd = 5;
-                keyboard
-                obj.pmExpo.block.hhat = ...
-                    [(1:idxToAdd)' + length(pmExpInpRaw) ...
-                    obj.pmExpo.block.hhat];
-                
+                if any(aRec) == 1
+                    % if there is a repeated pm point, add 4 indices to new pm
+                    % points and put the old pm point at the beginning.
+                    idxToAdd = 4;
+                    
+                    pmExpOtptSpecVal = obj.pmExpo.block.hhat(pmIdx, :);
+                    
+                    pmExpOtptTemp(pmIdx, :) = [];
+                    
+                    for iComp1 = 1:length(pmExpInpPmTemp)
+                        b = ismember(pmExpOtptSpecVal, ...
+                            pmExpInpPmTemp(iComp1, 2:3), 'rows');
+                        if b == 1
+                            pmExpOtptSpecIdx = pmExpInpPmTemp(iComp1, 1);
+                        end
+                    end
+                    
+                    obj.pmExpo.block.hhat = [[pmExpOtptSpecIdx ...
+                        pmExpOtptSpecVal]; ...
+                        [(1:idxToAdd)' + length(pmExpInpRaw) pmExpOtptTemp]];
+                    
+                else
+                    % if there is no repeated point, add 5 indices.
+                    idxToAdd = 5;
+                    obj.pmExpo.block.hhat = ...
+                        [(1:idxToAdd)' + length(pmExpInpRaw) ...
+                        obj.pmExpo.block.hhat];
+                    
+                end
             end
             
             % equip index, find refined block and perform grid to block.
             
-            % NOTE: if only consider refined block, the number of added 
-            % points do not need to be considered; however, if index is 
-            % included, or total number of grid points is considered, 
-            % then number of added points needs to be calculated. 
+            % NOTE: if only consider refined block, the number of added
+            % points do not need to be considered; however, if index is
+            % included, or total number of grid points is considered,
+            % then number of added points needs to be calculated.
             % Principle: same size & same location block: +4; different size
             % block: +5.
             obj.pmExpo.temp.inpt = [obj.pmExpo.block.hat{iRec}; ...
                 obj.pmExpo.block.hhat];
             obj.gridtoBlockwithIndx;
             
-            % delete original block which needs to be refined, put final 
-            % data together. pass value to a tmp var in case the 
+            % delete original block which needs to be refined, put final
+            % data together. pass value to a tmp var in case the
             % origin (obj.pmExpo.block.hat) is modified.
-            
             pmExpoPass = obj.pmExpo.block.hat;
             pmExpoPass(iRec) = [];
             obj.pmExpo.block.hhat = [pmExpoPass; obj.pmExpo.temp.otpt];
@@ -2868,7 +2915,7 @@ classdef beam < handle
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
-            keyboard
+            
         end
         
         %%
