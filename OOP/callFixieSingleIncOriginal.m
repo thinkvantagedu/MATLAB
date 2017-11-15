@@ -27,8 +27,6 @@ bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
 nConsEnd = 2;
-% mid 1 and 2 are used for refinement, middle points are needed for the
-% initial refinements.
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 %% data for time.
 tMax = 0.03;
@@ -65,9 +63,8 @@ gridSwitch = 0;
 % use subclass: canbeam to create cantilever beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam,...
-    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, ...
-    errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, ...
-    fNode, ftime, nConsEnd);
+    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix. 
 fixie.readMTX2DOF(nDofPerNode);
@@ -160,7 +157,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
     fixie.exactSolution('Greedy');
     
-    ratioSwitch = 0;
+    ratioSwitch = 1;
     singularSwitch = 0;
     fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
     fixie.reducedMatrices;
@@ -168,5 +165,5 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
 end
 %%
-figure(2)
-fixie.plotMaxErrorDecay(fixie.err.store.max);
+% figure(2)
+% fixie.plotMaxErrorDecay(fixie.err.store.max);

@@ -27,10 +27,6 @@ bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
 nConsEnd = 2;
-% mid 1 and 2 are used for refinement, middle points are needed for the
-% initial refinements.
-mid1 = (bondL1 + bondR1) / 2;
-mid2 = (bondL2 + bondR2) / 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 %% data for time
 tMax = 0.03;
@@ -59,7 +55,7 @@ refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 3;
+drawCol = 2;
 
 gridSwitch = 0;
 %% trial solution
@@ -67,8 +63,7 @@ gridSwitch = 0;
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, ...
-    nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix, 2 = 2d.
 fixie.readMTX2DOF(nDofPerNode);
@@ -108,7 +103,7 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 2;
+nPhiInitial = 1;
 nPhiEnrich = 1;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
@@ -135,7 +130,6 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
-
 fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 %% main while loop
 while fixie.err.max.val.slct > fixie.err.lowBond
@@ -208,7 +202,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     fixie.extractPmInfo(fixie.err.max.loc.hhat, fixie.err.max.loc.hhat);
     
     %% local h-refinement.
-    if canti.refinement.condition <= canti.refinement.thres
+    if fixie.refinement.condition <= fixie.refinement.thres
         
         %         disp('ehhat')
         %         disp(fixie.err.store.surf.hhat)
