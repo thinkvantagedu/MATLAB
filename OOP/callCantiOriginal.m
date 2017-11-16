@@ -31,6 +31,7 @@ nConsEnd = 1;
 % initial refinements.
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
+
 %% data for time
 tMax = 0.03;
 tStep = 0.01;

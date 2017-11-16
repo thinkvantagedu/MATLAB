@@ -1193,7 +1193,7 @@ classdef beam < handle
                         pmPre, obj.sti.mtxCell, 'un', 0);
                     stiPre = sparse(obj.no.dof, obj.no.dof);
                     for i = 1:length(stiPreCell)
-                        stiPre = stiPre + stiPreCell{i} * pmPre{i};
+                        stiPre = stiPre + stiPreCell{i};
                     end
                     for iPhy = 1:obj.no.phy
                         for iTdiff = 1:2
@@ -1221,7 +1221,6 @@ classdef beam < handle
                         end
                     end
                 end
-                
             elseif obj.indicator.refinement == 1 && ...
                     obj.indicator.enrichment == 0
                 % if refine, no enrichment, compute exact solutions
@@ -1235,7 +1234,7 @@ classdef beam < handle
                         pmPre, obj.sti.mtxCell, 'un', 0);
                     stiPre = sparse(obj.no.dof, obj.no.dof);
                     for i = 1:length(stiPreCell)
-                        stiPre = stiPre + stiPreCell{i} * pmPre{i};
+                        stiPre = stiPre + stiPreCell{i};
                     end
                     obj.sti.pre = stiPre;
                     for iPhy = 1:obj.no.phy
@@ -1455,7 +1454,6 @@ classdef beam < handle
                     
                     obj.err.pre.hhat(iPre, 3) = {respTransNonZero};
                 end
-                
             elseif obj.indicator.enrichment == 0 && ...
                     obj.indicator.refinement == 1
                 % if refine = 1, enrich = 0, compute the newly added
@@ -2009,7 +2007,6 @@ classdef beam < handle
                     obj.rvPmErrProdSum('hhat', 0);
                     obj.errStoreSurfs('hhat');
                 end
-                keyboard
             elseif obj.indicator.refinement == 1 && ...
                     obj.indicator.enrichment == 0
                 % if refine, let ehat surface = ehhat surface, interpolate new
@@ -2117,13 +2114,19 @@ classdef beam < handle
         function obj = inAddBlockIndicator(obj)
             % indicator for determining whether pm point is in added
             % parameter block (polygon).
-            pmIter = obj.pmExpo.iter{1:obj.no.inc};
-            pmIter1 = obj.pmExpo.iter{1};
-            pmIter2 = obj.pmExpo.iter{2};
+            pmIterCell = obj.pmExpo.iter(1:obj.no.inc);
             pmExpoAdd = obj.pmExpo.block.add;
-            obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
-                (pmIter{:}, pmExpoAdd(:, 2), ...
-                pmExpoAdd(:, 3)), pmExpoAdd);
+            
+            if obj.no.inc == 1
+                obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
+                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd), pmExpoAdd);
+            elseif obj.no.inc == 2
+                obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
+                    (pmIterCell{:}, pmExpoAdd(:, 2), ...
+                    pmExpoAdd(:, 3)), pmExpoAdd);
+            else
+                disp('dimension > 2')
+            end
         end
         %%
         function obj = errStoreSurfs(obj, type)
@@ -2341,7 +2344,6 @@ classdef beam < handle
             % local h-refinement
             obj.indicator.refinement = 1;
             obj.indicator.enrichment = 0;
-            
             obj.pmExpo.hat = obj.pmExpo.hhat;
             obj.pmExpo.block.hat = obj.pmExpo.block.hhat;
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
@@ -2349,7 +2351,7 @@ classdef beam < handle
             % nExist + nAdd should equal to nhhat.
             obj.no.iExist = obj.no.pre.hat;
             obj = refineGridLocalwithIdx(obj, 'iteration');
-            
+            obj.no.block.add = 2 ^ obj.no.inc - 1;
         end
         %%
         function obj = extractPmAdd(obj)
@@ -2357,7 +2359,8 @@ classdef beam < handle
             % relates to newly add samples.
             
             % the newly added blocks.
-            obj.pmExpo.block.add = obj.pmExpo.block.hhat(end - 3 : end);
+            obj.pmExpo.block.add = obj.pmExpo.block.hhat...
+                (end - obj.no.block.add : end);
             
             % indices of the block being refined.
             obj.pmLoc.block.add = zeros(size(obj.pmExpo.block.add, 1), 4);
@@ -2741,14 +2744,10 @@ classdef beam < handle
             % hhat blocks. example: see testGSALocalRefiFunc.m
             
             switch type
-                
                 case 'initial'
-                    
                     pmExptoTest = obj.pmExpo.mid;
                 case 'iteration'
-                    
                     pmExptoTest = obj.pmExpo.max;
-                    
             end
             
             pmExpInpPmTemp = cell2mat(obj.pmExpo.block.hat);
@@ -2795,11 +2794,9 @@ classdef beam < handle
             obj.pmExpo.block.hhat(jRec, :) = [];
             pmExpOtptTemp = obj.pmExpo.block.hhat;
             
-            
-            
             if obj.no.inc == 1
                 % if dimension = 1, always add 1 itpl point each refinement;
-                obj.pmExpo.block.hhat = [length(obj.pmExpo.block.hat{1}) + 1 ...
+                obj.pmExpo.block.hhat = [length(obj.pmExpo.hat) + 1 ...
                     obj.pmExpo.block.hhat];
             elseif obj.no.inc == 2
                 % compare pmEXP_otptTemp with pmEXP_inptRaw, only to find
@@ -2815,16 +2812,13 @@ classdef beam < handle
                     if a == 1
                         pmIdx = iComp;
                     end
-                    
                 end
                 
                 if any(aRec) == 1
                     % if there is a repeated pm point, add 4 indices to new pm
                     % points and put the old pm point at the beginning.
                     idxToAdd = 4;
-                    
                     pmExpOtptSpecVal = obj.pmExpo.block.hhat(pmIdx, :);
-                    
                     pmExpOtptTemp(pmIdx, :) = [];
                     
                     for iComp1 = 1:length(pmExpInpPmTemp)
@@ -2845,7 +2839,6 @@ classdef beam < handle
                     obj.pmExpo.block.hhat = ...
                         [(1:idxToAdd)' + length(pmExpInpRaw) ...
                         obj.pmExpo.block.hhat];
-                    
                 end
             end
             

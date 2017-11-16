@@ -48,14 +48,14 @@ trial = [1, 1];
 errLowBond = 1e-12;
 errMaxValInit = 1;
 errRbCtrl = 1;
-errRbCtrlThres = 0.01;
+errRbCtrlThres = 1e-7;
 errRbCtrlTNo = 1;
 
 %% counter
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.1;
+refiThres = 1e-7;
 
 %% plot surfaces and grids
 drawRow = 1;

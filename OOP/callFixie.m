@@ -18,8 +18,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class.
-domLengi = 25;
-domLengs = 25;
+domLengi = 10;
+domLengs = 10;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -51,11 +51,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.1;
+refiThres = 0.01;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 1;
 
 gridSwitch = 0;
 %% trial solution
