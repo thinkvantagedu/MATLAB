@@ -16,10 +16,11 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+typeSwitch = 'hhat';
 
 %% data for parameter class.
-domLengi = 10;
-domLengs = 10;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -28,8 +29,10 @@ bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
 nConsEnd = 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
+domMid = domMid';
+
 %% data for time
-tMax = 0.03;
+tMax = 0.19;
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -51,11 +54,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.01;
+refiThres = 0.02;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 1;
+drawCol = 2;
 
 gridSwitch = 0;
 %% trial solution
@@ -199,7 +202,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    fixie.extractPmInfo(fixie.err.max.loc.hhat, fixie.err.max.loc.hhat);
+    fixie.extractPmInfo('hhat');
     
     %% local h-refinement.
     if fixie.refinement.condition <= fixie.refinement.thres
@@ -241,8 +244,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.localHrefinement;
         
         fixie.extractPmAdd;
-        % only compute exact solutions regarding external force
-        % when pm domain is refined.
+        
         fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
         
     end

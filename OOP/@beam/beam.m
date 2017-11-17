@@ -20,7 +20,6 @@ classdef beam < handle
         pmComb
         pmVal
         pmLoc
-        pmGrid
         time
         phi
         coef
@@ -1023,7 +1022,8 @@ classdef beam < handle
         end
         %%
         function obj = respImpFce(obj, svdSwitch, qoiSwitchTime, qoiSwitchSpace)
-            
+            % only compute exact solutions regarding external force
+            % when pm domain is refined.
             if obj.indicator.refinement == 0 && obj.indicator.enrichment == 1
                 % if no refinement, only enrich, force related responses does
                 % not change since it's not related to new basis vectors.
@@ -1035,12 +1035,12 @@ classdef beam < handle
                     
                     stiPreCell = cellfun(@(u, v) u * v, ...
                         pmValCell, obj.sti.mtxCell, 'un', 0);
+                    
                     stiPre = sparse(obj.no.dof, obj.no.dof);
                     for i = 1:length(stiPreCell)
-                        
                         stiPre = stiPre + stiPreCell{i};
-                        
                     end
+                    
                     obj.sti.full = stiPre;
                     obj.fce.pass = obj.fce.val;
                     obj = NewmarkBetaReducedMethodOOP(obj, 'full');
@@ -1501,8 +1501,8 @@ classdef beam < handle
                     obj.err.pre.hhat(obj.no.iExist + iPre, 3) = ...
                         {respTransNonZero};
                 end
-                
             end
+            
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
             
         end
@@ -1902,16 +1902,22 @@ classdef beam < handle
                         switch type
                             case 'hhat'
                                 gridy = obj.err.pre.hhat(pmBlk{i}(:, 1), 3);
+                                obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                                    pmIter{:}, 'matrix');
                             case 'hat'
                                 gridy = obj.err.pre.hat(pmBlk{i}(:, 1), 3);
+                                obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                                    pmIter{:}, 'matrix');
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{i};
                                 gridy = obj.err.pre.hhat(pmAdd(:, 1), 3);
+                                obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                                    pmIter{:}, 'matrix');
                         end
                         % interpolate in 1D.
-                        obj.err.itpl.otpt = lagrange(pmBlk{i}(:, 2), gridy, ...
-                            pmIter{:}, 'matrix');
+%                         obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+%                             pmIter{:}, 'matrix');
                     end
                 elseif obj.no.inc == 2
                     if inpolygon(pmIter{:}, pmBlkCell{:}) == 1
@@ -2014,7 +2020,7 @@ classdef beam < handle
                 % H-REF
                 if iIter == 1
                     % only if point is not in refined blocks, hat = hhat,
-                    % otherwise all hat will = hhat.
+                    % otherwise all hat = hhat.
                     obj.err.store.surf.hat = obj.err.store.surf.hhat;
                 end
                 % Determine whether point is in refined block.
@@ -2023,14 +2029,11 @@ classdef beam < handle
                     % only interpolate and modify the refined part of hhat
                     % block, should be very fast.
                     obj.err.store.surf.hhat(iIter) = 0;
-                    
                     obj.inpolyItpl('add');
                     obj.rvPmErrProdSum('add', 0);
                     obj.errStoreSurfs('hhat');
                 end
-                
             end
-            
         end
         %%
         function obj = rvPmErrProdSum(obj, type, rvSvdSwitch)
@@ -2048,17 +2051,12 @@ classdef beam < handle
                 ePreSqrt = (obj.pmVal.rvCol .* obj.pmVal.pmCol)' * e * ...
                     (obj.pmVal.rvCol .* obj.pmVal.pmCol);
                 switch type
-                    case 'hhat'
+                    case {'hhat', 'add'}
                         obj.err.norm{1} = ...
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
                     case 'hat'
                         obj.err.norm{2} = ...
-                            sqrt(abs(ePreSqrt)) / ...
-                            norm(obj.dis.qoi.trial, 'fro');
-                    case 'add'
-                        % only apply to hhat, cause refined blocks are in it.
-                        obj.err.norm{1} = ...
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
                 end
@@ -2119,7 +2117,7 @@ classdef beam < handle
             
             if obj.no.inc == 1
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
-                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd), pmExpoAdd);
+                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd(:, 2)), pmExpoAdd);
             elseif obj.no.inc == 2
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
                     (pmIterCell{:}, pmExpoAdd(:, 2), ...
@@ -2320,21 +2318,27 @@ classdef beam < handle
             
         end
         %%
-        function obj = extractPmInfo(obj, eMaxPmLoc, eMaxValLoc)
+        function obj = extractPmInfo(obj, type)
             % when extracting maximum error information, values and
             % locations of maximum error can be different, for example, use
             % eDiff to decide maximum error location (eMaxPmLoc =
             % canti.err.maxLoc.diff), and use ehat (canti.err.maxLoc.hat) to
             % decide parameter value regarding maximum error.
-            
+            switch type
+                case 'original'
+                    eMaxPmLoc = obj.err.max.loc;
+                    eMaxValLoc = obj.err.max.loc;
+                case 'hhat'
+                    eMaxPmLoc = obj.err.max.loc.hhat;
+                    eMaxValLoc = obj.err.max.loc.hhat;
+            end
             obj.pmLoc.max = eMaxPmLoc;
             
             pmValMax = [];
             for i = 1:obj.no.inc
-                
                 pmValMax = [pmValMax, obj.pmVal.i.space{i}(eMaxValLoc(i), 2)];
-                
             end
+            
             obj.pmVal.max = pmValMax;
             obj.pmExpo.max = num2cell(log10(obj.pmVal.max));
             
@@ -2362,23 +2366,15 @@ classdef beam < handle
             obj.pmExpo.block.add = obj.pmExpo.block.hhat...
                 (end - obj.no.block.add : end);
             
-            % indices of the block being refined.
-            obj.pmLoc.block.add = zeros(size(obj.pmExpo.block.add, 1), 4);
-            for i = 1:size(obj.pmExpo.block.add, 1)
-                obj.pmLoc.block.add(:, i) = obj.pmLoc.block.add(:, i) + ...
-                    obj.pmExpo.block.add{i}(:, 1);
-            end
-            obj.pmLoc.block.add = unique(obj.pmLoc.block.add);
-            
             % indices of newly added samples.
-            pmNodehhat = obj.pmExpo.hhat(:, 1);
-            pmNodehat = obj.pmExpo.hat(:, 1);
-            obj.pmGrid.add = pmNodehhat(length(pmNodehat) + 1 : end);
+            pmIdxhhat = obj.pmExpo.hhat(:, 1);
+            pmIdxhat = obj.pmExpo.hat(:, 1);
+            pmIdxAdd = pmIdxhhat(length(pmIdxhat) + 1 : end);
             
             % pm values of newly added samples.
-            obj.pmVal.add = obj.pmVal.hhat(obj.pmGrid.add, :);
-            
+            obj.pmVal.add = obj.pmVal.hhat(pmIdxAdd, :);
             obj.no.itplAdd = size(obj.pmVal.add, 1);
+            
         end
         %%
         function obj = residualfromForce...
@@ -2391,16 +2387,19 @@ classdef beam < handle
                     relativeErrSq = @(xNum, xInit) ...
                         (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
             end
-            obj.sti.full = cellfun(@(v, w) full(v) * w, ...
-                obj.sti.mtxCell, obj.pmVal.iter, 'un', 0);
-            obj.sti.full = sum(cat(3, obj.sti.full{:}), 3);
             
-            obj.fce.resi = obj.fce.val - ...
+            stiPre = sparse(obj.no.dof, obj.no.dof);
+            for i = 1:obj.no.inc + 1
+                stiPre = stiPre + obj.sti.mtxCell{i} * obj.pmVal.iter{i};
+            end
+            
+            obj.sti.full = stiPre;
+            
+            obj.fce.pass = obj.fce.val - ...
                 obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
                 obj.dam.mtx * obj.phi.val * obj.vel.re.reVar - ...
                 obj.sti.full * obj.phi.val * obj.dis.re.reVar;
             
-            obj.fce.pass = obj.fce.resi;
             obj = NewmarkBetaReducedMethodOOP(obj, 'full');
             obj.dis.resi = obj.dis.full;
             

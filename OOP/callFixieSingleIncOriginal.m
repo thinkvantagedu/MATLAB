@@ -16,10 +16,11 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+typeSwitch = 'original';
 
 %% data for parameter.
-domLengi = 10;
-domLengs = 10;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -28,8 +29,10 @@ bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
 nConsEnd = 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
+domMid = domMid';
+
 %% data for time.
-tMax = 0.03;
+tMax = 0.19;
 tStep = 0.01; 
 
 %% data for external nodal force.
@@ -55,7 +58,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 1;
+drawCol = 2;
 
 gridSwitch = 0;
 
@@ -128,15 +131,15 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
         fixie.residualfromForce(normType, qoiSwitchSpace, qoiSwitchTime);
         
-        fixie.errStoreSurfs('original');
+        fixie.errStoreSurfs(typeSwitch);
         
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
     
     randomSwitch = 0;
-    fixie.extractErrorInfo('original', randomSwitch);
-    fixie.extractPmInfo(fixie.err.max.loc, fixie.err.max.loc);
+    fixie.extractErrorInfo(typeSwitch, randomSwitch);
+    fixie.extractPmInfo(typeSwitch);
     fixie.storeErrorInfoOriginal;
     
     figure(1)
@@ -147,9 +150,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         axisLim = fixie.err.max.val.slct;
     end
     
-    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, 'original');
+    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, typeSwitch);
     
-    fixie.maxErrorDisplay('original');
+    fixie.maxErrorDisplay(typeSwitch);
     if fixie.countGreedy >= drawRow * drawCol
         disp('iterations reach maximum plot number')
         break

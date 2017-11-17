@@ -16,6 +16,7 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+typeSwitch = 'hhat';
 
 %% data for parameter class.
 domLengi = [5 5];
@@ -27,8 +28,6 @@ bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]; [bondL2 bondR2]};
 nConsEnd = 1;
-% mid 1 and 2 are used for refinement, middle points are needed for the
-% initial refinements.
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
@@ -59,7 +58,7 @@ refiThres = 1e-7;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 
 gridSwitch = 0;
 %% trial solution
@@ -205,7 +204,7 @@ while canti.err.max.val.slct > canti.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    canti.extractPmInfo(canti.err.max.loc.hhat, canti.err.max.loc.hhat);
+    canti.extractPmInfo('hhat');
     
     %% local h-refinement.
     if canti.refinement.condition <= canti.refinement.thres

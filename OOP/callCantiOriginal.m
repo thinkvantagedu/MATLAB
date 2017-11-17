@@ -16,6 +16,7 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+typeSwitch = 'original';
 
 %% data for parameter class.
 domLengi = [5 5];
@@ -59,7 +60,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 
 gridSwitch = 0;
 
@@ -133,15 +134,15 @@ while canti.err.max.val.slct > canti.err.lowBond
         
         canti.residualfromForce(normType, qoiSwitchSpace, qoiSwitchTime);
         
-        canti.errStoreSurfs('original');
+        canti.errStoreSurfs(typeSwitch);
         
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
     
     randomSwitch = 0;
-    canti.extractErrorInfo('original', randomSwitch);
-    canti.extractPmInfo(canti.err.max.loc, canti.err.max.loc);
+    canti.extractErrorInfo(typeSwitch, randomSwitch);
+    canti.extractPmInfo(typeSwitch);
     canti.storeErrorInfoOriginal;
     
     figure(1)
@@ -150,9 +151,9 @@ while canti.err.max.val.slct > canti.err.lowBond
         axisLim = canti.err.max.val.slct;
     end
     
-    canti.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, 'original');
+    canti.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, typeSwitch);
     
-    canti.maxErrorDisplay('original');
+    canti.maxErrorDisplay(typeSwitch);
     if canti.countGreedy >= drawRow * drawCol
         disp('iterations reach maximum plot number')
         break
@@ -168,5 +169,5 @@ while canti.err.max.val.slct > canti.err.lowBond
     
 end
 %%
-figure(2)
-canti.plotMaxErrorDecay(canti.err.store.max);
+% figure(2)
+% canti.plotMaxErrorDecay(canti.err.store.max);
