@@ -58,7 +58,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 
 gridSwitch = 0;
 
@@ -160,7 +160,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
     fixie.exactSolution('Greedy');
     
-    ratioSwitch = 1;
+    ratioSwitch = 0;
     singularSwitch = 0;
     fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
     fixie.reducedMatrices;

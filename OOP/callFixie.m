@@ -54,14 +54,14 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.02;
+refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 
 gridSwitch = 0;
-%% trial solution
+%% trial s5olution
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
@@ -204,23 +204,16 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     % error, not value of maximum error.
     fixie.extractPmInfo('hhat');
     
-    %% local h-refinement.
+    
     if fixie.refinement.condition <= fixie.refinement.thres
-        
-        %         disp('ehhat')
-        %         disp(fixie.err.store.surf.hhat)
+        %% NO local h-refinement.
         fixie.refiCondDisplay('noRefi');
         fixie.maxErrorDisplay('hhat');
         
-        
-        %         fixie.storeErrorInfo('errwRb'); % exact error with new rb. %
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
-        %         if fixie.countIter == 1
-        %             axisLim = fixie.err.max.val.slct;
-        %         end
-        figure(3)
         
+        figure(3)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if fixie.countGreedy >= drawRow * drawCol
@@ -236,9 +229,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
             ratioSwitch);
         fixie.reducedMatrices;
         disp(fixie.countGreedy)
-        
+       
     elseif fixie.refinement.condition > fixie.refinement.thres
-        
+        %% local h-refinement 
         fixie.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         fixie.localHrefinement;
@@ -248,7 +241,6 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
         
     end
-    
 end
 
 % figure(4)

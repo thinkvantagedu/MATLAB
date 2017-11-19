@@ -331,7 +331,9 @@ classdef beam < handle
             
             if singularSwitch == 0 && ratioSwitch == 0
                 phiEnrich = u(:, 1:nEnrich);
-                obj.phi.val = [obj.phi.val phiEnrich];
+                phiTmp = [obj.phi.val phiEnrich];
+                obj.GramSchmidt(phiTmp);
+                obj.phi.val = obj.phi.otpt;
                 
             elseif singularSwitch == 1 && ratioSwitch == 0
                 nEnrich = 0;
@@ -530,29 +532,20 @@ classdef beam < handle
         %%
         function obj = exactSolution(obj, type, qoiSwitchTime, qoiSwitchSpace)
             % this method computes exact solution at maximum error points.
-            stiIcell = obj.sti.mtxCell(1:end - 1);
             switch type
                 case 'initial'
-                    pmIcell = mat2cell(obj.pmVal.i.trial', ...
-                        ones(obj.no.inc, 1), 1);
+                    pmIcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
                 case 'Greedy'
-                    pmIcell = mat2cell(obj.pmVal.max', ones(obj.no.inc, 1), 1);
+                    pmIcell = [obj.pmVal.max'; obj.pmVal.s.fix];
             end
-            stiIcell = cellfun(@(u, v) u * v, stiIcell, ...
-                pmIcell, 'un', 0);
-            stiS = obj.sti.mtxCell{end} * obj.pmVal.s.fix;
-            stiImtx = cell2mat(stiIcell);
             stiI = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc
-                stiI = stiI + stiImtx((i - 1) * obj.no.dof + 1 : ...
-                    i * obj.no.dof, :);
+            for i = 1:obj.no.inc + 1
+                stiI = stiI + obj.sti.mtxCell{i} * pmIcell(i);
             end
-            obj.sti.sum = stiI + stiS;
             % compute trial solution
-            obj.sti.full = obj.sti.sum;
+            obj.sti.full = stiI;
             obj.fce.pass = obj.fce.val;
             obj.NewmarkBetaReducedMethodOOP('full');
-            
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
@@ -569,7 +562,6 @@ classdef beam < handle
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
                         obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, ...
                             obj.qoi.t);
-                        
                     end
                 case 'Greedy'
                     obj.dis.rbEnrich = obj.dis.full;

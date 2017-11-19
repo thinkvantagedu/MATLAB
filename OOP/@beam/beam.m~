@@ -533,11 +533,12 @@ classdef beam < handle
             stiIcell = obj.sti.mtxCell(1:end - 1);
             switch type
                 case 'initial'
-                    pmIcell = mat2cell(obj.pmVal.i.trial', ...
+                    pmIcell = mat2cell([obj.pmVal.i.trial'; obj.pmVal.s.fix], ...
                         ones(obj.no.inc, 1), 1);
                 case 'Greedy'
                     pmIcell = mat2cell(obj.pmVal.max', ones(obj.no.inc, 1), 1);
             end
+            keyboard
             stiIcell = cellfun(@(u, v) u * v, stiIcell, ...
                 pmIcell, 'un', 0);
             stiS = obj.sti.mtxCell{end} * obj.pmVal.s.fix;
@@ -552,7 +553,7 @@ classdef beam < handle
             obj.sti.full = obj.sti.sum;
             obj.fce.pass = obj.fce.val;
             obj.NewmarkBetaReducedMethodOOP('full');
-            
+            keyboard
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
@@ -2032,8 +2033,6 @@ classdef beam < handle
                     obj.inpolyItpl('add');
                     obj.rvPmErrProdSum('add', 0);
                     obj.errStoreSurfs('hhat');
-                    disp('iteration = '), dis
-                    keyboard
                 end
             end
         end
@@ -2119,7 +2118,7 @@ classdef beam < handle
             
             if obj.no.inc == 1
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
-                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd), pmExpoAdd);
+                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd(:, 2)), pmExpoAdd);
             elseif obj.no.inc == 2
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
                     (pmIterCell{:}, pmExpoAdd(:, 2), ...
