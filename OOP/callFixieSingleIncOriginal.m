@@ -16,7 +16,17 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+
+%% all switches
 typeSwitch = 'original';
+gridSwitch = 0;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+svdSwitch = 0;
+rvSvdSwitch = 0;
+ratioSwitch = 0;
+singularSwitch = 0;
+randomSwitch = 0;
 
 %% data for parameter.
 domLengi = 9;
@@ -58,9 +68,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 3;
-
-gridSwitch = 0;
+drawCol = 2;
 
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
@@ -97,8 +105,6 @@ debugMode = 0;
 fixie.generateNodalFce(nDofPerNode, 0.5, debugMode);
 
 % quantity of interest.
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
 nQoiT = 2;
 manual = 1;
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
@@ -137,14 +143,11 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
     end
     
-    randomSwitch = 0;
     fixie.extractErrorInfo(typeSwitch, randomSwitch);
     fixie.extractPmInfo(typeSwitch);
     fixie.storeErrorInfoOriginal;
     
     figure(1)
-    fixie.err.max.pass = fixie.err.max.val.slct;
-    fixie.err.store.pass = fixie.err.store.surf;
     
     if fixie.countGreedy == 1
         axisLim = fixie.err.max.val.slct;
@@ -160,8 +163,6 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
     fixie.exactSolution('Greedy');
     
-    ratioSwitch = 0;
-    singularSwitch = 0;
     fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
     fixie.reducedMatrices;
     disp(fixie.countGreedy)

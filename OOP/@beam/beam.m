@@ -623,9 +623,7 @@ classdef beam < handle
             obj.no.respSVD = nSVD;
             obj.indicator.refinement = 0;
             obj.indicator.enrichment = 1;
-            obj.acc.rv.store = cell(prod(obj.no.incNode), 1);
-            obj.vel.rv.store = cell(prod(obj.no.incNode), 1);
-            obj.dis.rv.store = cell(prod(obj.no.incNode), 1);
+            obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
             
         end
         %%
@@ -852,77 +850,77 @@ classdef beam < handle
             
         end
         %%
-        function obj = respMultiplyPmRvSum(obj, timeType, iIter)
-            % this method accepts the interpolation results and multiply
-            % them with corresponding pm values and reduced variables.
-            % After multiplication, all responses are summed and normed to
-            % ba added to error response surfaces.
-            
-            % pm values for affine mass and damping matrices are 1.
-            pmPass = cell2mat(obj.pmVal.iter);
-            rvAcc = obj.acc.re.reVar;
-            rvVel = obj.vel.re.reVar;
-            rvDis = obj.dis.re.reVar;
-            
-            % the interpolated responses need to be saved for each
-            % iteration in order to multiply corresponding reduced
-            % variable.
-            resphhat =  obj.resp.itpl.hhat;
-            resphat = obj.resp.itpl.hat;
-            rvStore = zeros(obj.no.phy * obj.no.t_step + 1, obj.no.rb);
-            switch timeType
-                case 'allTime'
-                    % repeat for nt times to fit length of pre-computed
-                    % responses.
-                    pmAll = repmat([1; 1; pmPass], ...
-                        obj.no.t_step * obj.no.phInit, 1);
-                    
-                    for i = 1:obj.no.rb
-                        
-                        rvAccSiRow = rvAcc(i, :);
-                        rvVelSiRow = rvVel(i, :);
-                        rvDisSiRow = rvDis(i, :);
-                        rvDisRepRow = repmat(rvDisSiRow, obj.no.inc, 1);
-                        rvAllRow = [rvAccSiRow; rvVelSiRow; rvDisRepRow];
-                        rvAllCol = rvAllRow(:);
-                        
-                        if i == 1
-                            % initial iteration, need to consider force.
-                            pmAll = [1; pmAll];
-                            rvAllCol = [1; rvAllCol(:)];
-                            rvStore(:, i) = rvStore(:, i) + rvAllCol;
-                        else
-                            % successive iterations, need to cancel force.
-                            pmAll = [0; pmAll];
-                            rvAllCol = [0; rvAllCol(:)];
-                            rvStore(:, i) = rvStore(:, i) + rvAllCol;
-                        end
-                        
-                    end
-                    
-                    
-                    respPmRvhhat = sparse(size(resphhat, 1), ...
-                        size(resphhat, 2));
-                    respPmRvhat = sparse(size(resphat, 1), size(resphat, 2));
-                    
-                    for i = 1:size(resphhat, 2)
-                        respPmRvhhat(:, i) = respPmRvhhat(:, i) + ...
-                            pmAll(i) * resphhat(:, i) * rvAllCol(i);
-                        respPmRvhat(:, i) = respPmRvhat(:, i) + ...
-                            pmAll(i) * resphat(:, i) * rvAllCol(i);
-                    end
-                    
-                    respPmRvhhatSum = sum(respPmRvhhat, 2);
-                    obj.resp.store.hhat{iIter} = ...
-                        obj.resp.store.hhat{iIter} + respPmRvhhatSum;
-                    respPmRvhatSum = sum(respPmRvhat, 2);
-                    obj.resp.store.hat{iIter} = ...
-                        obj.resp.store.hat{iIter} + respPmRvhatSum;
-                    
-                    
-            end
-            
-        end
+%         function obj = respMultiplyPmRvSum(obj, timeType, iIter)
+%             % this method accepts the interpolation results and multiply
+%             % them with corresponding pm values and reduced variables.
+%             % After multiplication, all responses are summed and normed to
+%             % be added to error response surfaces.
+%             
+%             % pm values for affine mass and damping matrices are 1.
+%             pmPass = cell2mat(obj.pmVal.iter);
+%             rvAcc = obj.acc.re.reVar;
+%             rvVel = obj.vel.re.reVar;
+%             rvDis = obj.dis.re.reVar;
+%             
+%             % the interpolated responses need to be saved for each
+%             % iteration in order to multiply corresponding reduced
+%             % variable.
+%             resphhat =  obj.resp.itpl.hhat;
+%             resphat = obj.resp.itpl.hat;
+%             rvStore = zeros(obj.no.phy * obj.no.t_step + 1, obj.no.rb);
+%             switch timeType
+%                 case 'allTime'
+%                     % repeat for nt times to fit length of pre-computed
+%                     % responses.
+%                     pmAll = repmat([1; 1; pmPass], ...
+%                         obj.no.t_step * obj.no.phInit, 1);
+%                     
+%                     for i = 1:obj.no.rb
+%                         
+%                         rvAccSiRow = rvAcc(i, :);
+%                         rvVelSiRow = rvVel(i, :);
+%                         rvDisSiRow = rvDis(i, :);
+%                         rvDisRepRow = repmat(rvDisSiRow, obj.no.inc, 1);
+%                         rvAllRow = [rvAccSiRow; rvVelSiRow; rvDisRepRow];
+%                         rvAllCol = rvAllRow(:);
+%                         
+%                         if i == 1
+%                             % initial iteration, need to consider force.
+%                             pmAll = [1; pmAll];
+%                             rvAllCol = [1; rvAllCol(:)];
+%                             rvStore(:, i) = rvStore(:, i) + rvAllCol;
+%                         else
+%                             % successive iterations, need to cancel force.
+%                             pmAll = [0; pmAll];
+%                             rvAllCol = [0; rvAllCol(:)];
+%                             rvStore(:, i) = rvStore(:, i) + rvAllCol;
+%                         end
+%                         
+%                     end
+%                     
+%                     
+%                     respPmRvhhat = sparse(size(resphhat, 1), ...
+%                         size(resphhat, 2));
+%                     respPmRvhat = sparse(size(resphat, 1), size(resphat, 2));
+%                     
+%                     for i = 1:size(resphhat, 2)
+%                         respPmRvhhat(:, i) = respPmRvhhat(:, i) + ...
+%                             pmAll(i) * resphhat(:, i) * rvAllCol(i);
+%                         respPmRvhat(:, i) = respPmRvhat(:, i) + ...
+%                             pmAll(i) * resphat(:, i) * rvAllCol(i);
+%                     end
+%                     
+%                     respPmRvhhatSum = sum(respPmRvhhat, 2);
+%                     obj.resp.store.hhat{iIter} = ...
+%                         obj.resp.store.hhat{iIter} + respPmRvhhatSum;
+%                     respPmRvhatSum = sum(respPmRvhat, 2);
+%                     obj.resp.store.hat{iIter} = ...
+%                         obj.resp.store.hat{iIter} + respPmRvhatSum;
+%                     
+%                     
+%             end
+%             
+%         end
         %%
         function obj = resptoErrStore(obj)
             % this method takes stored responses and compute relative
@@ -1405,13 +1403,15 @@ classdef beam < handle
                     if rvSvdSwitch == 1
                         % if SVD on reduced variables, pm needs to be
                         % interpolated, therefore here pre-multiply pm to
-                        % related responses.
+                        % related responses (note: pmPrepare in online
+                        % stage is not needed).
                         
                         pmhhat = obj.pmVal.hhat(iPre, 2:end);
                         pmAll = [1; 1; pmhhat'; obj.pmVal.s.fix];
                         pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
                         pmRep = [1; pmRep];
                         pmMtx = pmRep * pmRep';
+                        obj.pmVal.pmCol = pmRep;
                         respTrans = (respAllCol' * respAllCol) .* pmMtx;
                         
                     elseif rvSvdSwitch == 0
@@ -1470,8 +1470,9 @@ classdef beam < handle
                     obj.resp.store.all{obj.no.iExist + iPre} = ...
                         [obj.resp.store.all{obj.no.iExist + iPre} respCol];
                     
-                    respTrans = obj.resp.store.all{obj.no.iExist + iPre}' * ...
-                        obj.resp.store.all{obj.no.iExist + iPre};
+                    respAllCol = obj.resp.store.all{obj.no.iExist + iPre};
+                    
+                    respTrans = respAllCol' * respAllCol;
                     
                     respTrans = triu(respTrans);
                     
@@ -1771,15 +1772,21 @@ classdef beam < handle
                 respPmRspec = respPmR(ntotal - nshift + 1:end);
             end
         end
-        %%
-        function obj = reducedVar(obj, iIter)
-            % compute reduced variables for each pm value.
+        %% 
+        function obj = pmIter(obj, iIter)
+            % this method extract the pm values, pm locations, pm
+            % exponential values for iterations. 
             obj.pmVal.iter = mat2cell([obj.pmVal.comb.space(iIter, ...
                 obj.no.inc + 1 : end)'; ...
                 obj.pmVal.s.fix], ones(obj.no.inc + 1, 1));
             obj.pmLoc.iter = obj.pmVal.comb.space(iIter, (1:obj.no.inc));
             obj.pmExpo.iter = ...
                 cellfun(@(v) log10(v), obj.pmVal.iter, 'un', 0);
+            
+        end
+        %%
+        function obj = reducedVar(obj)
+            % compute reduced variables for each pm value.
             stiReIter = ...
                 cellfun(@(v, w) full(v) * w, ...
                 obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
@@ -1794,12 +1801,7 @@ classdef beam < handle
             obj.dis.re.reVar = obj.dis.reduce;
         end
         %%
-        function obj = reducedVarStore(obj, iIter)
-            % this method stores all reduced variables in one cell.
-            obj.resp.rv.store(iIter) = {obj.pmVal.rvCol};
-        end
-        %%
-        function obj = reducedVarSVD(obj)
+        function obj = rvSVD(obj)
             % this method performs SVD on the stored reduced variables.
             rvStore = cell2mat(obj.resp.rv.store);
             [rvL, rvSig, rvR] = svd(rvStore, 0);
@@ -1817,6 +1819,7 @@ classdef beam < handle
                 obj.err.pre.hat{i, 3} = rvL' * obj.err.pre.hat{i, 3} * rvL;
             end
             obj.resp.rv.R = rvR;
+            
         end
         %%
         function obj = pmPrepare(obj)
@@ -1907,6 +1910,7 @@ classdef beam < handle
                                 obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
                                     pmIter{:}, 'matrix');
                         end
+                        
                         % interpolate in 1D.
 %                         obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
 %                             pmIter{:}, 'matrix');
@@ -1957,7 +1961,7 @@ classdef beam < handle
             end
         end
         %%
-        function obj = conditionalItplProdRvPm(obj, iIter)
+        function obj = conditionalItplProdRvPm(obj, iIter, rvSvdSwitch)
             % this method considers the interpolation condition and enrichment
             % condition to efficiently perform interpolation.
             
@@ -1970,11 +1974,10 @@ classdef beam < handle
             % if there is no refinement at all, both hhat and hat domain
             % need to perform interpolation.
             if obj.no.block.hat == 1
-                
                 obj.inpolyItpl('hhat');
                 obj.inpolyItpl('hat');
-                obj.rvPmErrProdSum('hhat', 0);
-                obj.rvPmErrProdSum('hat', 0);
+                obj.rvPmErrProdSum('hhat', rvSvdSwitch);
+                obj.rvPmErrProdSum('hat', rvSvdSwitch);
                 obj.err.store.surf.hhat(iIter) = 0;
                 obj.err.store.surf.hat(iIter) = 0;
                 obj.errStoreSurfs('hhat');
@@ -1989,7 +1992,7 @@ classdef beam < handle
                 obj.err.store.surf.hat(iIter) = 0;
                 obj.inpolyItpl('hat');
                 
-                obj.rvPmErrProdSum('hat', 0);
+                obj.rvPmErrProdSum('hat', rvSvdSwitch);
                 obj.errStoreSurfs('hat');
                 % Determine whether point is in refined block.
                 obj.inAddBlockIndicator;
@@ -2002,7 +2005,7 @@ classdef beam < handle
                 elseif any(obj.indicator.inBlock) == 1
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('hhat');
-                    obj.rvPmErrProdSum('hhat', 0);
+                    obj.rvPmErrProdSum('hhat', rvSvdSwitch);
                     obj.errStoreSurfs('hhat');
                 end
             elseif obj.indicator.refinement == 1 && ...
@@ -2022,7 +2025,7 @@ classdef beam < handle
                     % block, should be very fast.
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('add');
-                    obj.rvPmErrProdSum('add', 0);
+                    obj.rvPmErrProdSum('add', rvSvdSwitch);
                     obj.errStoreSurfs('hhat');
                 end
             end
@@ -2037,11 +2040,13 @@ classdef beam < handle
                 case 'add'
                     e = obj.err.itpl.add;
             end
-            % recover eTe
-            e = reConstruct(e);
+            
             if rvSvdSwitch == 0
+                % recover eTe
+                e = reConstruct(e);
                 ePreSqrt = (obj.pmVal.rvCol .* obj.pmVal.pmCol)' * e * ...
                     (obj.pmVal.rvCol .* obj.pmVal.pmCol);
+                
                 switch type
                     case {'hhat', 'add'}
                         obj.err.norm{1} = ...
@@ -2052,8 +2057,11 @@ classdef beam < handle
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
                 end
+                
             elseif rvSvdSwitch == 1
-                obj.err.store.preSqrt = obj.resp.rv.R * e * obj.resp.rv.R';
+                
+                a = sqrt(abs(obj.resp.rv.R * e * obj.resp.rv.R'));
+                keyboard
             end
         end
         %%
@@ -2864,7 +2872,12 @@ classdef beam < handle
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
             
         end
-        
+        %% 
+        function obj = rvColStore(obj, iIter)
+            % this method stores reduced variables to perform SVD. 
+            rvCol = obj.pmVal.rvCol;
+            obj.resp.rv.store(iIter) = {rvCol};
+        end
         %%
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);

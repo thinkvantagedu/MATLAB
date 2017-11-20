@@ -16,7 +16,17 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+
+%% all switches
 typeSwitch = 'hhat';
+gridSwitch = 0;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+svdSwitch = 0;
+rvSvdSwitch = 0;
+ratioSwitch = 0;
+singularSwitch = 0;
+randomSwitch = 0;
 
 %% data for parameter class.
 domLengi = [5 5];
@@ -60,14 +70,12 @@ refiThres = 1e-7;
 drawRow = 1;
 drawCol = 3;
 
-gridSwitch = 0;
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
 canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
-    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, ...
-    errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
-    drawRow, drawCol, fNode, ftime, nConsEnd);
+    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix, 2 = 2d.
 canti.readMTX2DOF(nDofPerNode);
@@ -97,8 +105,6 @@ debugMode = 0;
 canti.generateNodalFce(nDofPerNode, 0.5, debugMode);
 
 % quantity of interest
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
 nQoiT = 2;
 manual = 1;
 canti.qoiSpaceTime(nQoiT, nDofPerNode, manual);
@@ -125,7 +131,6 @@ timeType = 'allTime';
 svdType = 'noSVD';
 normType = 'fro';
 
-svdSwitch = 0;
 % prepare essential storage for error and responses.
 nRespSVD = 2;
 canti.otherPrepare(nRespSVD);
@@ -134,8 +139,8 @@ canti.impPrepareRemain;
 canti.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
-
 canti.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
+
 %% main while loop
 while canti.err.max.val.slct > canti.err.lowBond
     %% OFFLINE
@@ -159,7 +164,6 @@ while canti.err.max.val.slct > canti.err.lowBond
                 
                 case 'noSVD'
                     % CHANGE SIGN in this method!
-                    rvSvdSwitch = 0;
                     canti.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
                     
             end
@@ -171,20 +175,18 @@ while canti.err.max.val.slct > canti.err.lowBond
     
     for iIter = 1:nIter
         
-        canti.reducedVar(iIter);
+        canti.pmIter(iIter);
+        
+        canti.reducedVar;
         
         canti.pmPrepare;
         
         canti.rvPrepare;
-        
-        %         canti.exactErrwithRB(qoiSwitchTime, qoiSwitchSpace); %
-        
-        canti.conditionalItplProdRvPm(iIter);
+                
+        canti.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         
         canti.errStoreSurfs('diff');
-        
-        %         canti.errStoreSurfs(iIter, 'errwRb'); %
-        
+                
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
@@ -206,23 +208,15 @@ while canti.err.max.val.slct > canti.err.lowBond
     % error, not value of maximum error.
     canti.extractPmInfo('hhat');
     
-    %% local h-refinement.
     if canti.refinement.condition <= canti.refinement.thres
-        
-        %         disp('ehhat')
-        %         disp(canti.err.store.surf.hhat)
+        %% NO local h-refinement.
         canti.refiCondDisplay('noRefi');
         canti.maxErrorDisplay('hhat');
         
-        
-        %         canti.storeErrorInfo('errwRb'); % exact error with new rb. %
         canti.storeErrorInfo('hhat');
         canti.storeErrorInfo('hat');
-        %         if canti.countIter == 1
-        %             axisLim = canti.err.max.val.slct;
-        %         end
-        figure(3)
         
+        figure(3)
         canti.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if canti.countGreedy >= drawRow * drawCol
@@ -231,27 +225,24 @@ while canti.err.max.val.slct > canti.err.lowBond
         end
         
         canti.exactSolution('Greedy');
+        
         % rbEnrichment set the indicators.
-        ratioSwitch = 0;
-        singularSwitch = 0;
         canti.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
             ratioSwitch);
         canti.reducedMatrices;
         disp(canti.countGreedy)
         
     elseif canti.refinement.condition > canti.refinement.thres
-        
+        %% local h-refinement 
         canti.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         canti.localHrefinement;
         
         canti.extractPmAdd;
-        % only compute exact solutions regarding external force
-        % when pm domain is refined.
+        
         canti.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
         
     end
-    
 end
 
 % figure(4)

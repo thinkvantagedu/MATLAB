@@ -16,7 +16,16 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+
+%% all switches
 typeSwitch = 'hhat';
+gridSwitch = 0;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+svdSwitch = 0;
+rvSvdSwitch = 0;
+ratioSwitch = 0;
+singularSwitch = 0;
 
 %% data for parameter class.
 domLengi = 9;
@@ -54,13 +63,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.17;
+refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
 drawCol = 2;
-
-gridSwitch = 0;
 %% trial s5olution
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
@@ -96,8 +103,6 @@ debugMode = 0;
 fixie.generateNodalFce(nDofPerNode, 0.5, debugMode);
 
 % quantity of interest
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
 nQoiT = 2;
 manual = 1;
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
@@ -174,10 +179,8 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.pmPrepare;
         
         fixie.rvPrepare;
-        
-        %         canti.exactErrwithRB(qoiSwitchTime, qoiSwitchSpace); %
-        
-        fixie.conditionalItplProdRvPm(iIter);
+                
+        fixie.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         
         fixie.errStoreSurfs('diff');
         
@@ -204,11 +207,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     % error, not value of maximum error.
     fixie.extractPmInfo('hhat');
     
-    %% local h-refinement.
+    
     if fixie.refinement.condition <= fixie.refinement.thres
-        
-        %         disp('ehhat')
-        %         disp(fixie.err.store.surf.hhat)
+        %% NO local h-refinement.
         fixie.refiCondDisplay('noRefi');
         fixie.maxErrorDisplay('hhat');
         
@@ -231,9 +232,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
             ratioSwitch);
         fixie.reducedMatrices;
         disp(fixie.countGreedy)
-        
+       
     elseif fixie.refinement.condition > fixie.refinement.thres
-        
+        %% local h-refinement 
         fixie.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         fixie.localHrefinement;

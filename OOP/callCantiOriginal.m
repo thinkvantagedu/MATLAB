@@ -16,7 +16,17 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
+
+%% all switches
 typeSwitch = 'original';
+gridSwitch = 0;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+svdSwitch = 0;
+rvSvdSwitch = 0;
+ratioSwitch = 0;
+singularSwitch = 0;
+randomSwitch = 0;
 
 %% data for parameter class.
 domLengi = [5 5];
@@ -28,8 +38,6 @@ bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]; [bondL2 bondR2]};
 nConsEnd = 1;
-% mid 1 and 2 are used for refinement, middle points are needed for the
-% initial refinements.
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
@@ -62,15 +70,12 @@ refiThres = 0.0002;
 drawRow = 1;
 drawCol = 3;
 
-gridSwitch = 0;
-
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
 canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
-    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, ...
-    errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, ...
-    fNode, ftime, nConsEnd);
+    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
 
 % read mass matrix.
 canti.readMTX2DOF(nDofPerNode);
@@ -100,8 +105,6 @@ debugMode = 0;
 canti.generateNodalFce(nDofPerNode, 0.5, debugMode);
 
 % quantity of interest.
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
 nQoiT = 2;
 manual = 1;
 canti.qoiSpaceTime(nQoiT, nDofPerNode, manual);
@@ -123,14 +126,16 @@ canti.reducedMatrices;
 canti.errPrepareRemainOriginal;
 
 normType = 'fro';
-%% ONLINE
+
 while canti.err.max.val.slct > canti.err.lowBond
-    
+    %% ONLINE
     canti.errPrepareSetZeroOriginal;
     
     for iIter = 1:nIter
         
-        canti.reducedVar(iIter);
+        canti.pmIter(iIter);
+        
+        canti.reducedVar;
         
         canti.residualfromForce(normType, qoiSwitchSpace, qoiSwitchTime);
         
@@ -140,7 +145,6 @@ while canti.err.max.val.slct > canti.err.lowBond
         
     end
     
-    randomSwitch = 0;
     canti.extractErrorInfo(typeSwitch, randomSwitch);
     canti.extractPmInfo(typeSwitch);
     canti.storeErrorInfoOriginal;
@@ -161,8 +165,6 @@ while canti.err.max.val.slct > canti.err.lowBond
     
     canti.exactSolution('Greedy');
     
-    ratioSwitch = 0;
-    singularSwitch = 0;
     canti.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
     canti.reducedMatrices;
     disp(canti.countGreedy)
