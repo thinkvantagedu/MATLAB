@@ -42,7 +42,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.19;
+tMax = 0.04;
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -68,7 +68,7 @@ refiThres = 0.1;
 
 %% plot surfaces and grids.
 drawRow = 1;
-drawCol = 2;
+drawCol = 1;
 
 %% trial solution.
 % use subclass: canbeam to create fixed beam.
@@ -164,7 +164,6 @@ while fixie.err.max.val.slct > fixie.err.lowBond
                 
                 case 'noSVD'
                     % CHANGE SIGN in this method!
-                    
                     fixie.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
                     
             end
@@ -188,6 +187,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
     % SVD on the collected reduced variables.
     fixie.rvSVD;
+    fixie.rvLTePrervL;
     
     % multiply the output with pm and interpolate.
     for iIter = 1:nIter

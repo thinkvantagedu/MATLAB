@@ -23,7 +23,7 @@ gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 svdSwitch = 0;
-rvSvdSwitch = 0;
+rvSvdSwitch = 1;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
@@ -41,7 +41,7 @@ nConsEnd = 1;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
-%% data for time
+%% data for time.
 tMax = 0.03;
 tStep = 0.01;
 
@@ -53,25 +53,25 @@ ftime = 0.02;
 %% parameter data for trial iteration.
 trial = [1, 1];
 
-%% error informations
+%% error informations.
 errLowBond = 1e-12;
 errMaxValInit = 1;
 errRbCtrl = 1;
-errRbCtrlThres = 1e-7;
+errRbCtrlThres = 0.01;
 errRbCtrlTNo = 1;
 
-%% counter
+%% counter.
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 1e-7;
+refiThres = 0.1;
 
-%% plot surfaces and grids
+%% plot surfaces and grids.
 drawRow = 1;
 drawCol = 1;
 
-%% trial solution
-% use subclass: canbeam to create cantilever beam.
+%% trial solution.
+% use subclass: canbeam to create fixed beam.
 canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
@@ -141,9 +141,9 @@ canti.respStorePrepareRemain(svdType, timeType);
 % initial computation of force responses.
 canti.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 
-%% main while loop
+%% main while loop.
 while canti.err.max.val.slct > canti.err.lowBond
-    %% OFFLINE
+    %% OFFLINE.
     %     disp('offline start')
     
     canti.errPrepareSetZero;
@@ -169,31 +169,42 @@ while canti.err.max.val.slct > canti.err.lowBond
             end
     end
     %     disp('offline end')
-    %% ONLINE
+    %% ONLINE.
     
     %     disp('online start')
-    
+    % collect all reduced variables and perform POD.
     for iIter = 1:nIter
         
         canti.pmIter(iIter);
         
         canti.reducedVar;
         
-        canti.pmPrepare;
-        
         canti.rvPrepare;
-                
+        
+        canti.rvColStore(iIter);
+        
+    end
+    
+    % SVD on the collected reduced variables.
+    canti.rvSVD;
+    canti.rvLTePrervL;
+    
+    % multiply the output with pm and interpolate.
+    for iIter = 1:nIter
+        
+        canti.pmIter(iIter);
+        
         canti.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         
         canti.errStoreSurfs('diff');
-                
+        
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
     
     %     disp('online end')
     %     canti.clearmemory;
-    %% extract error information
+    %% extract error information.
     %     canti.extractErrorInfo('errwRb');
     
     canti.extractErrorInfo('hhat');
@@ -208,6 +219,7 @@ while canti.err.max.val.slct > canti.err.lowBond
     % error, not value of maximum error.
     canti.extractPmInfo('hhat');
     
+    
     if canti.refinement.condition <= canti.refinement.thres
         %% NO local h-refinement.
         canti.refiCondDisplay('noRefi');
@@ -216,7 +228,7 @@ while canti.err.max.val.slct > canti.err.lowBond
         canti.storeErrorInfo('hhat');
         canti.storeErrorInfo('hat');
         
-        figure(3)
+        figure(5)
         canti.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if canti.countGreedy >= drawRow * drawCol
@@ -225,15 +237,15 @@ while canti.err.max.val.slct > canti.err.lowBond
         end
         
         canti.exactSolution('Greedy');
-        
         % rbEnrichment set the indicators.
+        
         canti.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
             ratioSwitch);
         canti.reducedMatrices;
         disp(canti.countGreedy)
         
     elseif canti.refinement.condition > canti.refinement.thres
-        %% local h-refinement 
+        %% local h-refinement.
         canti.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         canti.localHrefinement;
@@ -246,7 +258,7 @@ while canti.err.max.val.slct > canti.err.lowBond
 end
 
 % figure(4)
-% canti.plotMaxErrorDecay(canti.err.store.max.hhat);
+% fixie.plotMaxErrorDecay(fixie.err.store.max.hhat);
 %
 % figNameSurf = strcat(trialName, 'SVDallVec');
 % figPathSurf = strcat(figRoute, figNameSurf);

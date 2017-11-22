@@ -68,7 +68,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 3;
+drawCol = 1;
 
 %% trial solution
 % use subclass: canbeam to create cantilever beam.

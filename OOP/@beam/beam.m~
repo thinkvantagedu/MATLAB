@@ -1405,23 +1405,23 @@ classdef beam < handle
                         % interpolated, therefore here pre-multiply pm to
                         % related responses (note: pmPrepare in online
                         % stage is not needed).
-                        
                         pmhhat = obj.pmVal.hhat(iPre, 2:end);
                         pmAll = [1; 1; pmhhat'; obj.pmVal.s.fix];
                         pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
                         pmRep = [1; pmRep];
                         pmMtx = pmRep * pmRep';
                         obj.pmVal.pmCol = pmRep;
-                        respTrans = (respAllCol' * respAllCol) .* pmMtx;
+                        eTe = respAllCol' * respAllCol;
+                        respTrans = eTe .* pmMtx;
                         
                     elseif rvSvdSwitch == 0
                         % compute eTe, including all zero elements, then take
                         % upper triangle only.
-                        
                         respTrans = respAllCol' * respAllCol;
+                        respTrans = triu(respTrans);
                     end
                     
-                    respTrans = triu(respTrans);
+                    
                     % find the nonzero elements and interpolate these only.
                     
                     if iPre == 1
@@ -1445,9 +1445,11 @@ classdef beam < handle
                         obj.indicator.nonzeroi));
                     
                     obj.err.pre.hhat(iPre, 3) = {respTransNonZero};
+                    
                 end
             elseif obj.indicator.enrichment == 0 && ...
                     obj.indicator.refinement == 1
+                
                 % if refine = 1, enrich = 0, compute the newly added
                 % interpolation samples for all basis vectors.
                 obj.resp.store.all(obj.no.iExist + 1 : obj.no.pre.hhat) = ...
@@ -1472,9 +1474,26 @@ classdef beam < handle
                     
                     respAllCol = obj.resp.store.all{obj.no.iExist + iPre};
                     
-                    respTrans = respAllCol' * respAllCol;
-                    
-                    respTrans = triu(respTrans);
+                    if rvSvdSwitch == 1
+                        % if SVD on reduced variables, pm needs to be
+                        % interpolated, therefore here pre-multiply pm to
+                        % related responses (note: pmPrepare in online
+                        % stage is not needed).
+                        pmhhat = obj.pmVal.hhat(iPre, 2:end);
+                        pmAll = [1; 1; pmhhat'; obj.pmVal.s.fix];
+                        pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
+                        pmRep = [1; pmRep];
+                        pmMtx = pmRep * pmRep';
+                        obj.pmVal.pmCol = pmRep;
+                        eTe = respAllCol' * respAllCol;
+                        respTrans = eTe .* pmMtx;
+                        keyboard
+                    elseif rvSvdSwitch == 0
+                        % compute eTe, including all zero elements, then take
+                        % upper triangle only.
+                        respTrans = respAllCol' * respAllCol;
+                        respTrans = triu(respTrans);
+                    end
                     
                     if iPre == 1
                         
@@ -1493,6 +1512,7 @@ classdef beam < handle
                     
                     obj.err.pre.hhat(obj.no.iExist + iPre, 3) = ...
                         {respTransNonZero};
+                    
                 end
             end
             
@@ -1773,20 +1793,21 @@ classdef beam < handle
             end
         end
         %% 
-        function obj = pmIter(obj)
-            
-            
-            
-        end
-        %%
-        function obj = reducedVar(obj, iIter)
-            % compute reduced variables for each pm value.
+        function obj = pmIter(obj, iIter)
+            % this method extract the pm values, pm locations, pm
+            % exponential values for iterations. 
             obj.pmVal.iter = mat2cell([obj.pmVal.comb.space(iIter, ...
                 obj.no.inc + 1 : end)'; ...
                 obj.pmVal.s.fix], ones(obj.no.inc + 1, 1));
             obj.pmLoc.iter = obj.pmVal.comb.space(iIter, (1:obj.no.inc));
             obj.pmExpo.iter = ...
                 cellfun(@(v) log10(v), obj.pmVal.iter, 'un', 0);
+            
+        end
+         
+        %%
+        function obj = reducedVar(obj)
+            % compute reduced variables for each pm value.
             stiReIter = ...
                 cellfun(@(v, w) full(v) * w, ...
                 obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
@@ -1811,15 +1832,29 @@ classdef beam < handle
             % rvL' * eTe * rvL * rvR') = domain size * domain size
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
-            for i = 1:obj.no.pre.hhat
-                obj.err.pre.hhat{i, 3} = rvL' * obj.err.pre.hhat{i, 3} * rvL;
-            end
-            
-            for i = 1:obj.no.pre.hat
-                obj.err.pre.hat{i, 3} = rvL' * obj.err.pre.hat{i, 3} * rvL;
-            end
+            rvL = rvL(:, 1:3);
+            rvR = rvR(:, 1:3);
+            obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
             
+        end
+        %%
+        function obj = rvLTePrervL(obj)
+            % this method multiply left singular vectors from collected reduced
+            % variables with pre-computed eTe
+            if obj.indicator.enrichment == 1 && obj.indicator.refinement == 0
+                for i = 1:obj.no.pre.hhat
+                    obj.err.pre.hhat{i, 3} = obj.resp.rv.L' * ...
+                        obj.err.pre.hhat{i, 3} * obj.resp.rv.L;
+                end
+                keyboard
+            elseif obj.indicator.enrichment == 0 && ...
+                    obj.indicator.refinement == 1
+                for i = 1:obj.no.itplAdd
+                    
+                end
+            end
+            obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
         end
         %%
         function obj = pmPrepare(obj)
@@ -1835,6 +1870,7 @@ classdef beam < handle
             pmSlct = [1; pmSlct];
             pmNonZeroCol = pmSlct(obj.indicator.nonzeroi, :);
             obj.pmVal.pmCol = pmNonZeroCol;
+            
         end
         
         %%
@@ -1910,7 +1946,7 @@ classdef beam < handle
                                 obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
                                     pmIter{:}, 'matrix');
                         end
-                        keyboard
+                        
                         % interpolate in 1D.
 %                         obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
 %                             pmIter{:}, 'matrix');
@@ -1974,11 +2010,10 @@ classdef beam < handle
             % if there is no refinement at all, both hhat and hat domain
             % need to perform interpolation.
             if obj.no.block.hat == 1
-                keyboard
                 obj.inpolyItpl('hhat');
                 obj.inpolyItpl('hat');
-                obj.rvPmErrProdSum('hhat', rvSvdSwitch);
-                obj.rvPmErrProdSum('hat', rvSvdSwitch);
+                obj.rvPmErrProdSum('hhat', rvSvdSwitch, iIter);
+                obj.rvPmErrProdSum('hat', rvSvdSwitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
                 obj.err.store.surf.hat(iIter) = 0;
                 obj.errStoreSurfs('hhat');
@@ -1993,7 +2028,7 @@ classdef beam < handle
                 obj.err.store.surf.hat(iIter) = 0;
                 obj.inpolyItpl('hat');
                 
-                obj.rvPmErrProdSum('hat', rvSvdSwitch);
+                obj.rvPmErrProdSum('hat', rvSvdSwitch, iIter);
                 obj.errStoreSurfs('hat');
                 % Determine whether point is in refined block.
                 obj.inAddBlockIndicator;
@@ -2006,7 +2041,7 @@ classdef beam < handle
                 elseif any(obj.indicator.inBlock) == 1
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('hhat');
-                    obj.rvPmErrProdSum('hhat', rvSvdSwitch);
+                    obj.rvPmErrProdSum('hhat', rvSvdSwitch, iIter);
                     obj.errStoreSurfs('hhat');
                 end
             elseif obj.indicator.refinement == 1 && ...
@@ -2026,13 +2061,13 @@ classdef beam < handle
                     % block, should be very fast.
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('add');
-                    obj.rvPmErrProdSum('add', rvSvdSwitch);
+                    obj.rvPmErrProdSum('add', rvSvdSwitch, iIter);
                     obj.errStoreSurfs('hhat');
                 end
             end
         end
         %%
-        function obj = rvPmErrProdSum(obj, type, rvSvdSwitch)
+        function obj = rvPmErrProdSum(obj, type, rvSvdSwitch, iIter)
             switch type
                 case 'hhat'
                     e = obj.err.itpl.hhat;
@@ -2047,7 +2082,7 @@ classdef beam < handle
                 e = reConstruct(e);
                 ePreSqrt = (obj.pmVal.rvCol .* obj.pmVal.pmCol)' * e * ...
                     (obj.pmVal.rvCol .* obj.pmVal.pmCol);
-                keyboard
+                
                 switch type
                     case {'hhat', 'add'}
                         obj.err.norm{1} = ...
@@ -2061,8 +2096,18 @@ classdef beam < handle
                 
             elseif rvSvdSwitch == 1
                 
-                a = sqrt(abs(obj.resp.rv.R * e * obj.resp.rv.R'));
-                keyboard
+                ePreSqrtMtx = obj.resp.rv.R * e * obj.resp.rv.R';
+                ePreMtx = sqrt(abs(ePreSqrtMtx)) / ...
+                    norm(obj.dis.qoi.trial, 'fro');
+                ePreDiag = diag(ePreMtx);
+                switch type
+                    case {'hhat', 'add'}
+                        obj.err.norm{1} = ePreDiag(iIter);
+                    case 'hat'
+                        obj.err.norm{2} = ePreDiag(iIter);
+                end
+                
+                
             end
         end
         %%
@@ -2131,45 +2176,34 @@ classdef beam < handle
         function obj = errStoreSurfs(obj, type)
             % store all error response surfaces: 2 hats, 1 diff, 1 errwithRb.
             pmLocIter = num2cell(obj.pmLoc.iter);
+            if obj.no.inc == 1
+                surfSize = [obj.domLeng.i 1];
+            else
+                surfSize = obj.domLeng.i;
+            end
+            idx = sub2ind(surfSize, pmLocIter{:});
             switch type
                 case 'hhat'
-                    surfSize = size(obj.err.store.surf.hhat);
-                    obj.err.store.surf.hhat...
-                        (sub2ind(surfSize, pmLocIter{:})) = ...
-                        obj.err.store.surf.hhat...
-                        (sub2ind(surfSize, pmLocIter{:})) + obj.err.norm{1};
+                    obj.err.store.surf.hhat(idx) = ...
+                        obj.err.store.surf.hhat(idx) + obj.err.norm{1};
                     
                 case 'hat'
-                    surfSize = size(obj.err.store.surf.hat);
-                    obj.err.store.surf.hat...
-                        (sub2ind(surfSize, pmLocIter{:})) = ...
-                        obj.err.store.surf.hat...
-                        (sub2ind(surfSize, pmLocIter{:})) + obj.err.norm{2};
+                    obj.err.store.surf.hat(idx) = ...
+                        obj.err.store.surf.hat(idx) + obj.err.norm{2};
                     
                 case 'diff'
-                    surfSize = size(obj.err.store.surf.diff);
-                    obj.err.store.surf.diff...
-                        (sub2ind(surfSize, pmLocIter{:})) = ...
-                        obj.err.store.surf.diff...
-                        (sub2ind(surfSize, pmLocIter{:})) + ...
-                        abs(obj.err.store.surf.hhat...
-                        (sub2ind(surfSize, pmLocIter{:})) - ...
-                        obj.err.store.surf.hat...
-                        (sub2ind(surfSize, pmLocIter{:})));
+                    obj.err.store.surf.diff(idx) = ...
+                        obj.err.store.surf.diff(idx) + ...
+                        abs(obj.err.store.surf.hhat(idx) - ...
+                        obj.err.store.surf.hat(idx));
                     
                 case 'errwRb'
-                    surfSize = size(obj.err.store.surf.errwRb);
-                    obj.err.store.surf.errwRb...
-                        (sub2ind(surfSize, pmLocIter{:})) = ...
-                        obj.err.store.surf.errwRb...
-                        (sub2ind(surfSize, pmLocIter{:})) + obj.err.errwRb;
+                    obj.err.store.surf.errwRb(idx) = ...
+                        obj.err.store.surf.errwRb(idx) + obj.err.errwRb;
                     
                 case 'original'
-                    surfSize = size(obj.err.store.surf);
-                    obj.err.store.surf(sub2ind(surfSize, pmLocIter{:})) = ...
-                        obj.err.store.surf(sub2ind(surfSize, pmLocIter{:})) + ...
+                    obj.err.store.surf(idx) = obj.err.store.surf(idx) + ...
                         obj.err.val;
-                    
             end
             
         end
