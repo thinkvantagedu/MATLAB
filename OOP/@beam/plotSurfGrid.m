@@ -74,7 +74,7 @@ elseif gridSwitch == 0
     if obj.no.inc == 1
         
         % for single inclusion case, plot error response curve.
-        hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'k');
+        hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'y');
         
         % text of current maximum error.
         txtPlotCurrentMax = sprintf('[%d %g]', obj.pmLoc.max, ...

@@ -196,8 +196,8 @@ while canti.err.max.val.slct > canti.err.lowBond
     %% extract error information
     %     canti.extractErrorInfo('errwRb');
     
-    canti.extractErrorInfo('hhat');
-    canti.extractErrorInfo('hat');
+    canti.extractMaxErrorInfo('hhat');
+    canti.extractMaxErrorInfo('hat');
     
     canti.err.max.val.slct = canti.err.max.val.hhat; %
     
@@ -206,7 +206,7 @@ while canti.err.max.val.slct > canti.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    canti.extractPmInfo('hhat');
+    canti.extractMaxPmInfo('hhat');
     
     if canti.refinement.condition <= canti.refinement.thres
         %% NO local h-refinement.

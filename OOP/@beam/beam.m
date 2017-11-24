@@ -1080,16 +1080,16 @@ classdef beam < handle
                     obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
+                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
                                 obj.dis.full(:);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
+                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
                                 obj.dis.full(:, obj.qoi.t);
                         elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
+                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, :);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                            obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
+                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, obj.qoi.t);
                         end
                     elseif svdSwitch == 1
@@ -1099,7 +1099,7 @@ classdef beam < handle
                         uFcel = uFcel * uFcesig;
                         uFcel = uFcel(:, 1:obj.no.respSVD);
                         uFcer = uFcer(:, 1:obj.no.respSVD);
-                        obj.resp.store.fce.hhat{obj.no.iExist + iPre} = ...
+                        obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
                             [{uFcel}; {uFcer}];
                     end
                 end
@@ -1237,7 +1237,7 @@ classdef beam < handle
                                 obj.fce.pass = impPass;
                                 obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                                 if svdSwitch == 0
-                                    obj.resp.store.tDiff(obj.no.iExist + iPre, ...
+                                    obj.resp.store.tDiff(obj.no.itplExist + iPre, ...
                                         iPhy, iTdiff, iRb) = {obj.dis.full};
                                 elseif svdSwitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full);
@@ -1245,7 +1245,7 @@ classdef beam < handle
                                     ul = ul(:, 1:obj.no.respSVD);
                                     ur = ur(:, 1:obj.no.respSVD);
                                     obj.resp.store.tDiff...
-                                        (obj.no.iExist + iPre, ...
+                                        (obj.no.itplExist + iPre, ...
                                         iPhy, iTdiff, iRb) = ...
                                         {ul; ur};
                                 end
@@ -1447,39 +1447,40 @@ classdef beam < handle
                     obj.err.pre.hhat(iPre, 3) = {respTransNonZero};
                     
                 end
+                
             elseif obj.indicator.enrichment == 0 && ...
                     obj.indicator.refinement == 1
                 
                 % if refine = 1, enrich = 0, compute the newly added
                 % interpolation samples for all basis vectors.
-                obj.resp.store.all(obj.no.iExist + 1 : obj.no.pre.hhat) = ...
+                obj.resp.store.all(obj.no.itplExist + 1 : obj.no.pre.hhat) = ...
                     cell(obj.no.itplAdd, 1);
                 obj.indicator.nonzeroi = [];
                 for iPre = 1:obj.no.itplAdd
                     
-                    obj.err.pre.hhat(obj.no.iExist + iPre, 1) = ...
-                        {obj.no.iExist + iPre};
+                    obj.err.pre.hhat(obj.no.itplExist + iPre, 1) = ...
+                        {obj.no.itplExist + iPre};
                     respPmPass = obj.resp.store.pm.hhat...
-                        (obj.no.iExist + iPre, :, :, :);
+                        (obj.no.itplExist + iPre, :, :, :);
                     respCol = sparse(cat(2, respPmPass{:}));
                     % if refined, force responses are also refined,
                     % therefore add the newly added force response to pm
                     % responses.
                     
-                    respCol = [obj.resp.store.fce.hhat{obj.no.iExist + ...
+                    respCol = [obj.resp.store.fce.hhat{obj.no.itplExist + ...
                         iPre}(:) -respCol];
                     
-                    obj.resp.store.all{obj.no.iExist + iPre} = ...
-                        [obj.resp.store.all{obj.no.iExist + iPre} respCol];
+                    obj.resp.store.all{obj.no.itplExist + iPre} = ...
+                        [obj.resp.store.all{obj.no.itplExist + iPre} respCol];
                     
-                    respAllCol = obj.resp.store.all{obj.no.iExist + iPre};
+                    respAllCol = obj.resp.store.all{obj.no.itplExist + iPre};
                     
                     if rvSvdSwitch == 1
                         % if SVD on reduced variables, pm needs to be
                         % interpolated, therefore here pre-multiply pm to
                         % related responses (note: pmPrepare in online
                         % stage is not needed).
-                        pmhhat = obj.pmVal.hhat(iPre, 2:end);
+                        pmhhat = obj.pmVal.add(iPre, 2:end);
                         pmAll = [1; 1; pmhhat'; obj.pmVal.s.fix];
                         pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
                         pmRep = [1; pmRep];
@@ -1510,10 +1511,11 @@ classdef beam < handle
                         respTrans(obj.indicator.nonzeroi, ...
                         obj.indicator.nonzeroi);
                     
-                    obj.err.pre.hhat(obj.no.iExist + iPre, 3) = ...
+                    obj.err.pre.hhat(obj.no.itplExist + iPre, 3) = ...
                         {respTransNonZero};
                     
                 end
+                
             end
             
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
@@ -1832,11 +1834,12 @@ classdef beam < handle
             % rvL' * eTe * rvL * rvR') = domain size * domain size
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
-            rvL = rvL(:, 1:5);
-            rvR = rvR(:, 1:5);
+            rvL = rvL(:, 1:6);
+            rvR = rvR(:, 1:6);
+            obj.resp.rv.sig = rvSig;
             obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
-            
+
         end
         %%
         function obj = rvLTePrervL(obj)
@@ -1852,12 +1855,16 @@ classdef beam < handle
                     obj.indicator.refinement == 1
                 
                 for i = 1:obj.no.itplAdd
-                    obj.err.pre.hhat{obj.no.iExist + i, 3} = obj.resp.rv.L' * ...
-                        obj.err.pre.hhat{obj.no.iExist + i, 3} * obj.resp.rv.L;
+                    obj.err.pre.hhat{obj.no.itplExist + i, 3} = ...
+                        obj.resp.rv.L' * ...
+                        obj.err.pre.hhat{obj.no.itplExist + i, 3} * ...
+                        obj.resp.rv.L;
                 end
                 
             end
+            
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
+            
         end
         %%
         function obj = pmPrepare(obj)
@@ -1936,17 +1943,20 @@ classdef beam < handle
                         switch type
                             case 'hhat'
                                 gridy = obj.err.pre.hhat(pmBlk{i}(:, 1), 3);
-                                obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                                obj.err.itpl.otpt = ...
+                                    lagrange(pmBlkCell{:}, gridy, ...
                                     pmIter{:}, 'matrix');
                             case 'hat'
                                 gridy = obj.err.pre.hat(pmBlk{i}(:, 1), 3);
-                                obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                                obj.err.itpl.otpt = ...
+                                    lagrange(pmBlkCell{:}, gridy, ...
                                     pmIter{:}, 'matrix');
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{i};
                                 gridy = obj.err.pre.hhat(pmAdd(:, 1), 3);
-                                obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                                obj.err.itpl.otpt = ...
+                                    lagrange(pmBlkCell{:}, gridy, ...
                                     pmIter{:}, 'matrix');
                         end
                         
@@ -2110,7 +2120,6 @@ classdef beam < handle
                         obj.err.norm{2} = ePreDiag(iIter);
                 end
                 
-                
             end
         end
         %%
@@ -2273,7 +2282,7 @@ classdef beam < handle
                 obj.dis.qoi.trial);
         end
         %%
-        function obj = extractErrorInfo(obj, type, randomSwitch)
+        function obj = extractMaxErrorInfo(obj, type, randomSwitch)
             % extract error max and location from surfaces. The maximum
             % error value displayed in main script is errwRb.
             
@@ -2356,12 +2365,13 @@ classdef beam < handle
             
         end
         %%
-        function obj = extractPmInfo(obj, type)
+        function obj = extractMaxPmInfo(obj, type)
             % when extracting maximum error information, values and
             % locations of maximum error can be different, for example, use
             % eDiff to decide maximum error location (eMaxPmLoc =
             % canti.err.maxLoc.diff), and use ehat (canti.err.maxLoc.hat) to
             % decide parameter value regarding maximum error.
+            
             switch type
                 case 'original'
                     eMaxPmLoc = obj.err.max.loc;
@@ -2391,14 +2401,14 @@ classdef beam < handle
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
             obj.no.block.hat = size(obj.pmExpo.block.hat, 1);
             % nExist + nAdd should equal to nhhat.
-            obj.no.iExist = obj.no.pre.hat;
+            obj.no.itplExist = obj.no.pre.hat;
             obj = refineGridLocalwithIdx(obj, 'iteration');
             obj.no.block.add = 2 ^ obj.no.inc - 1;
         end
         %%
         function obj = extractPmAdd(obj)
             % when a h-refinement occurs, this method finds the information
-            % relates to newly add samples.
+            % relates to newly added samples.
             
             % the newly added blocks.
             obj.pmExpo.block.add = obj.pmExpo.block.hhat...

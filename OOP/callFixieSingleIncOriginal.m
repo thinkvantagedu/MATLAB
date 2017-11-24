@@ -29,8 +29,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter.
-domLengi = 9;
-domLengs = 9;
+domLengi = 21;
+domLengs = 21;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -42,7 +42,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.04;
+tMax = 0.19;
 tStep = 0.01; 
 
 %% data for external nodal force.
@@ -145,8 +145,8 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
     end
     
-    fixie.extractErrorInfo(typeSwitch, randomSwitch);
-    fixie.extractPmInfo(typeSwitch);
+    fixie.extractMaxErrorInfo(typeSwitch, randomSwitch);
+    fixie.extractMaxPmInfo(typeSwitch);
     fixie.storeErrorInfoOriginal;
     
     figure(1)

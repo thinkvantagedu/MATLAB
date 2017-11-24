@@ -29,8 +29,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 9;
-domLengs = 9;
+domLengi = 21;
+domLengs = 21;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -42,7 +42,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.04;
+tMax = 0.19;
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -151,9 +151,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     fixie.impGenerate;
     
     fixie.respTdiffComputation(svdSwitch);
-    
-    %     canti.resptoErrPreCompPartTime(qoiSwitchTime, qoiSwitchSpace);
-    
+        
     switch timeType
         
         case 'allTime'
@@ -207,8 +205,8 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     %% extract error information.
     %     canti.extractErrorInfo('errwRb');
     
-    fixie.extractErrorInfo('hhat');
-    fixie.extractErrorInfo('hat');
+    fixie.extractMaxErrorInfo('hhat');
+    fixie.extractMaxErrorInfo('hat');
     
     fixie.err.max.val.slct = fixie.err.max.val.hhat; %
     
@@ -217,8 +215,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    fixie.extractPmInfo('hhat');
-    
+    fixie.extractMaxPmInfo('hhat');
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
@@ -228,7 +225,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
         
-        figure(3)
+        figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if fixie.countGreedy >= drawRow * drawCol

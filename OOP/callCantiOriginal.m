@@ -145,8 +145,8 @@ while canti.err.max.val.slct > canti.err.lowBond
         
     end
     
-    canti.extractErrorInfo(typeSwitch, randomSwitch);
-    canti.extractPmInfo(typeSwitch);
+    canti.extractMaxErrorInfo(typeSwitch, randomSwitch);
+    canti.extractMaxPmInfo(typeSwitch);
     canti.storeErrorInfoOriginal;
     
     figure(1)
