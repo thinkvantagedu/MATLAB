@@ -14,10 +14,11 @@ nt = 2;
 
 mtxi = ones(nd, nd);
 mtxz = zeros(nd, nd);
+mtxm = magic(nd);
 Hs = [m c k; mtxz mtxi mtxz; mtxz mtxz mtxi];
 Hz = zeros(length(Hs), length(Hs));
-
-A = [Hs Hz; Hz Hs];
+Hf = [mtxz mtxz mtxz; mtxm mtxm mtxm; mtxm mtxm mtxm];
+A = [Hs Hz; Hf Hs];
 
 phi = canti.phi.val;
 phiz = zeros(size(phi, 1), size(phi, 2));
@@ -37,8 +38,8 @@ for i = 1:3 * nt
 end
         
 mtxphi = cell2mat(mtxphi);
-
-res1 = A * mtxphi * rv;
+res1tmp = A * mtxphi;
+res1 = res1tmp * rv;
 
 %% case 2: use vector, need entrywise product.
 vecphi = cell(3 * nt, 1);

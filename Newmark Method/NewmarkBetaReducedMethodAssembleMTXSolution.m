@@ -14,7 +14,7 @@ m = [2 0; 0 1];
 c = [0 0; 0 0];
 %%
 dt = 0.28;
-maxt = 2.8;
+maxt = 1.12;
 u0 = [0; 0];
 v0 = [0; 0];
 acce = 'average';
@@ -50,7 +50,7 @@ a4 = (1 / 2 - beta) * dt ^ 2;
 a5 = (beta - 0.5) * dt ^ 2;
 mtxA = [m c k; a1 * id, -id, 0 * id; a2 * id, 0 * id, - id];
 mtxB = [0 * id 0 * id 0 * id; a3 * id id 0 * id; a4 * id dt * id id];
-coef_asmb = sparse(3 * nd * (nt), 3 * nd * (nt));
+coefAsemb = sparse(3 * nd * (nt), 3 * nd * (nt));
 %%
 ft = sparse(3 * nd * (nt), 1);
 fini = [f(:, 1); -a3 * a0 - v0; a5 * a0 - v0 - u0];
@@ -58,8 +58,8 @@ fadd = sparse(2 * nd, 1);
 %%
 for i = 1:nt
     
-    coef_asmb((i - 1) * 3 * nd + 1 : i * 3 * nd, (i - 1) * 3 * nd + 1 : i * 3 * nd) = ...
-        coef_asmb((i - 1) * 3 * nd + 1 : i * 3 * nd, (i - 1) * 3 * nd + 1:i * 3 * nd) + ...
+    coefAsemb((i - 1) * 3 * nd + 1 : i * 3 * nd, (i - 1) * 3 * nd + 1 : i * 3 * nd) = ...
+        coefAsemb((i - 1) * 3 * nd + 1 : i * 3 * nd, (i - 1) * 3 * nd + 1:i * 3 * nd) + ...
         mtxA;
     ft((i - 1) * 3 * nd + 1 : i * 3 * nd, :) = ft((i - 1) * 3 * nd + 1 : i * 3 * nd, :) + ...
         [f(:, i); fadd];
@@ -68,8 +68,8 @@ end
    
 for i = 1:nt-1
     
-   coef_asmb((i * 3 * nd + 1) : (i + 1) * 3 * nd, (i - 1) * 3 * nd + 1 : i * 3 * nd) = ...
-        coef_asmb((i * 3 * nd + 1) : (i + 1) * 3 * nd, (i - 1) * 3 * nd + 1:i * 3 * nd) + ...
+   coefAsemb((i * 3 * nd + 1) : (i + 1) * 3 * nd, (i - 1) * 3 * nd + 1 : i * 3 * nd) = ...
+        coefAsemb((i * 3 * nd + 1) : (i + 1) * 3 * nd, (i - 1) * 3 * nd + 1:i * 3 * nd) + ...
         mtxB; 
     
 end
@@ -77,12 +77,12 @@ end
 ft(1:3 * nd, :) = zeros(3 * nd, 1);
 ft(1:3 * nd, :) = ft(1:3 * nd, :) + fini;
 
-qrcol = qrcol + coef_asmb \ ft;
+qrcol = qrcol + coefAsemb \ ft;
 
 %%
-for i_t = 1:nt
+for i = 1:nt
     
-    qrrow(:, i_t) = qrrow(:, i_t) + qrcol((i_t - 1) * nd * 3 + 1:i_t * nd * 3);
+    qrrow(:, i) = qrrow(:, i) + qrcol((i - 1) * nd * 3 + 1:i * nd * 3);
     
 end
 A_r = qrrow(1:nr, :);

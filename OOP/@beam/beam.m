@@ -1211,6 +1211,7 @@ classdef beam < handle
                         end
                     end
                 end
+                
             elseif obj.indicator.refinement == 1 && ...
                     obj.indicator.enrichment == 0
                 % if refine, no enrichment, compute exact solutions
@@ -1325,6 +1326,7 @@ classdef beam < handle
                     end
                 end
             end
+            
         end
         %%
         function obj = respImpAllTime(obj, iPre, iPhy, nRb)
@@ -1916,7 +1918,7 @@ classdef beam < handle
             rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
             obj.no.totalResp = size(rvAllCol, 1);
             obj.pmVal.rvCol = rvNonZeroCol;
-            
+            keyboard
         end
         %%
         function obj = inpolyItpl(obj, type)
