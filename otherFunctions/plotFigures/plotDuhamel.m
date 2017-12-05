@@ -97,7 +97,7 @@ for j = 1:nt / nd
     
     if j == 1
         hinit = plot(x-1, ufkinit(1, :), 'r');
-        halpha =scatter(j - 1, alpha(1, j), 30, 'k', '+');
+        halpha =scatter(j - 1, alpha(1, j), 100, 'k', '+');
         ufk = ufk + ufkinit;
         hinit.LineWidth = 2;
         halpha.LineWidth = 2;
@@ -105,7 +105,7 @@ for j = 1:nt / nd
         
         ufkshift = [zeros(nd, nd * (j - 2)) ufkafter(:, 1:(nt - nd * j + 4))];
         hshift = plot(x, ufkshift(1, :), 'b');
-        halpha =scatter(j * 2 - 2, alpha(1, j), 30, 'k', '+');
+        halpha =scatter(j * 2 - 2, alpha(1, j), 100, 'k', '+');
         ufk = ufk + ufkshift;
         hshift.LineWidth = 2;
         halpha.LineWidth = 2;
@@ -121,11 +121,11 @@ yla = ylabel('amplitude');
 xla.FontSize = ftsize;
 yla.FontSize = ftsize;
 
-uin = 'U^{in}';
-usu = 'U^{su}';
-alphah = '\alpha(t_{\tau})';
-lgd = legend([hinit hshift halpha], uin, usu, alphah, 'Interpreter', 'latex');
-lgd.FontSize = ftsize;
+% uin = 'U^{in}';
+% usu = 'U^{su}';
+% alphah = '\alpha(t_{\tau})';
+% lgd = legend([hinit hshift halpha], uin, usu, alphah, 'Interpreter', 'latex');
+% lgd.FontSize = ftsize;
 
 
 
