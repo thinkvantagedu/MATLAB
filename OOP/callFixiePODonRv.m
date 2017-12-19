@@ -9,8 +9,8 @@ addpath(genpath(oopPath));
 %% data for beam class.
 trialName = 'l9h2SingleInc';
 lin = 1;
-[INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
-noIncl = 1;
+[INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
+    trialCaseSelect(trialName, lin);
 noStruct = 1;
 noMas = 1;
 noDam = 1;
@@ -49,6 +49,7 @@ tStep = 0.01;
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
+fRange = 10;
 
 %% parameter data for trial iteration.
 trial = 1;
@@ -75,7 +76,8 @@ drawCol = 1;
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
+    nConsEnd);
 
 % read mass matrix, 2 = 2d.
 fixie.readMTX2DOF(nDofPerNode);

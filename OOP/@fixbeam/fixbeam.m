@@ -15,7 +15,7 @@ classdef fixbeam < beam
                 noStruct, noMas, noDam, tMax, tStep, ...
                 errLowBond, errMaxVal, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
-                drawRow, drawCol, fNode, ftime, nConsEnd)
+                drawRow, drawCol, fNode, ftime, fRange, nConsEnd)
             
             obj = obj@beam(masFile, damFile, stiFile, locStart, ...
                 locEnd, INPname, domLengi, ...
@@ -28,6 +28,8 @@ classdef fixbeam < beam
             obj.fce.time = ftime;
             
             obj.fce.node = fNode;
+            
+            obj.fce.range = fRange;
             
             obj.no.consEnd = nConsEnd;
         end
@@ -49,7 +51,7 @@ classdef fixbeam < beam
             elseif debugMode == 0
                 % if not in debug mode, use a wide range without shift to
                 % generate efunc. 
-                xRange = linspace(-1, 1, obj.no.t_step);
+                xRange = linspace(-1, 1, obj.fce.range);
                 efunc = - xRange .^ 2 / 2 / sig ^ 2;
                 obj.fce.gaus = 1 / sqrt(2 * pi * sig ^ 2) * exp(efunc);
                 idx = obj.fce.gaus > 1e-5;

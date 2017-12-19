@@ -15,7 +15,7 @@ classdef canbeam < beam
                 noStruct, noMas, noDam, tMax, tStep, ...
                 errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
-                drawRow, drawCol, fNode, ftime, nConsEnd)
+                drawRow, drawCol, fNode, ftime, fRange, nConsEnd)
             
             obj = obj@beam(mas, dam, sti, locStartCons, ...
                 locEndCons, INPname, domLengi, domLengs, domBondi, domMid, ...
@@ -27,7 +27,7 @@ classdef canbeam < beam
             obj.fce.time = ftime;
             obj.fce.node = fNode;
             obj.no.consEnd = nConsEnd;
-            
+            obj.fce.range = fRange;
         end
         %%
         function obj = gaussian(obj, shift, sig, unit_amp, debugMode)
@@ -47,7 +47,7 @@ classdef canbeam < beam
             elseif debugMode == 0
                 % if not in debug mode, use a wide range without shift to
                 % generate efunc. 
-                xRange = linspace(-1, 1, obj.no.t_step);
+                xRange = linspace(-1, 1, obj.fce.range);
                 efunc = - xRange .^ 2 / 2 / sig ^ 2;
                 obj.fce.gaus = 1 / sqrt(2 * pi * sig ^ 2) * exp(efunc);
                 idx = obj.fce.gaus > 1e-5;

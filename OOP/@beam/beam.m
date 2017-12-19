@@ -1053,6 +1053,7 @@ classdef beam < handle
                         % if SVD is not on-the-fly, comment this.
                         [uFcel, uFcesig, uFcer] = ...
                             svd(obj.dis.full, 'econ');
+                        
                         uFcel = uFcel * uFcesig;
                         uFcel = uFcel(:, 1:obj.no.respSVD);
                         uFcer = uFcer(:, 1:obj.no.respSVD);
@@ -1080,16 +1081,19 @@ classdef beam < handle
                     obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
-                                obj.dis.full(:);
+                            obj.resp.store.fce.hhat...
+                                {obj.no.itplExist + iPre} = obj.dis.full(:);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
+                            obj.resp.store.fce.hhat...
+                                {obj.no.itplExist + iPre} = ...
                                 obj.dis.full(:, obj.qoi.t);
                         elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
+                            obj.resp.store.fce.hhat...
+                                {obj.no.itplExist + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, :);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                            obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
+                            obj.resp.store.fce.hhat...
+                                {obj.no.itplExist + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, obj.qoi.t);
                         end
                     elseif svdSwitch == 1
@@ -1238,7 +1242,8 @@ classdef beam < handle
                                 obj.fce.pass = impPass;
                                 obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                                 if svdSwitch == 0
-                                    obj.resp.store.tDiff(obj.no.itplExist + iPre, ...
+                                    obj.resp.store.tDiff...
+                                        (obj.no.itplExist + iPre, ...
                                         iPhy, iTdiff, iRb) = {obj.dis.full};
                                 elseif svdSwitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full);
@@ -1260,7 +1265,8 @@ classdef beam < handle
         end
         
         %%
-        function obj = respTimeShift(obj, qoiSwitchTime, qoiSwitchSpace)
+        function obj = respTimeShift...
+                (obj, qoiSwitchTime, qoiSwitchSpace, svdSwitch)
             % this method shifts the responses in time.
             
             for iPre = 1:obj.no.pre.hhat
@@ -1294,33 +1300,58 @@ classdef beam < handle
                                     = {respQoi};
                                 
                             else
-                                storePmzeros = zeros(obj.no.dof, iT - 2);
-                                storePmNonzeros = ...
-                                    obj.resp.store.tDiff...
-                                    {iPre, iPhy, 2, iRb}...
-                                    (:, 1:obj.no.t_step - iT + 2);
-                                storePmAsemb = ...
-                                    [storePmzeros storePmNonzeros];
                                 
-                                if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                                    storePmQoi = storePmAsemb;
+                                if svdSwitch == 0
+                                    storePmZeros = zeros(obj.no.dof, iT - 2);
+                                    storePmNonZeros = ...
+                                        obj.resp.store.tDiff...
+                                        {iPre, iPhy, 2, iRb}...
+                                        (:, 1:obj.no.t_step - iT + 2);
+                                    storePmAsemb = ...
+                                        [storePmZeros storePmNonZeros];
+                                    if qoiSwitchTime == 0 && ...
+                                            qoiSwitchSpace == 0
+                                        storePmQoi = storePmAsemb;
+                                        
+                                    elseif qoiSwitchTime == 1 && ...
+                                            qoiSwitchSpace == 0
+                                        storePmQoi = storePmAsemb(:, obj.qoi.t);
+                                        
+                                    elseif qoiSwitchTime == 0 && ...
+                                            qoiSwitchSpace == 1
+                                        storePmQoi = ...
+                                            storePmAsemb(obj.qoi.dof, :);
+                                        
+                                    elseif qoiSwitchTime == 1 && ...
+                                            qoiSwitchSpace == 1
+                                        storePmQoi = storePmAsemb...
+                                            (obj.qoi.dof, obj.qoi.t);
+                                        
+                                    end
                                     
-                                elseif qoiSwitchTime == 1 && ...
-                                        qoiSwitchSpace == 0
-                                    storePmQoi = storePmAsemb(:, obj.qoi.t);
-                                    
-                                elseif qoiSwitchTime == 0 && ...
-                                        qoiSwitchSpace == 1
-                                    storePmQoi = storePmAsemb(obj.qoi.dof, :);
-                                    
-                                elseif qoiSwitchTime == 1 && ...
-                                        qoiSwitchSpace == 1
-                                    storePmQoi = storePmAsemb...
-                                        (obj.qoi.dof, obj.qoi.t);
-                                    
+                                    obj.resp.store.pm.hhat...
+                                        (iPre, iPhy, iT, iRb)...
+                                        = {storePmQoi(:)};
+                                elseif svdSwitch == 1
+                                    % onlys hift the right singular
+                                    % vectors, if recast the displacements,
+                                    % fro norm of the recast should match
+                                    % original displacements.
+                                    storePmZeros = ...
+                                        zeros(obj.no.respSVD, iT - 2);
+                                    storeTemp = obj.resp.store.tDiff...
+                                        {iPre, iPhy, 2, iRb}{2};
+                                    storeTemp = storeTemp';
+                                    storePmNonZeros = storeTemp...
+                                        (:, 1:obj.no.t_step - iT + 2);
+                                    storePmL = obj.resp.store.tDiff...
+                                        {iPre, iPhy, 2, iRb}{1};
+                                    storePmR = ...
+                                        [storePmZeros storePmNonZeros]';
+                                    obj.resp.store.pm.hhat...
+                                        {iPre, iPhy, iT, iRb}...
+                                        = {storePmL; storePmR};
                                 end
-                                obj.resp.store.pm.hhat(iPre, iPhy, iT, iRb)...
-                                    = {storePmQoi(:)};
                             end
                         end
                     end
@@ -1354,10 +1385,10 @@ classdef beam < handle
                         obj.resp.store.pm.hhat(iPre, iPhy, 1, nRb) = ...
                             {obj.resp.store.pm.tdiff{1}(:)};
                     else
-                        storePmzeros = zeros(obj.no.dof, iTall - 2);
-                        storePmNonzeros = obj.resp.storePm.tdiff{2}...
+                        storePmZeros = zeros(obj.no.dof, iTall - 2);
+                        storePmNonZeros = obj.resp.storePm.tdiff{2}...
                             (:, 1:obj.no.t_step - iTall + 2);
-                        storePmAsemb = [storePmzeros storePmNonzeros];
+                        storePmAsemb = [storePmZeros storePmNonZeros];
                         obj.resp.store.pm.hhat(iPre, iPhy, iTall, ...
                             nRb) = {storePmAsemb(:)};
                     end
@@ -1555,8 +1586,8 @@ classdef beam < handle
                     respFceTemp = reshape(respFceTemp, ...
                         [obj.no.dof, length(obj.qoi.t)]);
                     for i = 1:length(obj.qoi.t)
-                        respFce(:, obj.qoi.t(i)) = respFce(:, obj.qoi.t(i)) + ...
-                            respFceTemp(:, i);
+                        respFce(:, obj.qoi.t(i)) = ...
+                            respFce(:, obj.qoi.t(i)) + respFceTemp(:, i);
                     end
                 end
                 
@@ -1918,7 +1949,7 @@ classdef beam < handle
             rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
             obj.no.totalResp = size(rvAllCol, 1);
             obj.pmVal.rvCol = rvNonZeroCol;
-            keyboard
+            
         end
         %%
         function obj = inpolyItpl(obj, type)
@@ -2676,8 +2707,8 @@ classdef beam < handle
             fid = fopen(obj.INPname);
             tline = fgetl(fid);
             lineNo = 1;
-            lineIncStart = cell(obj.no.inc - 1, 1);
-            lineIncEnd = cell(obj.no.inc - 1, 1);
+            lineIncStart = cell(obj.no.inc, 1);
+            lineIncEnd = cell(obj.no.inc, 1);
             idx = 1;
             while ischar(tline)
                 
@@ -2695,9 +2726,15 @@ classdef beam < handle
                     lineElem = [lineElem; lineNo];
                 end
                 
-                strStart = strcat('*Nset, nset=Set-', num2str(idx));
-                strEnd = strcat('*Elset, elset=Set-', ...
-                    num2str(idx), ', generate');
+                if obj.no.inc == 1
+                    strStart = strcat('*Nset, nset=Set-I', num2str(idx));
+                    strEnd = strcat('*Elset, elset=Set-I', ...
+                        num2str(idx), ', generate');
+                elseif obj.no.inc == 9
+                    strStart = strcat('*Nset, nset=Set-', num2str(idx));
+                    strEnd = strcat('*Elset, elset=Set-', ...
+                        num2str(idx), ', generate');
+                end
                 
                 if strncmpi(tline, strStart, 18) == 1
                     lineIncStart(idx) = {lineNo};
@@ -2727,10 +2764,11 @@ classdef beam < handle
             incNode = cell(obj.no.inc - 1, 1);
             incConn = cell(obj.no.inc - 1, 1);
             
-            for i = 1:obj.no.inc - 1
+            for i = 1:obj.no.inc 
                 % nodal info of inclusions
                 nodeIncCol = [];
-                txtInc = strtext((lineIncNo(i, 1):lineIncNo(i, 2) - 2), :);
+                
+                txtInc = strtext((lineIncNo(i, 1):lineIncNo(i, 2) - 1), :);
                 trimInc = strtrim(txtInc);
                 for j = 1:size(trimInc, 1)
                     
@@ -2770,7 +2808,7 @@ classdef beam < handle
                 view(2);
                 hold on
                 % inclusions
-                for i = 1:obj.no.inc - 1
+                for i = 1:obj.no.inc
                     
                     in = trisurf(obj.elem.all(obj.elem.inc{i}, 2:4), ...
                         x, y, zeros(nnode, 1));

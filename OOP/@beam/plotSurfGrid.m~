@@ -74,18 +74,15 @@ elseif gridSwitch == 0
     if obj.no.inc == 1
         
         % for single inclusion case, plot error response curve.
-        hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'k', 'LineWidth', 2);
+        hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'k');
         
         % text of current maximum error.
-        txtPlotCurrentMax = sprintf('[%d %.4g]', obj.pmLoc.max, ...
+        txtPlotCurrentMax = sprintf('[%d %g]', obj.pmLoc.max, ...
             obj.err.max.val.slct);
         % add text to figure location.
         errTxt = text(obj.pmExpo.max{:}, errMax, txtPlotCurrentMax, ...
-            'color', '[0 0 1]', 'Fontsize', 15);
-        
-%         plot(obj.pmExpo.max{:}, errMax, '^')
+            'color', '[0 0 1]', 'Fontsize', 12);
         xlabel('Inclusion')
-        ylabel('Error')
         hold on
         axis square
         
@@ -101,7 +98,7 @@ elseif gridSwitch == 0
             obj.pmLoc.max(1), obj.pmLoc.max(2), obj.err.max.val.slct);
         % add text to figure location.
         errTxt = text(obj.pmExpo.max{:}, errMax, ...
-            txtPlotCurrentMax, 'color', '[0 0 1]', 'Fontsize', 20);
+            txtPlotCurrentMax, 'color', '[0 0 1]', 'Fontsize', 12);
         xlabel('I1')
         ylabel('I2')
         set(hAx,'zscale','log')
@@ -129,12 +126,12 @@ elseif gridSwitch == 0
             txtPlotPrevMax = sprintf('[%d %.4g]', eLocPrevMax{1}, ...
                 eValPrevMaxCurrent);
             text(pmExpoPrev, eValPrevMaxCurrent, txtPlotPrevMax, ...
-                'color', '[0 0 0]', 'Fontsize', 15);
+                'color', '[0 0 0]', 'Fontsize', 12);
         elseif obj.no.inc == 2
             txtPlotPrevMax = sprintf('[%d %d, %d]', ...
                 eLocPrevMax{1}, eLocPrevMax{2}, eValPrevMaxCurrent);
             text(pmExpoPrev(1), pmExpoPrev(2), eValPrevMaxCurrent, ...
-                txtPlotPrevMax, 'color', '[0 0 0]', 'Fontsize', 20);
+                txtPlotPrevMax, 'color', '[0 0 0]', 'Fontsize', 12);
             axis(hAx,'square')
             axis(hAx,'tight', 'manual')
             
@@ -151,5 +148,5 @@ end
 % set(hAx,'zlim',axi_lim)
 shading faceted
 colormap(cool)
-set(gca,'fontsize',20)
-set(legend,'FontSize',20);
+set(gca,'fontsize',12)
+set(legend,'FontSize',12);

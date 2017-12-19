@@ -1,4 +1,4 @@
-function [INPname, mas, sti, locStartCons, locEndCons] = ...
+function [INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
     trialCaseSelect(trialName, lin)
 if lin == 0
     route = '/Users/kevin/GoogleDrive/Temp/FE_model/cantileverBeam/';
@@ -16,6 +16,7 @@ switch trialName
         locStartCons = {'nset=Set-lc'};
         locEndCons = {'End Assembly'};
         sti = {sti1; sti2; stis};
+        noIncl = 2;
         
     case 'l9h2Coarse'
         
@@ -27,9 +28,10 @@ switch trialName
         locStartCons = {'nset=Set-lc'};
         locEndCons = {'Elset, elset=Set-lc'};
         sti = {sti1; sti2; stis};
+        noIncl = 2;
         
-    case 'l9h2_multiInc'
-        
+    case 'l9h2MultiInc'
+        % 9 inclusions, for plot purpose
         INPname = strcat(route, 'l9h2_multiInc.inp');
         mas = strcat(route, 'l9h2_multiIncMtx_MASS1.mtx');
         sti1 = nan(1);
@@ -38,6 +40,7 @@ switch trialName
         locStartCons = {nan(1)};
         locEndCons = {nan(1)};
         sti = {sti1; sti2; stis};
+        noIncl = 9;
         
     case 'airfoilSim'
         airfoilstr = 'airfoil/';
@@ -49,6 +52,7 @@ switch trialName
         locStartCons = {'nset=Set-lc'};
         locEndCons = {'Elset, elset=Set-lc'};
         sti = {sti1; sti2; stis};
+        noIncl = 2;
         
     case 'airfoilMedium'
         airfoilstr = 'airfoil/';
@@ -60,6 +64,7 @@ switch trialName
         locStartCons = {'nset=Set-lc'};
         locEndCons = {'Elset, elset=Set-lc'};
         sti = {sti1; sti2; stis};
+        noIncl = 2;
         
     case 'airfoilLarge'
         airfoilstr = 'airfoil/';
@@ -71,7 +76,10 @@ switch trialName
         locStartCons = {'nset=Set-lc'};
         locEndCons = {'Elset, elset=Set-lc'};
         sti = {sti1; sti2; stis};
+        noIncl = 2;
+        
     case 'l9h2SingleInc'
+        % l = 90, h = 20, li = 35.8, ri = 54.2
         route = '/home/xiaohan/Desktop/Temp/FE_model/fixBeam/';
         INPname = strcat(route, 'l9h2SingleInc.inp');
         mas = strcat(route, 'l9h2SingleInc_MASS1.mtx');
@@ -84,5 +92,7 @@ switch trialName
         sti = {sti1; stis};
         locStartCons = {locStartConsLc; locStartConsRc};
         locEndCons = {locEndConsLc; locEndConsRc};
+        noIncl = 1;
+        
 end
 end

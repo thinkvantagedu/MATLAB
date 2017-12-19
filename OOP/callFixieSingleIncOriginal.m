@@ -9,8 +9,8 @@ addpath(genpath(oopPath));
 %% data for beam class.
 trialName = 'l9h2SingleInc';
 lin = 1;
-[INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
-noIncl = 1;
+[INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
+    trialCaseSelect(trialName, lin);
 noStruct = 1;
 noMas = 1;
 noDam = 1;
@@ -24,13 +24,13 @@ qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 svdSwitch = 0;
 rvSvdSwitch = 0;
-ratioSwitch = 0;
+ratioSwitch = 1;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter.
-domLengi = 21;
-domLengs = 21;
+domLengi = 10;
+domLengs = 10;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -42,13 +42,14 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.19;
+tMax = 1.99;
 tStep = 0.01; 
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
+fRange = 10;
 
 %% parameter location for trial iteration.
 trial = 1;
@@ -67,7 +68,7 @@ cntInit = 1;
 refiThres = 0.0002;
 
 %% plot surfaces and grids
-drawRow = 1;
+drawRow = 2;
 drawCol = 1;
 
 %% trial solution
@@ -75,7 +76,8 @@ drawCol = 1;
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam,...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
+    nConsEnd);
 
 % read mass matrix. 
 fixie.readMTX2DOF(nDofPerNode);
@@ -102,7 +104,7 @@ fixie.disInpt;
 
 % generate nodal force.
 debugMode = 0;
-fixie.generateNodalFce(nDofPerNode, 0.5, debugMode);
+fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
 nQoiT = 2;
@@ -114,12 +116,12 @@ fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution. 
 nPhiInitial = 1;
-nPhiEnrich = 1;
+nPhiEnrich = 5;
 fixie.rbInitial(nPhiInitial);
 % rbCtrlThres = 0.1;
 % canti.rbCtrlInitial(rbCtrlThres);
 reductionRatio = 0.9; 
-% canti.rbSingularInitial(reductionRatio);
+fixie.rbSingularInitial(reductionRatio);
 % canti.rbReVarInitial(reductionRatio);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
@@ -171,5 +173,5 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
 end
 %%
-% figure(2)
-% fixie.plotMaxErrorDecay(fixie.err.store.max);
+figure(2)
+fixie.plotMaxErrorDecay(fixie.err.store.max);

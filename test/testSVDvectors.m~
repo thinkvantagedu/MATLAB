@@ -6,8 +6,7 @@ a = [1:12; 3:14; 5:16; 2:13];
 
 no.nrb = 2;
 
-bl = x(:, 1:no.nrb);
-sig = y(1:no.nrb, 1:no.nrb);
+bl = 
 blsig = x(:, 1:no.nrb) * y(1:no.nrb, 1:no.nrb);
 br = z(:, 1:no.nrb);
 

@@ -9,8 +9,8 @@ addpath(genpath(oopPath));
 %% data for beam class.
 trialName = 'l2h1';
 lin = 1;
-[INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
-noIncl = 2;
+[INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
+    trialCaseSelect(trialName, lin);
 noStruct = 1;
 noMas = 1;
 noDam = 1;
@@ -42,13 +42,14 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time
-tMax = 0.03;
+tMax = 0.19;
 tStep = 0.01;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 4;
 ftime = 0.02;
+fRange = 10;
 
 %% parameter data for trial iteration.
 trial = [1, 1];
@@ -75,7 +76,8 @@ drawCol = 1;
 canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
+    nConsEnd);
 
 % read mass matrix, 2 = 2d.
 canti.readMTX2DOF(nDofPerNode);

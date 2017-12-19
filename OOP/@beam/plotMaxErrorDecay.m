@@ -11,7 +11,7 @@ xlim([1 no_plot])
 % axis square
 % legend(plotName, 'Location', 'southwest')
 xlabel('Greedy iterations')
-ylabel('Maximum Frobenius norm error')
+ylabel('Maximum error')
 
 % legend('show')
 grid on

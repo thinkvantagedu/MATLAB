@@ -9,8 +9,8 @@ addpath(genpath(oopPath));
 %% data for beam class.
 trialName = 'l9h2SingleInc';
 lin = 1;
-[INPname, mas, sti, locStartCons, locEndCons] = trialCaseSelect(trialName, lin);
-noIncl = 1;
+[INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
+    trialCaseSelect(trialName, lin);
 noStruct = 1;
 noMas = 1;
 noDam = 1;
@@ -22,15 +22,17 @@ typeSwitch = 'hhat';
 gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
-svdSwitch = 0;
+% SVD on responses. 
+svdSwitch = 1;
+% SVD on reduced variables.
 rvSvdSwitch = 0;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 21;
-domLengs = 21;
+domLengi = 5;
+domLengs = 5;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -49,6 +51,7 @@ tStep = 0.01;
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
+fRange = 10;
 
 %% parameter location for trial iteration.
 trial = 1;
@@ -68,14 +71,15 @@ refiThres = 0.04;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 1;
+drawCol = 3;
 
 %% trial s5olution
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
+    nConsEnd);
 
 % read mass matrix, 2 = 2d.
 fixie.readMTX2DOF(nDofPerNode);
@@ -113,7 +117,7 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 2;
+nPhiInitial = 1;
 nPhiEnrich = 1;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
@@ -132,7 +136,7 @@ svdType = 'noSVD';
 normType = 'fro';
 
 % prepare essential storage for error and responses.
-nRespSVD = 2;
+nRespSVD = 15;
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemain;
 fixie.impPrepareRemain;
@@ -158,7 +162,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
         case 'allTime'
             
-            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace);
+            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, svdSwitch);
             
             switch svdType
                 

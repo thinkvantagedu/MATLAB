@@ -81,29 +81,21 @@ fkafter(:, nd + 1: nd * 2) = fkafter(:, nd + 1 : nd * 2) + kphi;
     (phiid, m, c, k, fkafter, acce, dt, maxt, u0, v0);
 
 %% compute alpha
-mp = phi' * m * phi;
-cp = phi' * c * phi;
-kp = phi' * k * phi;
-fp = phi' * fkinit;
-
-[alpha, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-    (1, mp, cp, kp, fp, acce, dt, 2, 0, 0);
-
-alpha = alpha * 2 + 1;
+alpha = sin(1:40) + 2;
 
 hold on
 ufk = zeros(nd, nt);
 for j = 1:nt / nd
     
     if j == 1
-        hinit = plot(x-1, ufkinit(1, :), 'r');
+        hinit = plot(x-1, 3 * ufkinit(1, :), 'r');
         halpha =scatter(j - 1, alpha(1, j), 100, 'k', '+');
         ufk = ufk + ufkinit;
         hinit.LineWidth = 2;
         halpha.LineWidth = 2;
     else
         
-        ufkshift = [zeros(nd, nd * (j - 2)) ufkafter(:, 1:(nt - nd * j + 4))];
+        ufkshift = [zeros(nd, nd * (j - 2)) 3 * ufkafter(:, 1:(nt - nd * j + 4))];
         hshift = plot(x, ufkshift(1, :), 'b');
         halpha =scatter(j * 2 - 2, alpha(1, j), 100, 'k', '+');
         ufk = ufk + ufkshift;
@@ -112,7 +104,7 @@ for j = 1:nt / nd
     end
 end
 
-
+axis([0 40 -5 5])
 
 ftsize = 30;
 
@@ -124,10 +116,13 @@ yla.FontSize = ftsize;
 % uin = 'U^{in}';
 % usu = 'U^{su}';
 % alphah = '\alpha(t_{\tau})';
-% lgd = legend([hinit hshift halpha], uin, usu, alphah, 'Interpreter', 'latex');
-% lgd.FontSize = ftsize;
+uin = ' ';
+usu = ' ';
+alphah = ' ';
+lgd = legend([hinit hshift halpha], uin, usu, alphah, 'Interpreter', 'latex');
+lgd.FontSize = ftsize;
 
-
+grid on
 
 
 
