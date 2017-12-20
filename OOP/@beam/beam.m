@@ -519,6 +519,7 @@ classdef beam < handle
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
             snap = obj.dis.trial;
+            
             [u, ~, ~] = svd(snap, 0);
             u = u(:, 1:nInit);
             obj.phi.val = u;
@@ -1051,14 +1052,13 @@ classdef beam < handle
                         end
                     elseif svdSwitch == 1
                         % if SVD is not on-the-fly, comment this.
-                        [uFcel, uFcesig, uFcer] = ...
+                        [uFcel, uFceSig, uFcer] = ...
                             svd(obj.dis.full, 'econ');
-                        
-                        uFcel = uFcel * uFcesig;
                         uFcel = uFcel(:, 1:obj.no.respSVD);
+                        uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
                         uFcer = uFcer(:, 1:obj.no.respSVD);
                         obj.resp.store.fce.hhat{iPre} = ...
-                            [{uFcel}; {uFcer}];
+                            [{uFcel}; {uFceSig}; {uFcer}];
                     end
                 end
                 
@@ -1082,29 +1082,29 @@ classdef beam < handle
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                             obj.resp.store.fce.hhat...
-                                {obj.no.itplExist + iPre} = obj.dis.full(:);
+                                {obj.no.itplEx + iPre} = obj.dis.full(:);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
                             obj.resp.store.fce.hhat...
-                                {obj.no.itplExist + iPre} = ...
+                                {obj.no.itplEx + iPre} = ...
                                 obj.dis.full(:, obj.qoi.t);
                         elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
                             obj.resp.store.fce.hhat...
-                                {obj.no.itplExist + iPre} = ...
+                                {obj.no.itplEx + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, :);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
                             obj.resp.store.fce.hhat...
-                                {obj.no.itplExist + iPre} = ...
+                                {obj.no.itplEx + iPre} = ...
                                 obj.dis.full(obj.qoi.dof, obj.qoi.t);
                         end
                     elseif svdSwitch == 1
                         % if SVD is not on-the-fly, comment this.
-                        [uFcel, uFcesig, uFcer] = ...
+                        [uFcel, uFceSig, uFcer] = ...
                             svd(obj.dis.full, 'econ');
-                        uFcel = uFcel * uFcesig;
                         uFcel = uFcel(:, 1:obj.no.respSVD);
+                        uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
                         uFcer = uFcer(:, 1:obj.no.respSVD);
-                        obj.resp.store.fce.hhat{obj.no.itplExist + iPre} = ...
-                            [{uFcel}; {uFcer}];
+                        obj.resp.store.fce.hhat{obj.no.itplEx + iPre} = ...
+                            [{uFcel}; {uFceSig}; {uFcer}];
                     end
                 end
             end
@@ -1204,12 +1204,13 @@ classdef beam < handle
                                         {obj.dis.full};
                                 elseif svdSwitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full);
-                                    ul = ul * usig;
                                     ul = ul(:, 1:obj.no.respSVD);
+                                    usig = usig(1:obj.no.respSVD, ...
+                                        1:obj.no.respSVD);
                                     ur = ur(:, 1:obj.no.respSVD);
                                     obj.resp.store.tDiff...
                                         {iPre, iPhy, iTdiff, iRb} = ...
-                                        {ul; ur};
+                                        {ul; usig; ur};
                                 end
                             end
                         end
@@ -1243,17 +1244,18 @@ classdef beam < handle
                                 obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
-                                        (obj.no.itplExist + iPre, ...
+                                        (obj.no.itplEx + iPre, ...
                                         iPhy, iTdiff, iRb) = {obj.dis.full};
                                 elseif svdSwitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full);
-                                    ul = ul * usig;
                                     ul = ul(:, 1:obj.no.respSVD);
+                                    usig = usig(1:obj.no.respSVD, ...
+                                        1:obj.no.respSVD);
                                     ur = ur(:, 1:obj.no.respSVD);
                                     obj.resp.store.tDiff...
-                                        (obj.no.itplExist + iPre, ...
-                                        iPhy, iTdiff, iRb) = ...
-                                        {ul; ur};
+                                        {obj.no.itplEx + iPre, ...
+                                        iPhy, iTdiff, iRb} = ...
+                                        {ul; usig; ur};
                                 end
                             end
                         end
@@ -1340,17 +1342,19 @@ classdef beam < handle
                                     storePmZeros = ...
                                         zeros(obj.no.respSVD, iT - 2);
                                     storeTemp = obj.resp.store.tDiff...
-                                        {iPre, iPhy, 2, iRb}{2};
+                                        {iPre, iPhy, 2, iRb}{3};
                                     storeTemp = storeTemp';
                                     storePmNonZeros = storeTemp...
                                         (:, 1:obj.no.t_step - iT + 2);
                                     storePmL = obj.resp.store.tDiff...
                                         {iPre, iPhy, 2, iRb}{1};
+                                    storePmSig = obj.resp.store.tDiff...
+                                        {iPre, iPhy, 2, iRb}{2};
                                     storePmR = ...
                                         [storePmZeros storePmNonZeros]';
                                     obj.resp.store.pm.hhat...
                                         {iPre, iPhy, iT, iRb}...
-                                        = {storePmL; storePmR};
+                                        = {storePmL; storePmSig; storePmR};
                                 end
                             end
                         end
@@ -1397,7 +1401,8 @@ classdef beam < handle
             end
         end
         %%
-        function obj = resptoErrPreCompAllTimeMatrix(obj, rvSvdSwitch)
+        function obj = resptoErrPreCompAllTimeMatrix...
+                (obj, svdSwitch, rvSvdSwitch)
             % CHANGE SIGN in this method!
             % here the index follows the refind grid sequence, not a
             % sequencial sequence.
@@ -1420,19 +1425,33 @@ classdef beam < handle
                     respPmPass = obj.resp.store.pm.hhat(iPre, :, :, ...
                         obj.no.rb - obj.no.phiAdd + 1 : end);
                     
-                    respCol = sparse(cat(2, respPmPass{:}));
-                    
-                    if obj.countGreedy == 1
-                        respCol = [obj.resp.store.fce.hhat{iPre} -respCol];
-                    else
-                        respCol = -respCol;
+                    if svdSwitch == 0
+                        respCol = sparse(cat(2, respPmPass{:}));
+                        if obj.countGreedy == 1
+                            respCol = [obj.resp.store.fce.hhat{iPre} -respCol];
+                        else
+                            respCol = -respCol;
+                        end
+                        obj.resp.store.all{iPre} = ...
+                            [obj.resp.store.all{iPre} respCol];
+                        respAllCol = obj.resp.store.all{iPre};
+                        
+                    elseif svdSwitch == 1
+                        % reshape multi dim cell to 2d cell array.
+                        respCol = reshape(respPmPass, [1, numel(respPmPass)]);
+                        if obj.countGreedy == 1
+                            % cellfun in cellfun to apply minus to cell in
+                            % cell. Align in column.
+                            respAllCol = [obj.resp.store.fce.hhat(iPre) ...
+                                cellfun(@(x) ...
+                                cellfun(@uminus, x, 'un', 0), ...
+                                respCol, 'un', 0)]';
+                        else
+                            respAllCol = cellfun(@(x) ...
+                                cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
+                            respAllCol = respAllCol';
+                        end
                     end
-                    
-                    obj.resp.store.all{iPre} = ...
-                        [obj.resp.store.all{iPre} respCol];
-                    
-                    respAllCol = obj.resp.store.all{iPre};
-                    
                     if rvSvdSwitch == 1
                         % if SVD on reduced variables, pm needs to be
                         % interpolated, therefore here pre-multiply pm to
@@ -1450,15 +1469,28 @@ classdef beam < handle
                     elseif rvSvdSwitch == 0
                         % compute eTe, including all zero elements, then take
                         % upper triangle only.
-                        respTrans = respAllCol' * respAllCol;
-                        respTrans = triu(respTrans);
+                        if svdSwitch == 0
+                            respTrans = respAllCol' * respAllCol;
+                            respTrans = triu(respTrans);
+                        elseif svdSwitch == 1
+                            respTrans = ...
+                                zeros(numel(respAllCol), numel(respAllCol));
+                            % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
+                            for i = 1:numel(respAllCol)
+                                u1 = respAllCol{i};
+                                for j = i:numel(respAllCol)
+                                    u2 = respAllCol{j};
+                                    respTrans(i, j) = ...
+                                        trace(u1{3} * u1{2}' * u1{1}' * ...
+                                        u2{1} * u2{2} * u2{3}');
+                                end
+                            end
+                        end
                     end
                     
-                    
                     % find the nonzero elements and interpolate these only.
-                    
+                    % find indicator by only dealing with iPre = 1.
                     if iPre == 1
-                        
                         for i = 1:size(respTrans, 2)
                             obj.indicator.nonzeroi = ...
                                 [obj.indicator.nonzeroi; any(respTrans(:, i))];
@@ -1486,27 +1518,41 @@ classdef beam < handle
                 
                 % if refine = 1, enrich = 0, compute the newly added
                 % interpolation samples for all basis vectors.
-                obj.resp.store.all(obj.no.itplExist + 1 : obj.no.pre.hhat) = ...
+                obj.resp.store.all(obj.no.itplEx + 1 : obj.no.pre.hhat) = ...
                     cell(obj.no.itplAdd, 1);
                 obj.indicator.nonzeroi = [];
                 for iPre = 1:obj.no.itplAdd
                     
-                    obj.err.pre.hhat(obj.no.itplExist + iPre, 1) = ...
-                        {obj.no.itplExist + iPre};
+                    obj.err.pre.hhat(obj.no.itplEx + iPre, 1) = ...
+                        {obj.no.itplEx + iPre};
                     respPmPass = obj.resp.store.pm.hhat...
-                        (obj.no.itplExist + iPre, :, :, :);
-                    respCol = sparse(cat(2, respPmPass{:}));
+                        (obj.no.itplEx + iPre, :, :, :);
+                    
                     % if refined, force responses are also refined,
                     % therefore add the newly added force response to pm
                     % responses.
-                    
-                    respCol = [obj.resp.store.fce.hhat{obj.no.itplExist + ...
-                        iPre}(:) -respCol];
-                    
-                    obj.resp.store.all{obj.no.itplExist + iPre} = ...
-                        [obj.resp.store.all{obj.no.itplExist + iPre} respCol];
-                    
-                    respAllCol = obj.resp.store.all{obj.no.itplExist + iPre};
+                    if svdSwitch == 0
+                        respCol = sparse(cat(2, respPmPass{:}));
+                        respCol = [obj.resp.store.fce.hhat{obj.no.itplEx + ...
+                            iPre}(:) -respCol];
+                        obj.resp.store.all{obj.no.itplEx + iPre} = ...
+                            [obj.resp.store.all{obj.no.itplEx + iPre} respCol];
+                        respAllCol = obj.resp.store.all{obj.no.itplEx + iPre};
+                        
+                    elseif svdSwitch == 1
+                        respCol = reshape(respPmPass, [1, numel(respPmPass)]);
+                        if obj.countGreedy == 1
+                            uFce = obj.resp.store.fce.hhat...
+                                (obj.no.itplEx + iPre);
+                            respAllCol = ...
+                                [uFce cellfun(@(x) cellfun...
+                                (@uminus, x, 'un', 0), respCol, 'un', 0)]';
+                        else
+                            respAllCol = cellfun(@(x) ...
+                                cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
+                            respAllCol = respAllCol';
+                        end
+                    end
                     
                     if rvSvdSwitch == 1
                         % if SVD on reduced variables, pm needs to be
@@ -1525,10 +1571,25 @@ classdef beam < handle
                     elseif rvSvdSwitch == 0
                         % compute eTe, including all zero elements, then take
                         % upper triangle only.
-                        respTrans = respAllCol' * respAllCol;
-                        respTrans = triu(respTrans);
+                        if svdSwitch == 0
+                            respTrans = respAllCol' * respAllCol;
+                            respTrans = triu(respTrans);
+                        elseif svdSwitch == 1
+                            respTrans = ...
+                                zeros(numel(respAllCol), numel(respAllCol));
+                            % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
+                            for i = 1:numel(respAllCol)
+                                u1 = respAllCol{i};
+                                for j = i:numel(respAllCol)
+                                    u2 = respAllCol{j};
+                                    respTrans(i, j) = ...
+                                        trace(u1{3} * u1{2}' * u1{1}' * ...
+                                        u2{1} * u2{2} * u2{3}');
+                                end
+                            end
+                        end
                     end
-                    
+                    keyboard
                     if iPre == 1
                         
                         for i = 1:size(respTrans, 2)
@@ -1544,7 +1605,7 @@ classdef beam < handle
                         respTrans(obj.indicator.nonzeroi, ...
                         obj.indicator.nonzeroi);
                     
-                    obj.err.pre.hhat(obj.no.itplExist + iPre, 3) = ...
+                    obj.err.pre.hhat(obj.no.itplEx + iPre, 3) = ...
                         {respTransNonZero};
                     
                 end
@@ -1888,9 +1949,9 @@ classdef beam < handle
                     obj.indicator.refinement == 1
                 
                 for i = 1:obj.no.itplAdd
-                    obj.err.pre.hhat{obj.no.itplExist + i, 3} = ...
+                    obj.err.pre.hhat{obj.no.itplEx + i, 3} = ...
                         obj.resp.rv.L' * ...
-                        obj.err.pre.hhat{obj.no.itplExist + i, 3} * ...
+                        obj.err.pre.hhat{obj.no.itplEx + i, 3} * ...
                         obj.resp.rv.L;
                 end
                 
@@ -2434,7 +2495,7 @@ classdef beam < handle
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
             obj.no.block.hat = size(obj.pmExpo.block.hat, 1);
             % nExist + nAdd should equal to nhhat.
-            obj.no.itplExist = obj.no.pre.hat;
+            obj.no.itplEx = obj.no.pre.hat;
             obj = refineGridLocalwithIdx(obj, 'iteration');
             obj.no.block.add = 2 ^ obj.no.inc - 1;
         end

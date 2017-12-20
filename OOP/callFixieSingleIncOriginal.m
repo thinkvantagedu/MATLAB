@@ -22,15 +22,17 @@ typeSwitch = 'original';
 gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
+% SVD on responses. 
 svdSwitch = 0;
+% SVD on reduced variables.
 rvSvdSwitch = 0;
-ratioSwitch = 1;
+ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter.
-domLengi = 10;
-domLengs = 10;
+domLengi = 5;
+domLengs = 5;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -42,14 +44,14 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 1.99;
+tMax = 0.05;
 tStep = 0.01; 
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
-fRange = 10;
+fRange = 3;
 
 %% parameter location for trial iteration.
 trial = 1;
@@ -68,8 +70,8 @@ cntInit = 1;
 refiThres = 0.0002;
 
 %% plot surfaces and grids
-drawRow = 2;
-drawCol = 1;
+drawRow = 1;
+drawCol = 3;
 
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
@@ -116,7 +118,7 @@ fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution. 
 nPhiInitial = 1;
-nPhiEnrich = 5;
+nPhiEnrich = 1;
 fixie.rbInitial(nPhiInitial);
 % rbCtrlThres = 0.1;
 % canti.rbCtrlInitial(rbCtrlThres);
@@ -173,5 +175,5 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
 end
 %%
-figure(2)
-fixie.plotMaxErrorDecay(fixie.err.store.max);
+% figure(2)
+% fixie.plotMaxErrorDecay(fixie.err.store.max);

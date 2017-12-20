@@ -43,15 +43,15 @@ nConsEnd = 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
-%% data for time
-tMax = 0.19;
+%% data for time.
+tMax = 0.04;
 tStep = 0.01;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
-fRange = 10;
+fRange = 3;
 
 %% parameter location for trial iteration.
 trial = 1;
@@ -136,7 +136,7 @@ svdType = 'noSVD';
 normType = 'fro';
 
 % prepare essential storage for error and responses.
-nRespSVD = 15;
+nRespSVD = 5;
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemain;
 fixie.impPrepareRemain;
@@ -168,7 +168,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
                 
                 case 'noSVD'
                     % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
+                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
                     
             end
     end
@@ -220,7 +220,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
         
-        figure(1)
+        figure(3)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if fixie.countGreedy >= drawRow * drawCol
