@@ -1442,16 +1442,21 @@ classdef beam < handle
                         if obj.countGreedy == 1
                             % cellfun in cellfun to apply minus to cell in
                             % cell. Align in column.
-                            respAllCol = [obj.resp.store.fce.hhat(iPre) ...
+                            respCol = [obj.resp.store.fce.hhat(iPre) ...
                                 cellfun(@(x) ...
                                 cellfun(@uminus, x, 'un', 0), ...
                                 respCol, 'un', 0)]';
                         else
-                            respAllCol = cellfun(@(x) ...
+                            respCol = cellfun(@(x) ...
                                 cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
-                            respAllCol = respAllCol';
+                            respCol = respCol';
                         end
+                        
+                        obj.resp.store.all{iPre} = ...
+                            [obj.resp.store.all{iPre}; respCol];
+                        respAllCol = obj.resp.store.all{iPre};
                     end
+                    
                     if rvSvdSwitch == 1
                         % if SVD on reduced variables, pm needs to be
                         % interpolated, therefore here pre-multiply pm to
@@ -1544,14 +1549,17 @@ classdef beam < handle
                         if obj.countGreedy == 1
                             uFce = obj.resp.store.fce.hhat...
                                 (obj.no.itplEx + iPre);
-                            respAllCol = ...
+                            respCol = ...
                                 [uFce cellfun(@(x) cellfun...
                                 (@uminus, x, 'un', 0), respCol, 'un', 0)]';
                         else
-                            respAllCol = cellfun(@(x) ...
+                            respCol = cellfun(@(x) ...
                                 cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
-                            respAllCol = respAllCol';
+                            respCol = respCol';
                         end
+                        obj.resp.store.all{obj.no.itplEx + iPre} = ...
+                            [obj.resp.store.all{obj.no.itplEx + iPre}; respCol];
+                        respAllCol = obj.resp.store.all{obj.no.itplEx + iPre};
                     end
                     
                     if rvSvdSwitch == 1
@@ -1589,7 +1597,7 @@ classdef beam < handle
                             end
                         end
                     end
-                    keyboard
+                    
                     if iPre == 1
                         
                         for i = 1:size(respTrans, 2)
@@ -2605,6 +2613,7 @@ classdef beam < handle
                     obj.refinement.condition = ...
                         abs(max(obj.err.store.surf.diff(:)) / ...
                         obj.err.max.val.hat);
+                    
             end
         end
         %%

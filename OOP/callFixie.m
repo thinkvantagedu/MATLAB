@@ -128,7 +128,7 @@ reductionRatio = 0.9;
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
 
-% set types
+% set types.
 refindicator = 0;
 
 timeType = 'allTime';
@@ -216,7 +216,6 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         %% NO local h-refinement.
         fixie.refiCondDisplay('noRefi');
         fixie.maxErrorDisplay('hhat');
-        
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
         
@@ -235,7 +234,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
             ratioSwitch);
         fixie.reducedMatrices;
         disp(fixie.countGreedy)
-       
+        
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement 
         fixie.refiCondDisplay('refi');
