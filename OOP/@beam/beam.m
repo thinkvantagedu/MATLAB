@@ -2018,7 +2018,7 @@ classdef beam < handle
             rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
             obj.no.totalResp = size(rvAllCol, 1);
             obj.pmVal.rvCol = rvNonZeroCol;
-            
+            keyboard
         end
         %%
         function obj = inpolyItpl(obj, type)
@@ -2159,6 +2159,7 @@ classdef beam < handle
                     obj.rvPmErrProdSum('hhat', rvSvdSwitch, iIter);
                     obj.errStoreSurfs('hhat');
                 end
+                
             elseif obj.indicator.refinement == 1 && ...
                     obj.indicator.enrichment == 0
                 % if refine, let ehat surface = ehhat surface, interpolate new
