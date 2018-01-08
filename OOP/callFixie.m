@@ -136,7 +136,7 @@ svdType = 'noSVD';
 normType = 'fro';
 
 % prepare essential storage for error and responses.
-nRespSVD = 5;
+nRespSVD = 4;
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemain;
 fixie.impPrepareRemain;

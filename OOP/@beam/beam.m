@@ -1276,6 +1276,7 @@ classdef beam < handle
                     for iT = 1:obj.no.t_step
                         for iRb = 1:obj.no.rb
                             if iT == 1
+                                % conditions for quantity of interest
                                 if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                                     respQoi = obj.resp.store.tDiff...
                                         {iPre, iPhy, 1, iRb};
@@ -1335,7 +1336,7 @@ classdef beam < handle
                                         (iPre, iPhy, iT, iRb)...
                                         = {storePmQoi(:)};
                                 elseif svdSwitch == 1
-                                    % onlys hift the right singular
+                                    % only shift the right singular
                                     % vectors, if recast the displacements,
                                     % fro norm of the recast should match
                                     % original displacements.
@@ -1435,7 +1436,7 @@ classdef beam < handle
                         obj.resp.store.all{iPre} = ...
                             [obj.resp.store.all{iPre} respCol];
                         respAllCol = obj.resp.store.all{iPre};
-                        
+                        keyboard
                     elseif svdSwitch == 1
                         % reshape multi dim cell to 2d cell array.
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
@@ -2018,7 +2019,7 @@ classdef beam < handle
             rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
             obj.no.totalResp = size(rvAllCol, 1);
             obj.pmVal.rvCol = rvNonZeroCol;
-            keyboard
+            
         end
         %%
         function obj = inpolyItpl(obj, type)
