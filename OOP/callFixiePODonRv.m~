@@ -25,14 +25,14 @@ qoiSwitchTime = 0;
 % SVD on responses. 
 svdSwitch = 0;
 % SVD on reduced variables.
-rvSvdSwitch = 0;
+rvSvdSwitch = 1;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 15;
-domLengs = 15;
+domLengi = 21;
+domLengs = 21;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -44,36 +44,36 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.19;
+tMax = 0.04;
 tStep = 0.01;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
-fRange = 5;
+fRange = 10;
 
-%% parameter location for trial iteration.
+%% parameter data for trial iteration.
 trial = 1;
 
-%% error informations
+%% error informations.
 errLowBond = 1e-12;
 errMaxValInit = 1;
 errRbCtrl = 1;
 errRbCtrlThres = 0.01;
 errRbCtrlTNo = 1;
 
-%% counter
+%% counter.
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.04;
+refiThres = 0.1;
 
-%% plot surfaces and grids
+%% plot surfaces and grids.
 drawRow = 1;
-drawCol = 3;
+drawCol = 1;
 
-%% trial s5olution
+%% trial solution.
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
@@ -117,8 +117,8 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 2;
-nPhiEnrich = 3;
+nPhiInitial = 1;
+nPhiEnrich = 1;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
@@ -128,7 +128,7 @@ reductionRatio = 0.9;
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
 
-% set types.
+% set types
 refindicator = 0;
 
 timeType = 'allTime';
@@ -136,7 +136,7 @@ svdType = 'noSVD';
 normType = 'fro';
 
 % prepare essential storage for error and responses.
-nRespSVD = 4;
+nRespSVD = 2;
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemain;
 fixie.impPrepareRemain;
@@ -145,9 +145,9 @@ fixie.respStorePrepareRemain(svdType, timeType);
 % initial computation of force responses.
 fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 
-%% main while loop
+%% main while loop.
 while fixie.err.max.val.slct > fixie.err.lowBond
-    %% OFFLINE
+    %% OFFLINE.
     %     disp('offline start')
     
     fixie.errPrepareSetZero;
@@ -155,9 +155,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     fixie.impGenerate;
     
     fixie.respTdiffComputation(svdSwitch);
-    
-    %     canti.resptoErrPreCompPartTime(qoiSwitchTime, qoiSwitchSpace);
-    
+        
     switch timeType
         
         case 'allTime'
@@ -173,20 +171,31 @@ while fixie.err.max.val.slct > fixie.err.lowBond
             end
     end
     %     disp('offline end')
-    %% ONLINE
+    %% ONLINE.
     
     %     disp('online start')
-    
+    % collect all reduced variables and perform POD.
     for iIter = 1:nIter
         
         fixie.pmIter(iIter);
         
         fixie.reducedVar;
         
-        fixie.pmPrepare;
-        
         fixie.rvPrepare;
-                
+        
+        fixie.rvColStore(iIter);
+        
+    end
+    
+    % SVD on the collected reduced variables.
+    fixie.rvSVD;
+    fixie.rvLTePrervL;
+    
+    % multiply the output with pm and interpolate.
+    for iIter = 1:nIter
+        
+        fixie.pmIter(iIter);
+        
         fixie.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         
         fixie.errStoreSurfs('diff');
@@ -197,7 +206,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     
     %     disp('online end')
     %     canti.clearmemory;
-    %% extract error information
+    %% extract error information.
     %     canti.extractErrorInfo('errwRb');
     
     fixie.extractMaxErrorInfo('hhat');
@@ -216,10 +225,11 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         %% NO local h-refinement.
         fixie.refiCondDisplay('noRefi');
         fixie.maxErrorDisplay('hhat');
+        
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
         
-        figure(3)
+        figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if fixie.countGreedy >= drawRow * drawCol
@@ -228,15 +238,15 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         end
         
         fixie.exactSolution('Greedy');
-        
         % rbEnrichment set the indicators.
+        
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
             ratioSwitch);
         fixie.reducedMatrices;
         disp(fixie.countGreedy)
-        
+       
     elseif fixie.refinement.condition > fixie.refinement.thres
-        %% local h-refinement 
+        %% local h-refinement.
         fixie.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         fixie.localHrefinement;

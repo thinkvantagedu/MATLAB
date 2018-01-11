@@ -851,77 +851,77 @@ classdef beam < handle
             
         end
         %%
-%         function obj = respMultiplyPmRvSum(obj, timeType, iIter)
-%             % this method accepts the interpolation results and multiply
-%             % them with corresponding pm values and reduced variables.
-%             % After multiplication, all responses are summed and normed to
-%             % be added to error response surfaces.
-%             
-%             % pm values for affine mass and damping matrices are 1.
-%             pmPass = cell2mat(obj.pmVal.iter);
-%             rvAcc = obj.acc.re.reVar;
-%             rvVel = obj.vel.re.reVar;
-%             rvDis = obj.dis.re.reVar;
-%             
-%             % the interpolated responses need to be saved for each
-%             % iteration in order to multiply corresponding reduced
-%             % variable.
-%             resphhat =  obj.resp.itpl.hhat;
-%             resphat = obj.resp.itpl.hat;
-%             rvStore = zeros(obj.no.phy * obj.no.t_step + 1, obj.no.rb);
-%             switch timeType
-%                 case 'allTime'
-%                     % repeat for nt times to fit length of pre-computed
-%                     % responses.
-%                     pmAll = repmat([1; 1; pmPass], ...
-%                         obj.no.t_step * obj.no.phInit, 1);
-%                     
-%                     for i = 1:obj.no.rb
-%                         
-%                         rvAccSiRow = rvAcc(i, :);
-%                         rvVelSiRow = rvVel(i, :);
-%                         rvDisSiRow = rvDis(i, :);
-%                         rvDisRepRow = repmat(rvDisSiRow, obj.no.inc, 1);
-%                         rvAllRow = [rvAccSiRow; rvVelSiRow; rvDisRepRow];
-%                         rvAllCol = rvAllRow(:);
-%                         
-%                         if i == 1
-%                             % initial iteration, need to consider force.
-%                             pmAll = [1; pmAll];
-%                             rvAllCol = [1; rvAllCol(:)];
-%                             rvStore(:, i) = rvStore(:, i) + rvAllCol;
-%                         else
-%                             % successive iterations, need to cancel force.
-%                             pmAll = [0; pmAll];
-%                             rvAllCol = [0; rvAllCol(:)];
-%                             rvStore(:, i) = rvStore(:, i) + rvAllCol;
-%                         end
-%                         
-%                     end
-%                     
-%                     
-%                     respPmRvhhat = sparse(size(resphhat, 1), ...
-%                         size(resphhat, 2));
-%                     respPmRvhat = sparse(size(resphat, 1), size(resphat, 2));
-%                     
-%                     for i = 1:size(resphhat, 2)
-%                         respPmRvhhat(:, i) = respPmRvhhat(:, i) + ...
-%                             pmAll(i) * resphhat(:, i) * rvAllCol(i);
-%                         respPmRvhat(:, i) = respPmRvhat(:, i) + ...
-%                             pmAll(i) * resphat(:, i) * rvAllCol(i);
-%                     end
-%                     
-%                     respPmRvhhatSum = sum(respPmRvhhat, 2);
-%                     obj.resp.store.hhat{iIter} = ...
-%                         obj.resp.store.hhat{iIter} + respPmRvhhatSum;
-%                     respPmRvhatSum = sum(respPmRvhat, 2);
-%                     obj.resp.store.hat{iIter} = ...
-%                         obj.resp.store.hat{iIter} + respPmRvhatSum;
-%                     
-%                     
-%             end
-%             
-%         end
+        %         function obj = respMultiplyPmRvSum(obj, timeType, iIter)
+        %             % this method accepts the interpolation results and multiply
+        %             % them with corresponding pm values and reduced variables.
+        %             % After multiplication, all responses are summed and normed to
+        %             % be added to error response surfaces.
+        %
+        %             % pm values for affine mass and damping matrices are 1.
+        %             pmPass = cell2mat(obj.pmVal.iter);
+        %             rvAcc = obj.acc.re.reVar;
+        %             rvVel = obj.vel.re.reVar;
+        %             rvDis = obj.dis.re.reVar;
+        %
+        %             % the interpolated responses need to be saved for each
+        %             % iteration in order to multiply corresponding reduced
+        %             % variable.
+        %             resphhat =  obj.resp.itpl.hhat;
+        %             resphat = obj.resp.itpl.hat;
+        %             rvStore = zeros(obj.no.phy * obj.no.t_step + 1, obj.no.rb);
+        %             switch timeType
+        %                 case 'allTime'
+        %                     % repeat for nt times to fit length of pre-computed
+        %                     % responses.
+        %                     pmAll = repmat([1; 1; pmPass], ...
+        %                         obj.no.t_step * obj.no.phInit, 1);
+        %
+        %                     for i = 1:obj.no.rb
+        %
+        %                         rvAccSiRow = rvAcc(i, :);
+        %                         rvVelSiRow = rvVel(i, :);
+        %                         rvDisSiRow = rvDis(i, :);
+        %                         rvDisRepRow = repmat(rvDisSiRow, obj.no.inc, 1);
+        %                         rvAllRow = [rvAccSiRow; rvVelSiRow; rvDisRepRow];
+        %                         rvAllCol = rvAllRow(:);
+        %
+        %                         if i == 1
+        %                             % initial iteration, need to consider force.
+        %                             pmAll = [1; pmAll];
+        %                             rvAllCol = [1; rvAllCol(:)];
+        %                             rvStore(:, i) = rvStore(:, i) + rvAllCol;
+        %                         else
+        %                             % successive iterations, need to cancel force.
+        %                             pmAll = [0; pmAll];
+        %                             rvAllCol = [0; rvAllCol(:)];
+        %                             rvStore(:, i) = rvStore(:, i) + rvAllCol;
+        %                         end
+        %
+        %                     end
+        %
+        %
+        %                     respPmRvhhat = sparse(size(resphhat, 1), ...
+        %                         size(resphhat, 2));
+        %                     respPmRvhat = sparse(size(resphat, 1), size(resphat, 2));
+        %
+        %                     for i = 1:size(resphhat, 2)
+        %                         respPmRvhhat(:, i) = respPmRvhhat(:, i) + ...
+        %                             pmAll(i) * resphhat(:, i) * rvAllCol(i);
+        %                         respPmRvhat(:, i) = respPmRvhat(:, i) + ...
+        %                             pmAll(i) * resphat(:, i) * rvAllCol(i);
+        %                     end
+        %
+        %                     respPmRvhhatSum = sum(respPmRvhhat, 2);
+        %                     obj.resp.store.hhat{iIter} = ...
+        %                         obj.resp.store.hhat{iIter} + respPmRvhhatSum;
+        %                     respPmRvhatSum = sum(respPmRvhat, 2);
+        %                     obj.resp.store.hat{iIter} = ...
+        %                         obj.resp.store.hat{iIter} + respPmRvhatSum;
+        %
+        %
+        %             end
+        %
+        %         end
         %%
         function obj = resptoErrStore(obj)
             % this method takes stored responses and compute relative
@@ -1436,7 +1436,7 @@ classdef beam < handle
                         obj.resp.store.all{iPre} = ...
                             [obj.resp.store.all{iPre} respCol];
                         respAllCol = obj.resp.store.all{iPre};
-                        keyboard
+                        
                     elseif svdSwitch == 1
                         % reshape multi dim cell to 2d cell array.
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
@@ -1518,7 +1518,7 @@ classdef beam < handle
                     obj.err.pre.hhat(iPre, 3) = {respTransNonZero};
                     
                 end
-                
+                keyboard
             elseif obj.indicator.enrichment == 0 && ...
                     obj.indicator.refinement == 1
                 
@@ -1897,10 +1897,10 @@ classdef beam < handle
                 respPmRspec = respPmR(ntotal - nshift + 1:end);
             end
         end
-        %% 
+        %%
         function obj = pmIter(obj, iIter)
             % this method extract the pm values, pm locations, pm
-            % exponential values for iterations. 
+            % exponential values for iterations.
             obj.pmVal.iter = mat2cell([obj.pmVal.comb.space(iIter, ...
                 obj.no.inc + 1 : end)'; ...
                 obj.pmVal.s.fix], ones(obj.no.inc + 1, 1));
@@ -1909,7 +1909,7 @@ classdef beam < handle
                 cellfun(@(v) log10(v), obj.pmVal.iter, 'un', 0);
             
         end
-         
+        
         %%
         function obj = reducedVar(obj)
             % compute reduced variables for each pm value.
@@ -1937,12 +1937,13 @@ classdef beam < handle
             % rvL' * eTe * rvL * rvR') = domain size * domain size
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
-            rvL = rvL(:, 1:6);
-            rvR = rvR(:, 1:6);
+            
+            rvL = rvL(:, 1:length(rvSig));
+            rvR = rvR(:, 1:length(rvSig));
             obj.resp.rv.sig = rvSig;
             obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
-
+            keyboard
         end
         %%
         function obj = rvLTePrervL(obj)
@@ -2064,8 +2065,8 @@ classdef beam < handle
                         end
                         
                         % interpolate in 1D.
-%                         obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
-%                             pmIter{:}, 'matrix');
+                        %                         obj.err.itpl.otpt = lagrange(pmBlkCell{:}, gridy, ...
+                        %                             pmIter{:}, 'matrix');
                     end
                 elseif obj.no.inc == 2
                     if inpolygon(pmIter{:}, pmBlkCell{:}) == 1
@@ -2836,7 +2837,7 @@ classdef beam < handle
             incNode = cell(obj.no.inc - 1, 1);
             incConn = cell(obj.no.inc - 1, 1);
             
-            for i = 1:obj.no.inc 
+            for i = 1:obj.no.inc
                 % nodal info of inclusions
                 nodeIncCol = [];
                 
@@ -3032,9 +3033,9 @@ classdef beam < handle
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
             
         end
-        %% 
+        %%
         function obj = rvColStore(obj, iIter)
-            % this method stores reduced variables to perform SVD. 
+            % this method stores reduced variables to perform SVD.
             rvCol = obj.pmVal.rvCol;
             obj.resp.rv.store(iIter) = {rvCol};
         end

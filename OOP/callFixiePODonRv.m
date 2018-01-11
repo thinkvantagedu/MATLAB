@@ -22,15 +22,17 @@ typeSwitch = 'hhat';
 gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
+% SVD on responses. 
 svdSwitch = 0;
+% SVD on reduced variables.
 rvSvdSwitch = 1;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 21;
-domLengs = 21;
+domLengi = 15;
+domLengs = 15;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -49,7 +51,7 @@ tStep = 0.01;
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
-fRange = 10;
+fRange = 5;
 
 %% parameter data for trial iteration.
 trial = 1;
@@ -65,11 +67,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.1;
+refiThres = 0.04;
 
 %% plot surfaces and grids.
 drawRow = 1;
-drawCol = 1;
+drawCol = 3;
 
 %% trial solution.
 % use subclass: canbeam to create fixed beam.
@@ -115,7 +117,7 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 1;
+nPhiInitial = 2;
 nPhiEnrich = 1;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
@@ -158,13 +160,13 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
         case 'allTime'
             
-            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace);
+            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, svdSwitch);
             
             switch svdType
                 
                 case 'noSVD'
                     % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
+                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
                     
             end
     end
