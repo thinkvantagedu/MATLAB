@@ -1,5 +1,7 @@
 function [U_r, V_r, A_r, U, V, A, t, time_step_NO] = NewmarkBetaReducedMethod...
     (Phi, M_r, C_r, K_r, F_r, acce, dT, maxT, U0, V0)
+% [U_r, V_r, A_r, U, V, A, t, time_step_NO]
+% (Phi, M_r, C_r, K_r, F_r, acce, dT, maxT, U0, V0)
 % hold on
 % clear variables; clc;
 % % for i = 1:16
