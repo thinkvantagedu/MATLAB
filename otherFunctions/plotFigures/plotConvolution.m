@@ -93,10 +93,17 @@ for j = 1:nt / nd
         ufk = ufk + ufkinit;
         hinit.LineWidth = 2;
         halpha.LineWidth = 2;
-    else
+    elseif j == 2
         
         ufkshift = [zeros(nd, nd * (j - 2)) 3 * ufkafter(:, 1:(nt - nd * j + 4))];
-        hshift = plot(x, ufkshift(1, :), 'b');
+        hshift2 = plot(x, ufkshift(1, :), 'b');
+        halpha =scatter(j * 2 - 2, alpha(1, j), 100, 'k', '+');
+        ufk = ufk + ufkshift;
+        hshift2.LineWidth = 2;
+        halpha.LineWidth = 2;
+    else
+        ufkshift = [zeros(nd, nd * (j - 2)) 3 * ufkafter(:, 1:(nt - nd * j + 4))];
+        hshift = plot(x, ufkshift(1, :), '-.b');
         halpha =scatter(j * 2 - 2, alpha(1, j), 100, 'k', '+');
         ufk = ufk + ufkshift;
         hshift.LineWidth = 2;
@@ -106,21 +113,22 @@ end
 
 axis([0 40 -5 5])
 
-ftsize = 30;
+ftsize = 20;
 
 xla = xlabel('time');
 yla = ylabel('amplitude');
 xla.FontSize = ftsize;
 yla.FontSize = ftsize;
 
-% uin = 'U^{in}';
-% usu = 'U^{su}';
-% alphah = '\alpha(t_{\tau})';
-uin = ' ';
-usu = ' ';
-alphah = ' ';
-lgd = legend([hinit hshift halpha], uin, usu, alphah, 'Interpreter', 'latex');
+uin = 'Initial response';
+usu2 = 'Successive response';
+usu = 'Successive responses from shift';
+alphah = 'reduced variables';
+lgd = legend([hinit hshift2 hshift halpha], uin, usu2, usu, alphah, 'Interpreter', 'latex');
 lgd.FontSize = ftsize;
+
+set(gca,'xticklabel',{[]})
+set(gca,'yticklabel',{[]})
 
 grid on
 

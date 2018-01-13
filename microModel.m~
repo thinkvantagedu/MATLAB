@@ -11,6 +11,8 @@ v0 = [0; 0];
 acce = 'average';
 
 nt = 5;
+nf = 3; % only m, c, k, no separate affined terms. 
+ni = 2; % use 1, 5 as interpolation samples. 
 
 fFunc = [0 10]';
 fce = zeros(2, nt);
@@ -61,31 +63,28 @@ v0r = zeros(nr, 1);
 u3r = phi * al3u;
 v3r = phi * al3v;
 a3r = phi * al3a;
-%% solutions from proposed method: interpolate displacements.
+
+%% reconstruct solutions from convoluted displacements and reduced variables.
 impm = mas * phi;
 impc = zeros(size(impm));
 impk = sti * phi;
 % store single imp vectors
 impmck = {impm; impc; impk};
-impsingle = cell(3, nr);
-for i = 1:3
-    for j = 1:nr
-        impsingle{i, j} = impmck{i}(:, j);
-    end
-end
-% from vectors generate impulses. Dim(imp) = (3, nr, 2), only initial and
+% from vectors generate impulses. Dim(imp) = (nf, 2, nr), only initial and
 % successive impulses needs to be generated.
-impStore = cell(3, nr, 2);
-for i = 1:3
-    for j = 1:nr
-        for k = 1:2
-            if k == 1
+% we see these impulses are pm-independent.
+% the order is always ni, nf, nt, nr, follow 
+impStore = cell(nf, 2, nr);
+for i = 1:nf
+    for j = 1:2
+        for k = 1:nr
+            if j == 1
                 imp = zeros(2, nt);
-                imp(:, 1) = imp(:, 1) + impsingle{i, j};
+                imp(:, 1) = imp(:, 1) + impmck{i}(:, k);
                 impStore{i, j, k} = imp;
-            elseif k == 2
+            elseif j == 2
                 imp = zeros(2, nt);
-                imp(:, 2) = imp(:, 2) + impsingle{i, j};
+                imp(:, 2) = imp(:, 2) + impmck{i}(:, k);
                 impStore{i, j, k} = imp;
             end
         end
@@ -93,10 +92,10 @@ for i = 1:3
 end
 
 % from impulses generate responses.
-respImpStore = cell(3, nr, 2);
-for i = 1:3
-    for j = 1:nr
-        for k = 1:2
+respImpStore = cell(nf, 2, nr);
+for i = 1:nf
+    for j = 1:2
+        for k = 1:nr
             [respImpSingle, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
                 (phione, mas, dam, sti, impStore{i, j, k}, ...
                 acce, dt, maxt, u0, v0);
@@ -106,12 +105,12 @@ for i = 1:3
 end
 
 % from imp responses generate shifted responses. 
-respStore = cell(3, nr, nt);
-for i = 1:3
-    for j = 1:nr 
-        for k = 1:nt
-            if k == 1
-                respStore{i, j, k} = respImpStore{i, j, 1};
+respStore = cell(nf, nt, nr);
+for i = 1:nf
+    for j = 1:nt 
+        for k = 1:nr
+            if j == 1
+                respStore{i, j, k} = respImpStore{i, 1, k};
             else
                 rNz = respImpStore{i, j, 2}(:, 1:nt - k + 2);
                 rz = zeros(2, k - 2);
@@ -133,15 +132,23 @@ for i = 1:3
     end
 end
 
-
-
-
 %% interpolated solutions.
 xc = [x1; x5];
 yc = {u1; u5};
 
 u3l = lagrange(xc, yc, x3, 'matrix');
 
+%% obtain norm(u3, 'fro'), test norm with proposed interpolation method.
+nu3 = norm(u3, 'fro');
+
+% impulses are parameter-independent, and applied at the 
+% [interpolation parameter-dependent]
+% (very important to understand the procedure) sample points.
+
+% here for each interpolation sample, there should be nf*nr*2 impulse
+% responses (before shift). Thus total no of responses is ni*nf*nr*2.
+
+respTotal = cell(ni, nf, 2, nr);
 
 
 

@@ -1437,7 +1437,7 @@ classdef beam < handle
                         obj.resp.store.all{iPre} = ...
                             [obj.resp.store.all{iPre} respCol];
                         respAllCol = obj.resp.store.all{iPre};
-                        keyboard
+                        
                     elseif svdSwitch == 1
                         % reshape multi dim cell to 2d cell array.
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
@@ -1519,7 +1519,7 @@ classdef beam < handle
                     obj.err.pre.hhat(iPre, 3) = {respTransNonZero};
                     
                 end
-                
+                keyboard
             elseif obj.indicator.enrichment == 0 && ...
                     obj.indicator.refinement == 1
                 
