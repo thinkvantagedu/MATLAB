@@ -10,7 +10,7 @@ u0 = [0; 0];
 v0 = [0; 0];
 acce = 'average';
 
-nt = 5;
+nt = 4;
 nf = 3; % only m, c, k, no separate affined terms. 
 ni = 2; % use 1, 5 as interpolation samples. 
 
@@ -31,7 +31,7 @@ x1 = 1;
 x5 = 5;
 % input x
 x3 = 3;
-
+domSam = [x1; x5];
 %% exact solutions.
 
 [u1, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
@@ -45,10 +45,10 @@ x3 = 3;
 
 %% solutions from reduced system.
 snap = [u1 u5];
-[l, sig ,r] = svd(snap, 'econ');
+[phil, sig ,phir] = svd(snap, 'econ');
 
 nr = 2;
-phi = l(:, 1:nr);
+phi = phil(:, 1:nr);
 
 mr = phi' * mas * phi;
 cr = zeros(nr);
@@ -57,10 +57,10 @@ fr = phi' * fce;
 u0r = zeros(nr, 1);
 v0r = zeros(nr, 1);
 
-[al3u, al3v, al3a, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+[al3d, al3v, al3a, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
     (phi, mr, cr, x3 * kr, fr, acce, dt, maxt, u0r, v0r);
 
-u3r = phi * al3u;
+u3r = phi * al3d;
 v3r = phi * al3v;
 a3r = phi * al3a;
 
@@ -112,10 +112,9 @@ for i = 1:nf
             if j == 1
                 respStore{i, j, k} = respImpStore{i, 1, k};
             else
-                rNz = respImpStore{i, j, 2}(:, 1:nt - k + 2);
-                rz = zeros(2, k - 2);
-                respInd = [rz rNz];
-                respStore{i, j, k} = respInd;
+                rNz = respImpStore{i, 2, k}(:, 1:nt - j + 2);
+                rz = zeros(2, j - 2);
+                respStore{i, j, k} = [rz rNz];
             end
         end
     end
@@ -123,11 +122,11 @@ end
 
 % test: reconstruct u3r from proposed method
 u3rRecons = zeros(2, nt);
-al3Store = {al3a; al3v; al3u};
-for i = 1:3
-    for j = 1:nr 
-        for k = 1:nt
-            u3rRecons = u3rRecons + respStore{i, j, k} * al3Store{i}(j, k);
+al3Store = {al3a; al3v; al3d};
+for i = 1:nf
+    for j = 1:nt
+        for k = 1:nr
+            u3rRecons = u3rRecons + respStore{i, j, k} * al3Store{i}(k, j);
         end
     end
 end
@@ -148,11 +147,76 @@ nu3 = norm(u3, 'fro');
 % here for each interpolation sample, there should be nf*nr*2 impulse
 % responses (before shift). Thus total no of responses is ni*nf*nr*2.
 
-respTotal = cell(ni, nf, 2, nr);
+% compute the initial and successive displacements for itpl, phy, rb.
+respDiff = cell(ni, nf, 2, nr);
+for i = 1:ni
+    pmPro = domSam(i);
+    stiPro = pmPro * sti;
+    for j = 1:nf
+        for k = 1:2
+            for l = 1:nr
+                [respPro, ~, ~, ~, ~, ~, ~, ~] = ...
+                    NewmarkBetaReducedMethod...
+                    (phione, mas, dam, stiPro, impStore{j, k, l}, ...
+                    acce, dt, maxt, u0, v0);
+                respDiff{i, j, k, l} = respPro;
+            end
+        end
+    end
+end
+% shift the computed displacements to obtain time-dependent displacements.
+respProStore = cell(ni, nf, nt, nr);
+for i = 1:ni
+    for j = 1:nf
+        for k = 1:nt
+            for l = 1:nr
+                if k == 1
+                    respProStore{i, j, k, l} = respDiff{i, j, k, l}(:);
+                else
+                    rNz = respDiff{i, j, 2, l}(:, 1:nt - k + 2);
+                    rz = zeros(2, k - 2);
+                    rtmp = [rz rNz];
+                    respProStore{i, j, k, l} = rtmp(:);
+                end
+            end
+        end
+    end
+end
+% for each itpl sample, and compute eTe. 
+errhhat = cell(ni, 2);
+for i = 1:ni
+    errhhat{i, 1} = i;
+    % extract e for each itpl sample.
+    respPmPass = respProStore(i, :, :, :);
+    % the cat operation gives: mr1t1, cr1t1, kr1t1, mr1t2, cr1t2, kr1t2,
+    % ... mr2t1, cr2t1, kr2t1, mr2t2, cr2t2, kr2t2, ...
+    respCol = cat(2, respPmPass{:});
+    errhhat{i, 2} = respCol' * respCol;
+end
 
+% interpolate eTe for u3.
+ycPro = errhhat(:, 2);
+eTe3 = lagrange(xc, ycPro, x3, 'matrix');
 
+% obtain the pm and rv vector.
+pmPass = x3;
+pmSlct = repmat([1; 1; pmPass], nt * nr, 1);
 
+rvAccRow = al3a';
+rvAccRow = rvAccRow(:);
+rvAccRow = rvAccRow';
+rvVelRow = al3v';
+rvVelRow = rvVelRow(:);
+rvVelRow = rvVelRow';
+rvDisRow = al3d';
+rvDisRow = rvDisRow(:);
+rvDisRow = rvDisRow';
 
+rvAllRow = [rvAccRow; rvVelRow; rvDisRow];
+rvAllCol = rvAllRow(:);
+
+% multiply the pm, rv vectors with eTe.
+ePreSqrt = (rvAllCol .* pmSlct)' * eTe3 * (rvAllCol .* pmSlct);
 
 
 

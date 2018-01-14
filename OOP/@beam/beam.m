@@ -1429,6 +1429,7 @@ classdef beam < handle
                     
                     if svdSwitch == 0
                         respCol = sparse(cat(2, respPmPass{:}));
+                        
                         if obj.countGreedy == 1
                             respCol = [obj.resp.store.fce.hhat{iPre} -respCol];
                         else
