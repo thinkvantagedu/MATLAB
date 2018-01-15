@@ -31,7 +31,8 @@ x1 = 1;
 x5 = 5;
 % input x
 x3 = 3;
-domSam = [x1; x5];
+xc = [x1; x5];
+
 %% exact solutions.
 
 [u1, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
@@ -131,11 +132,6 @@ for i = 1:nf
     end
 end
 
-%% interpolated solutions.
-xc = [x1; x5];
-yc = {u1; u5};
-
-u3l = lagrange(xc, yc, x3, 'matrix');
 
 %% obtain norm(u3, 'fro'), test norm with proposed interpolation method.
 nmu3 = norm(u3, 'fro');
@@ -150,7 +146,7 @@ nmu3 = norm(u3, 'fro');
 % compute the initial and successive displacements for itpl, phy, rb.
 respDiff = cell(ni, nf, 2, nr);
 for i = 1:ni
-    pmPro = domSam(i);
+    pmPro = xc(i);
     stiPro = pmPro * sti;
     for j = 1:nf
         for k = 1:2
@@ -184,6 +180,7 @@ for i = 1:ni
 end
 % for each itpl sample, and compute eTe. 
 errhhat = cell(ni, 2);
+respResStore = cell(ni, 1);
 for i = 1:ni
     errhhat{i, 1} = i;
     % extract e for each itpl sample.
@@ -191,6 +188,7 @@ for i = 1:ni
     % the cat operation gives: mr1t1, cr1t1, kr1t1, mr1t2, cr1t2, kr1t2,
     % ... mr2t1, cr2t1, kr2t1, mr2t2, cr2t2, kr2t2, ...
     respCol = cat(2, respPmPass{:});
+    respResStore{i} = respCol;
     errhhat{i, 2} = respCol' * respCol;
 end
 
@@ -218,6 +216,49 @@ rvAllCol = rvAllRow(:);
 % multiply the pm, rv vectors with eTe.
 ePreSqrt = (rvAllCol .* pmSlct)' * eTe3 * (rvAllCol .* pmSlct);
 nmeTe3 = sqrt(abs(ePreSqrt));
+
+%% interpolate pre-computed displacements. 2 operations with same results!!!     %|
+% respnm == respnm1;                                                             %|
+respItpl = lagrange(xc, respResStore, x3, 'matrix');                             %|
+                                                                                 %|
+% multiply related rv and pm.                                                    %|
+respnmsq = (rvAllCol .* pmSlct)' * (respItpl)' * respItpl * (rvAllCol .* pmSlct);%|
+respnm1 = sqrt(respnmsq);                                                        %|
+                                                                                 %|same operation
+respSum = zeros(nd * nt, 1);                                                     %|
+for i = 1:size(respItpl, 2)                                                      %|
+    respSum = respSum + respItpl(:, i) * rvAllCol(i) * pmSlct(i);                %|
+end                                                                              %|
+                                                                                 %|
+respnm = norm(respSum, 'fro');                                                   %|
+
+%% test what should be correct.
+lagCoef = [0.5; 0.5];
+cTc = lagCoef * lagCoef';
+ectec = cell(2, 2);
+for i = 1:2
+    for j = 1:2
+        if j < i
+            ectec{i, j} = ectec{j, i}';
+        else
+            ectec{i, j} = respResStore{i}' * respResStore{j};
+        end
+    end
+end
+
+eteotpt = zeros(nt * nr * nf, nt * nr * nf);
+for i = 1:4
+    eteotpt = eteotpt + ectec{i} * cTc(i);
+end
+ete = sqrt((rvAllCol .* pmSlct)' * eteotpt * (rvAllCol .* pmSlct));
+
+
+
+
+
+
+
+
 
 
 

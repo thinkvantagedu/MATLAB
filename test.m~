@@ -6,9 +6,6 @@ nr = 2;
 nt = 3;
 nd = 2;
 
-sti = [6 -2; -2 4];
-phi = [-0.0971   -0.9953; -0.9953    0.0971];
-
 % follow ni, nj, nr, nt. 
 u1111 = [1 2 3 4 5 6]';
 u1112 = [2 3 5 4 1 6]';
@@ -34,10 +31,32 @@ inptx = 4;
 %% interpolate u, multiply alpha then norm.
 ycu = {e1 e2};
 otptu = lagrange(xc, ycu, inptx, 'matrix');
-otptnmsq = a3' * (otptu)' * otptu * a3;
-
-%% interpolate eTe, then multiply alpha.
+otptnm = sqrt(a3' * (otptu)' * otptu * a3);         %|
+% otptnmsq = zeros(6, 1);                           %|
+% for i = 1:6                                       %|same operation
+%     otptnmsq = otptnmsq + otptu(:, i) * a3(i);    %|
+% end                                               %|
+% otptnm = norm(otptnmsq, 'fro');                   %|
+%% interpolate eTe, then multiply alpha. This is not correct.
 e1te1 = e1' * e1;
 e2te2 = e2' * e2;
-yce = {e};
-otpte = 
+yce = {e1te1 e2te2};
+otpte = lagrange(xc, yce, inptx, 'matrix');
+otptete = a3' * otpte * a3;
+otptetenm = sqrt(otptete);
+
+%% Test what should be correct.
+lagCoef = [0.25; 0.75];
+eC = {e1; e2};
+cTc = lagCoef * lagCoef';
+ectec = cell(2, 2);
+for i = 1:2
+    for j = 1:2
+        ectec{i, j} = eC{i}' * eC{j};
+    end
+end
+
+eTeotpt = zeros(6, 6);
+for i = 1:4
+    eTeotpt = eTeotpt + ectec{i} * cTc(i);
+end
