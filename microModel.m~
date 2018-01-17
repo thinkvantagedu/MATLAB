@@ -11,8 +11,8 @@ v0 = [0; 0];
 acce = 'average';
 
 nt = 4;
-nf = 3; % only m, c, k, no separate affined terms. 
-ni = 2; % use 1, 5 as interpolation samples. 
+nf = 3; % only m, c, k, no separate affined terms.
+ni = 2; % use 1, 5 as interpolation samples.
 
 fFunc = [0 10]';
 fce = zeros(2, nt);
@@ -31,7 +31,7 @@ x1 = 1;
 x5 = 5;
 % input x
 x3 = 3;
-xc = [x1; x5];
+xc = {x1; x5};
 
 %% exact solutions.
 
@@ -74,7 +74,7 @@ impmck = {impm; impc; impk};
 % from vectors generate impulses. Dim(imp) = (nf, 2, nr), only initial and
 % successive impulses needs to be generated.
 % we see these impulses are pm-independent.
-% the order is always ni, nf, nt, nr, follow 
+% the order is always ni, nf, nt, nr, follow
 impStore = cell(nf, 2, nr);
 for i = 1:nf
     for j = 1:2
@@ -105,10 +105,10 @@ for i = 1:nf
     end
 end
 
-% from imp responses generate shifted responses. 
+% from imp responses generate shifted responses.
 respStore = cell(nf, nt, nr);
 for i = 1:nf
-    for j = 1:nt 
+    for j = 1:nt
         for k = 1:nr
             if j == 1
                 respStore{i, j, k} = respImpStore{i, 1, k};
@@ -136,7 +136,25 @@ end
 %% obtain norm(u3, 'fro'), test norm with proposed interpolation method.
 nmu3 = norm(u3, 'fro');
 
-% impulses are parameter-independent, and applied at the 
+% compute the pm and rv vector.
+pmPass = x3;
+pmSlct = repmat([1; 1; pmPass], nt * nr, 1);
+
+rvAccRow = al3a';
+rvAccRow = rvAccRow(:);
+rvAccRow = rvAccRow';
+rvVelRow = al3v';
+rvVelRow = rvVelRow(:);
+rvVelRow = rvVelRow';
+rvDisRow = al3d';
+rvDisRow = rvDisRow(:);
+rvDisRow = rvDisRow';
+
+rvAllRow = [rvAccRow; rvVelRow; rvDisRow];
+rvAllCol = rvAllRow(:);
+
+% compute the pm-independent impulse responses.
+% impulses are parameter-independent, and applied at the
 % [interpolation parameter-dependent]
 % (very important to understand the procedure) sample points.
 
@@ -146,7 +164,7 @@ nmu3 = norm(u3, 'fro');
 % compute the initial and successive displacements for itpl, phy, rb.
 respDiff = cell(ni, nf, 2, nr);
 for i = 1:ni
-    pmPro = xc(i);
+    pmPro = xc{i};
     stiPro = pmPro * sti;
     for j = 1:nf
         for k = 1:2
@@ -178,7 +196,7 @@ for i = 1:ni
         end
     end
 end
-% for each itpl sample, and compute eTe. 
+% for each itpl sample, and compute eTe.
 errhhat = cell(ni, 2);
 respResStore = cell(ni, 1);
 for i = 1:ni
@@ -192,49 +210,8 @@ for i = 1:ni
     errhhat{i, 2} = respCol' * respCol;
 end
 
-% interpolate eTe for u3.
-ycPro = errhhat(:, 2);
-eTe3 = lagrange(xc, ycPro, x3, 'matrix');
-
-% obtain the pm and rv vector.
-pmPass = x3;
-pmSlct = repmat([1; 1; pmPass], nt * nr, 1);
-
-rvAccRow = al3a';
-rvAccRow = rvAccRow(:);
-rvAccRow = rvAccRow';
-rvVelRow = al3v';
-rvVelRow = rvVelRow(:);
-rvVelRow = rvVelRow';
-rvDisRow = al3d';
-rvDisRow = rvDisRow(:);
-rvDisRow = rvDisRow';
-
-rvAllRow = [rvAccRow; rvVelRow; rvDisRow];
-rvAllCol = rvAllRow(:);
-
-% multiply the pm, rv vectors with eTe.
-ePreSqrt = (rvAllCol .* pmSlct)' * eTe3 * (rvAllCol .* pmSlct);
-nmeTe3 = sqrt(abs(ePreSqrt));
-
-%% interpolate pre-computed displacements. There are 2 same operations!!!=====   %|
-% respnm == respnm1;                                                             %|
-respItpl = lagrange(xc, respResStore, x3, 'matrix');                             %|
-                                                                                 %|
-% multiply related rv and pm.                                                    %|
-respnmsq = (rvAllCol .* pmSlct)' * (respItpl)' * respItpl * (rvAllCol .* pmSlct);%|
-respnm1 = sqrt(respnmsq);                                                        %|
-                                                                                 %|same operation
-respSum = zeros(nd * nt, 1);                                                     %|
-for i = 1:size(respItpl, 2)                                                      %|
-    respSum = respSum + respItpl(:, i) * rvAllCol(i) * pmSlct(i);                %|
-end                                                                              %|
-                                                                                 %|
-respnm = norm(respSum, 'fro');                                                   %|
-
-%% test what should be correct.
-lagCoef = [0.25; 0.75];
-cTc = lagCoef * lagCoef';
+lagCoef = lagrange(x3, xc);
+coefTcoef = lagCoef * lagCoef';
 ectec = cell(2, 2);
 for i = 1:2
     for j = 1:2
@@ -246,11 +223,29 @@ for i = 1:2
     end
 end
 
-eteotpt = zeros(nd * nt, nd * nt);
+eteotpt = zeros(nt * nr * nf, nt * nr * nf);
 for i = 1:4
-    eteotpt = eteotpt + ectec{i} * cTc(i);
+    eteotpt = eteotpt + ectec{i} * coefTcoef(i);
 end
-ete = 
+% this is the result from interpolating displacements.
+ete = sqrt((rvAllCol .* pmSlct)' * eteotpt * (rvAllCol .* pmSlct));
+
+%% interpolate pre-computed displacements. 2 operations with same results!!!%|
+% respnm == respnm1;                                                        %|
+[~, respItpl] = lagrange(x3, xc, respResStore);                                  %|
+                                                                            %|
+% multiply related rv and pm.                                               %|
+respnmsq = (rvAllCol .* pmSlct)' * ...                                      %|
+    (respItpl)' * respItpl * (rvAllCol .* pmSlct);                          %|
+respnm1 = sqrt(respnmsq);                             % same operation      %|
+                                                                            %|
+respSum = zeros(nd * nt, 1);                                                %|
+for i = 1:size(respItpl, 2)                                                 %|
+    respSum = respSum + respItpl(:, i) * rvAllCol(i) * pmSlct(i);           %|
+end                                                                         %|
+                                                                            %|
+respnm = norm(respSum, 'fro');                                              %|
+
 
 
 

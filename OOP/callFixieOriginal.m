@@ -31,8 +31,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter.
-domLengi = 5;
-domLengs = 5;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -44,14 +44,14 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.05;
+tMax = 0.09;
 tStep = 0.01; 
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.02;
-fRange = 3;
+fRange = 5;
 
 %% parameter location for trial iteration.
 trial = 1;
@@ -67,11 +67,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.0002;
+refiThres = 0.04;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 3;
+drawCol = 7;
 
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
@@ -118,12 +118,12 @@ fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution. 
 nPhiInitial = 1;
-nPhiEnrich = 1;
+nPhiEnrich = 2;
 fixie.rbInitial(nPhiInitial);
 % rbCtrlThres = 0.1;
 % canti.rbCtrlInitial(rbCtrlThres);
 reductionRatio = 0.9; 
-fixie.rbSingularInitial(reductionRatio);
+% fixie.rbSingularInitial(reductionRatio);
 % canti.rbReVarInitial(reductionRatio);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;

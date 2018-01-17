@@ -22,7 +22,7 @@ typeSwitch = 'hhat';
 gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
-% SVD on responses. 
+% SVD on responses.
 svdSwitch = 0;
 % SVD on reduced variables.
 rvSvdSwitch = 0;
@@ -31,8 +31,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 15;
-domLengs = 15;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -44,7 +44,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time.
-tMax = 0.19;
+tMax = 0.09;
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -71,7 +71,7 @@ refiThres = 0.04;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 3;
+drawCol = 7;
 
 %% trial s5olution
 % use subclass: canbeam to create fixed beam.
@@ -106,7 +106,7 @@ fixie.disInpt;
 
 % generate nodal force.
 debugMode = 0;
-fixie.generateNodalFce(nDofPerNode, 0.5, debugMode);
+fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest
 nQoiT = 2;
@@ -117,8 +117,8 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 2;
-nPhiEnrich = 3;
+nPhiInitial = 1;
+nPhiEnrich = 2;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
@@ -186,11 +186,11 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.pmPrepare;
         
         fixie.rvPrepare;
-                
+        
         fixie.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         
         fixie.errStoreSurfs('diff');
-                
+        
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
@@ -236,7 +236,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         disp(fixie.countGreedy)
         
     elseif fixie.refinement.condition > fixie.refinement.thres
-        %% local h-refinement 
+        %% local h-refinement
         fixie.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         fixie.localHrefinement;

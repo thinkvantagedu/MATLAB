@@ -22,15 +22,17 @@ typeSwitch = 'original';
 gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
+% SVD on responses. 
 svdSwitch = 0;
+% SVD on reduced variables.
 rvSvdSwitch = 0;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = [5 5];
-domLengs = 5;
+domLengi = [15 15];
+domLengs = 15;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -46,8 +48,7 @@ tMax = 0.19;
 tStep = 0.01;
 
 %% data for external nodal force.
-% fNode needs to be manually updated. fRange manully restrict the length of
-% the force 'cap'.
+% fNode needs to be manually updated. 
 fNode = 4;
 ftime = 0.02;
 fRange = 10;
@@ -70,7 +71,7 @@ refiThres = 0.0002;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 1;
+drawCol = 3;
 
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
@@ -117,7 +118,7 @@ canti.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
 nPhiInitial = 1;
-nPhiEnrich = 1;
+nPhiEnrich = 2;
 canti.rbInitial(nPhiInitial);
 % rbCtrlThres = 0.1;
 % canti.rbCtrlInitial(rbCtrlThres);

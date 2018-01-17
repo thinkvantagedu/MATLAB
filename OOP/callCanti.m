@@ -22,15 +22,17 @@ typeSwitch = 'hhat';
 gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
+% SVD on responses. 
 svdSwitch = 0;
+% SVD on reduced variables.
 rvSvdSwitch = 0;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = [5 5];
-domLengs = 5;
+domLengi = [15 15];
+domLengs = 15;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -69,7 +71,7 @@ refiThres = 1e-7;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 1;
+drawCol = 3;
 
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
@@ -116,7 +118,7 @@ canti.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
 nPhiInitial = 1;
-nPhiEnrich = 1;
+nPhiEnrich = 2;
 canti.rbInitial(nPhiInitial);
 disp(canti.countGreedy)
 canti.reducedMatrices;
@@ -160,13 +162,13 @@ while canti.err.max.val.slct > canti.err.lowBond
         
         case 'allTime'
             
-            canti.respTimeShift(qoiSwitchTime, qoiSwitchSpace);
+            canti.respTimeShift(qoiSwitchTime, qoiSwitchSpace, svdSwitch);
             
             switch svdType
                 
                 case 'noSVD'
                     % CHANGE SIGN in this method!
-                    canti.resptoErrPreCompAllTimeMatrix(rvSvdSwitch);
+                    canti.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
                     
             end
     end
@@ -214,7 +216,6 @@ while canti.err.max.val.slct > canti.err.lowBond
         %% NO local h-refinement.
         canti.refiCondDisplay('noRefi');
         canti.maxErrorDisplay('hhat');
-        
         canti.storeErrorInfo('hhat');
         canti.storeErrorInfo('hat');
         

@@ -106,7 +106,7 @@ fixie.disInpt;
 
 % generate nodal force.
 debugMode = 0;
-fixie.generateNodalFce(nDofPerNode, 0.5, debugMode);
+fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest
 nQoiT = 2;
@@ -117,8 +117,8 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 2;
-nPhiEnrich = 1;
+nPhiInitial = 1;
+nPhiEnrich = 2;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
@@ -229,7 +229,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
         
-        figure(1)
+        figure(4)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
         
         if fixie.countGreedy >= drawRow * drawCol
