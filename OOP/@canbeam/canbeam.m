@@ -30,15 +30,16 @@ classdef canbeam < beam
             obj.fce.range = fRange;
         end
         %%
-        function obj = gaussian(obj, shift, sig, unit_amp, debugMode)
-            
-            % generate Gaussian function. x is the x-axis, which contains 
-            % length of gap; shift is the length shift to left or right; 
-            % sig is the coefficient sigma; unit_amp decides whether the 
-            % amplitude is normalized or not.
-            % - shift moves the curve to right.
-            % small sig = small width.
-            
+        function obj = gaussian(obj, shift, sig, unitAmp, debugMode)
+            % generate Gaussian function. 
+            % Input: 
+            % obj.fce.xaxis: x-axis, contains length of gap.
+            % shift: negative value moves the curve to right. 
+            % sig: small value = narrow curve.
+            % unitAmp: set to 1 normalise the amplitude. 
+            % debugMode: set to 1 
+            % Output: 
+            % obj.fce.gaus: 1-by-n array gaussian bell shape force. 
             if debugMode == 1
                 % if in debug mode, use xaxis of fce with shift to generate
                 % efunc.
@@ -55,7 +56,7 @@ classdef canbeam < beam
                 obj.fce.gaus = obj.fce.gaus - obj.fce.gaus(1);
             end
             
-            if unit_amp == 1
+            if unitAmp == 1
                 obj.fce.gaus = obj.fce.gaus / max(obj.fce.gaus);
             end
             
@@ -77,8 +78,8 @@ classdef canbeam < beam
         end
         %%
         function obj = readINPconsCanti(obj, dim)
-            % read constraint information from INP file.
-            
+            % Read constraint information from INP file.
+            % Input: 
             lineConsStart = [];
             lineConsEnd = [];
             fid = fopen(obj.INPname);

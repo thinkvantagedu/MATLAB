@@ -1,5 +1,16 @@
 function [INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
     trialCaseSelect(trialName, lin)
+% Define the different cases. 
+% Input: 
+% trialName: includes l2h1, l9h2Coarse, l9h2MultiInc, airfoilSim, 
+% airfoilMedium, airfoilLarge, l9h2SingleInc. 
+% lin: defines the directory, 0 for Mac and 1 for Linux.
+% Output: 
+% INPname: dir and name of the Abaqus inp file.
+% mas, sti: dir and name of Abaqus mass and stiffness files.
+% locStartCons, locEndCons: start and end string of the constraints, to
+% know where to look for. 
+% noIncl: number of inclusions. 
 if lin == 0
     route = '/Users/kevin/GoogleDrive/Temp/FE_model/cantileverBeam/';
 else

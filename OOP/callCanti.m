@@ -82,7 +82,7 @@ canti = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     nConsEnd);
 
 % read mass matrix, 2 = 2d.
-canti.readMTX2DOF(nDofPerNode);
+canti.readMasMTX2DOF(nDofPerNode);
 
 % read constraint infomation, 2 = 2d.
 canti.readINPconsCanti(nDofPerNode);
@@ -94,7 +94,7 @@ canti.readINPgeoMultiInc;
 canti.generatePmSpaceMultiDim;
 
 % read stiffness matrices, 2 = 2d.
-canti.readMTX2DOFBCMod(nDofPerNode);
+canti.readStiMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
 canti.pmTrial;

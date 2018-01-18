@@ -35,14 +35,15 @@ classdef fixbeam < beam
         end
         %%
         function obj = gaussian(obj, shift, sig, unit_amp, debugMode)
-            
-            % generate Gaussian function. x is the x-axis, which contains 
-            % length of gap; shift is the length shift to left or right; 
-            % sig is the coefficient sigma; unit_amp decides whether the 
-            % amplitude is normalized or not.
-            % - shift moves the curve to right.
-            % small sig = small width.
-            
+            % generate Gaussian function. 
+            % Input: 
+            % obj.fce.xaxis: x-axis, contains length of gap.
+            % shift: negative value moves the curve to right. 
+            % sig: small value = narrow curve.
+            % unitAmp: set to 1 normalise the amplitude. 
+            % debugMode: set to 1 
+            % Output: 
+            % obj.fce.gaus: 1-by-n array gaussian bell shape force. 
             if debugMode == 1
                 % if in debug mode, use xaxis of fce with shift to generate
                 % efunc.
@@ -81,8 +82,12 @@ classdef fixbeam < beam
         end
         %%
         function obj = readINPconsFixie(obj, dim)
-            % read constraint information from INP file. Still manually
+            % Read constraint information from INP file. Still manually
             % input the constraint informations (left and right for fixie case).
+            % Input: 
+            % obj.INPname: dir and name of Abaqus INP file.
+            % Output: 
+            % 
             lineConsStart = [];
             lineConsEnd = [];
             fid = fopen(obj.INPname);

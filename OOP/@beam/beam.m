@@ -109,10 +109,14 @@ classdef beam < handle
             
         end
         %%
-        function [obj] = readMTX2DOF(obj, ndofPerNode)
+        function [obj] = readMasMTX2DOF(obj, ndofPerNode)
+            % Read and import mass matrix from Abaqus mas file.
             % works for both 2d and 3d.
-            %============== Import Mass Matrix ==============%
-            
+            % Input:
+            % obj.mas.file: Imported Abaqus mass file.
+            % Output:
+            % obj.mas.mtx: scalar mass matrix.
+            % obj.no.dof: number of degrees of freedom.
             ASM = dlmread(obj.mas.file);
             Node_n = max(ASM(:,1));    %or max(ASM(:,3))
             ndof = Node_n * ndofPerNode;
@@ -134,9 +138,11 @@ classdef beam < handle
             obj.no.dof = length(obj.mas.mtx);
         end
         %%
-        function [obj] = readMTX2DOFBCMod(obj, ndofPerNode)
+        function [obj] = readStiMTX2DOFBCMod(obj, ndofPerNode)
+            % Read and import stiffness matrix from Abaqus sti file and
+            % modify related values with boundary conditions.
             % works for both 2d and 3d.
-            %========= Import Stiffness Matrix and modify with BC=========%
+            
             n = length(obj.sti.file);
             
             obj.sti.mtxCell = cell(n, 1);
@@ -411,8 +417,8 @@ classdef beam < handle
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.phiAdd = nEnrich;
             
-            obj.indicator.refinement = 0;
-            obj.indicator.enrichment = 1;
+            obj.indicator.refine = 0;
+            obj.indicator.enrich = 1;
             obj.countGreedy = obj.countGreedy + 1;
             
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
@@ -622,8 +628,8 @@ classdef beam < handle
         function obj = otherPrepare(obj, nSVD)
             
             obj.no.respSVD = nSVD;
-            obj.indicator.refinement = 0;
-            obj.indicator.enrichment = 1;
+            obj.indicator.refine = 0;
+            obj.indicator.enrich = 1;
             obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
             
         end
@@ -899,7 +905,7 @@ classdef beam < handle
             mtxAsemb(3:3 + obj.no.inc) = obj.sti.mtxCell;
             obj.asemb.imp.cel = cell(obj.no.phy, 1);
             
-            if obj.indicator.refinement == 0 && obj.indicator.enrichment == 1
+            if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % impulse is system matrices multiply reduced basis
                 % vectors.
                 obj.asemb.imp.cel = cellfun(@(v) v * obj.phi.val, ...
@@ -924,7 +930,7 @@ classdef beam < handle
         function obj = respImpFce(obj, svdSwitch, qoiSwitchTime, qoiSwitchSpace)
             % only compute exact solutions regarding external force
             % when pm domain is refined.
-            if obj.indicator.refinement == 0 && obj.indicator.enrichment == 1
+            if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % if no refinement, only enrich, force related responses does
                 % not change since it's not related to new basis vectors.
                 for iPre = 1:obj.no.pre.hhat
@@ -948,16 +954,16 @@ classdef beam < handle
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                             obj.resp.store.fce.hhat{iPre} = obj.dis.full(:);
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                            tempdis = obj.dis.full(:, obj.qoi.t);
-                            obj.resp.store.fce.hhat{iPre} = tempdis(:);
+                            dis_ = obj.dis.full(:, obj.qoi.t);
+                            obj.resp.store.fce.hhat{iPre} = dis_(:);
                             
                         elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                            tempdis = obj.dis.full(obj.qoi.dof, :);
-                            obj.resp.store.fce.hhat{iPre} = tempdis(:);
+                            dis_ = obj.dis.full(obj.qoi.dof, :);
+                            obj.resp.store.fce.hhat{iPre} = dis_(:);
                             
                         elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                            tempdis = obj.dis.full(obj.qoi.dof, obj.qoi.t);
-                            obj.resp.store.fce.hhat{iPre} = tempdis(:);
+                            dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
+                            obj.resp.store.fce.hhat{iPre} = dis_(:);
                         end
                     elseif svdSwitch == 1
                         % if SVD is not on-the-fly, comment this.
@@ -971,8 +977,8 @@ classdef beam < handle
                     end
                 end
                 
-            elseif obj.indicator.refinement == 1 && ...
-                    obj.indicator.enrichment == 0
+            elseif obj.indicator.refine == 1 && ...
+                    obj.indicator.enrich == 0
                 % if refine, no enrichment, only compute force related
                 % responses regarding the new interpolation samples.
                 for iPre = 1:obj.no.itplAdd
@@ -1085,7 +1091,7 @@ classdef beam < handle
             % only compute responses regarding newly added basis vectors,
             % but store all responses regarding all basis vectors.
             
-            if obj.indicator.enrichment == 1 && obj.indicator.refinement == 0
+            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                 % if no refinement, enrich basis: compute the new exact
                 % solutions regarding the newly added basis vectors.
                 for iPre = 1:obj.no.pre.hhat
@@ -1127,8 +1133,8 @@ classdef beam < handle
                     end
                 end
                 
-            elseif obj.indicator.refinement == 1 && ...
-                    obj.indicator.enrichment == 0
+            elseif obj.indicator.refine == 1 && ...
+                    obj.indicator.enrich == 0
                 % if refine, no enrichment, compute exact solutions
                 % regarding all basis vectors but only for the newly added
                 % interpolation samples.
@@ -1252,10 +1258,10 @@ classdef beam < handle
                                     % original displacements.
                                     storePmZeros = ...
                                         zeros(obj.no.respSVD, iT - 2);
-                                    storeTemp = obj.resp.store.tDiff...
+                                    store_ = obj.resp.store.tDiff...
                                         {iPre, iPhy, 2, iRb}{3};
-                                    storeTemp = storeTemp';
-                                    storePmNonZeros = storeTemp...
+                                    store_ = store_';
+                                    storePmNonZeros = store_...
                                         (:, 1:obj.no.t_step - iT + 2);
                                     storePmL = obj.resp.store.tDiff...
                                         {iPre, iPhy, 2, iRb}{1};
@@ -1276,7 +1282,7 @@ classdef beam < handle
         end
         %%
         function obj = respImpAllTime(obj, iPre, iPhy, nRb)
-            if obj.indicator.refinement == 0
+            if obj.indicator.refine == 0
                 obj.resp.store.pm.tdiff = cell(2, 1);
                 pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) ...
                     obj.pmVal.s.fix];
@@ -1322,8 +1328,7 @@ classdef beam < handle
             % reason of using eTe is size of eTe is decided by nt * nj *
             % nr. At least this is not related to nd. Cannot use anyting
             % relate to nd.
-            
-            if obj.indicator.enrichment == 1 && obj.indicator.refinement == 0
+            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                 % indicator for non-zero part of eTe.
                 obj.indicator.nonzeroi = [];
                 
@@ -1368,7 +1373,8 @@ classdef beam < handle
                         end
                         
                         obj.resp.store.all(iPre, 1) = {iPre};
-                        obj.resp.store.all(iPre, 2) = {obj.pmExpo.hhat(iPre, 2)};
+                        obj.resp.store.all(iPre, 2) = ...
+                            {obj.pmExpo.hhat(iPre, 2)};
                         obj.resp.store.all{iPre, 3} = ...
                             [obj.resp.store.all{iPre, 3}; respCol];
                         respAllCol = obj.resp.store.all{iPre, 3};
@@ -1428,29 +1434,26 @@ classdef beam < handle
                     
                     obj.err.pre.hhat(iPre, 5) = {respTransNonZero};
                 end
+                % compute uiTui+1 and store in the last column of
+                % obj.err.pre.hhat.
+                respStoretoTrans = obj.resp.store.all;
+                obj.uiTujSort(respStoretoTrans);
+                obj.err.pre.hhat(:, end) = obj.err.pre.trans;
                 
-                % compute (ui)T(ui+1)
-                
-                for iPre = 1:length(obj.resp.store.all) - 1
-                    respTrans = obj.resp.store.all{iPre, 3}' * ...
-                        obj.resp.store.all{iPre + 1, 3};
-                    respTransNonZero = full(respTrans(obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi));
-                    obj.err.pre.hhat{iPre, 6} = respTransNonZero;
-                end
-                
-            elseif obj.indicator.enrichment == 0 && ...
-                    obj.indicator.refinement == 1
+            elseif obj.indicator.enrich == 0 && ...
+                    obj.indicator.refine == 1
                 
                 % if refine = 1, enrich = 0, compute the newly added
                 % interpolation samples for all basis vectors.
-                obj.resp.store.all(obj.no.itplEx + 1 : obj.no.pre.hhat, :) = ...
+                obj.resp.store.all(obj.no.itplEx + 1:obj.no.pre.hhat, :) = ...
                     cell(obj.no.itplAdd, 3);
                 obj.indicator.nonzeroi = [];
                 for iPre = 1:obj.no.itplAdd
                     
                     obj.err.pre.hhat(obj.no.itplEx + iPre, 1) = ...
                         {obj.no.itplEx + iPre};
+                    obj.err.pre.hhat(obj.no.itplEx + iPre, 2) = ...
+                        {obj.pmExpo.hhat(obj.no.itplEx + iPre, 2)};
                     respPmPass = obj.resp.store.pm.hhat...
                         (obj.no.itplEx + iPre, :, :, :);
                     
@@ -1484,8 +1487,10 @@ classdef beam < handle
                         end
                         obj.resp.store.all(obj.no.itplEx + iPre, 1) = ...
                             {obj.no.itplEx + iPre};
-                        obj.resp.store.all{obj.no.itplEx + iPre, 2} = ...
-                            [obj.resp.store.all{obj.no.itplEx + iPre, 2}; ...
+                        obj.resp.store.all(obj.no.itplEx + iPre, 2) = ...
+                            {obj.pmExpo.hhat(obj.no.itplEx + iPre, 2)};
+                        obj.resp.store.all{obj.no.itplEx + iPre, 3} = ...
+                            [obj.resp.store.all{obj.no.itplEx + iPre, 3}; ...
                             respCol];
                         respAllCol = obj.resp.store.all{obj.no.itplEx + iPre, 2};
                     end
@@ -1540,17 +1545,44 @@ classdef beam < handle
                     obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
                         {respTransNonZero};
                 end
-                % compute (ui)T(ui+1)
-                for iPre = obj.no.itplEx:(obj.no.itplEx + obj.no.itplAdd - 1)
-                    respTrans = obj.resp.store.all{iPre, 3}' * ...
-                        obj.resp.store.all{iPre + 1, 3};
-                    respTransNonZero = full(respTrans(obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi));
-                    obj.err.pre.hhat{iPre, 6} = respTransNonZero;
-                end
-                
+                % compute uiTui+1 and store in the last column of
+                % obj.err.pre.hhat.
+                respStoretoTrans = obj.resp.store.all;
+                obj.uiTujSort(respStoretoTrans);
+                obj.err.pre.hhat(:, end) = obj.err.pre.trans;
             end
-            obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
+            obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
+                obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
+            respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
+            obj.uiTujSort(respStoretoTrans);
+            obj.err.pre.hat(:, 6) = obj.err.pre.trans;
+            
+        end
+        %%
+        function [obj, respStoreCellUnsort] = uiTujSort(obj, respStoreInpt)
+            % sort stored displacements, perform uiTui+1, then sort back to
+            % previous order, put in the last column of obj.err.pre.hhat,
+            % to be ready to be interpolated.
+            [respStoreSort, respIdx] = sortrows(respStoreInpt, 2);
+            % a temp cell to store uiTui+1, should contain a void
+            % after filling.
+            respStoreCell_ = cell(size(respStoreSort, 1), 1);
+            for iPre = 1:size(respStoreSort, 1)
+                % respStoreSort_ should contain n-1 uiTui+1 matrix element
+                %  and 1 void element.
+                if iPre < size(respStoreSort, 1)
+                    respTransSort = respStoreSort{iPre, 3}' * ...
+                        respStoreSort{iPre + 1, 3};
+                    respTransSortNonZero = full(respTransSort...
+                        (obj.indicator.nonzeroi, ...
+                        obj.indicator.nonzeroi));
+                elseif iPre == size(respStoreSort, 1)
+                    respTransSortNonZero = [];
+                end
+                respStoreCell_(iPre) = {respTransSortNonZero};
+            end
+            respStoreCellUnsort = respStoreCell_(respIdx);
+            obj.err.pre.trans = respStoreCellUnsort;
         end
         %%
         function obj = resptoErrPreCompPartTime(obj, qoiSwitchTime, ...
@@ -1567,8 +1599,8 @@ classdef beam < handle
             indb(~~indb) = inda;
             indb = indb';
             indb = indb(:);
-            tempBlk = cell(obj.no.rb, obj.no.rb);
-            tempCellTri = cell(nWidth * nWidth, 1);
+            blk_ = cell(obj.no.rb, obj.no.rb);
+            cellTri_ = cell(nWidth * nWidth, 1);
             respCell = cell(1);
             
             for iPre = 1:obj.no.pre.hhat
@@ -1576,25 +1608,25 @@ classdef beam < handle
                 obj.err.pre.hhat(iPre, 1) = {iPre};
                 obj.err.pre.hhat(iPre, 2) = {obj.pmExpo.hhat(iPre, 2)};
                 respPmPass = obj.resp.store.tDiff(iPre, :, :, :);
-                respPreTemp = cellfun(@(v) -v, respPmPass, 'un', 0);
+                respPre_ = cellfun(@(v) -v, respPmPass, 'un', 0);
                 respFce = zeros(obj.no.dof, obj.no.t_step);
-                respFceTemp = obj.resp.store.fce.hhat{iPre};
+                respFce_ = obj.resp.store.fce.hhat{iPre};
                 
                 if qoiSwitchTime == 1
                     
-                    respFceTemp = reshape(respFceTemp, ...
+                    respFce_ = reshape(respFce_, ...
                         [obj.no.dof, length(obj.qoi.t)]);
                     for i = 1:length(obj.qoi.t)
                         respFce(:, obj.qoi.t(i)) = ...
-                            respFce(:, obj.qoi.t(i)) + respFceTemp(:, i);
+                            respFce(:, obj.qoi.t(i)) + respFce_(:, i);
                     end
                 end
                 
-                respPreTemp = cellfun(@(v) v(:), respPreTemp, 'un', 0);
-                respPreTemp = [respPreTemp{:}];
+                respPre_ = cellfun(@(v) v(:), respPre_, 'un', 0);
+                respPre_ = [respPre_{:}];
                 
                 for i = 1:obj.no.rb * 2
-                    respCell(i) = {respPreTemp(:, (i - 1) * obj.no.phy + 1:...
+                    respCell(i) = {respPre_(:, (i - 1) * obj.no.phy + 1:...
                         i * obj.no.phy)};
                 end
                 
@@ -1607,7 +1639,7 @@ classdef beam < handle
                 
                 for irb = 1:obj.no.rb
                     for jrb = irb:obj.no.rb
-                        tempCell = cell(1);
+                        cell_ = cell(1);
                         counter = 1;
                         for ish = 1:obj.no.t_step
                             if ish == 1
@@ -1633,7 +1665,7 @@ classdef beam < handle
                                         respT1(obj.qoi.vecIndSetdiff, :) = 0;
                                         respT2(obj.qoi.vecIndSetdiff, :) = 0;
                                     end
-                                    tempCell(counter) = {respT1' * respT2};
+                                    cell_(counter) = {respT1' * respT2};
                                     counter = counter + 1;
                                 end
                                 
@@ -1651,7 +1683,7 @@ classdef beam < handle
                                         respT1(obj.qoi.vecIndSetdiff, :) = 0;
                                         respT2(obj.qoi.vecIndSetdiff, :) = 0;
                                     end
-                                    tempCell(counter) = {respT1' * respT2};
+                                    cell_(counter) = {respT1' * respT2};
                                     counter = counter + 1;
                                 end
                             end
@@ -1661,46 +1693,46 @@ classdef beam < handle
                             % block
                             for i = 1:nWidth * nWidth
                                 if indb(i) ~= 0
-                                    tempCellTri{i} = tempCell{indb(i)};
+                                    cellTri_{i} = cell_{indb(i)};
                                 end
                             end
-                            tempCellTri = reshape(tempCellTri, ...
+                            cellTri_ = reshape(cellTri_, ...
                                 [nWidth, nWidth]);
                             
-                            tempBlk(irb, jrb) = {tempCellTri};
+                            blk_(irb, jrb) = {cellTri_};
                         elseif irb ~= jrb
                             % put cells into square block, then
                             % transpose.
-                            tempCellSq = reshape(tempCell, ...
+                            cellSq_ = reshape(cell_, ...
                                 [obj.no.t_step, obj.no.t_step]);
-                            tempCellSq = tempCellSq';
-                            tempBlk(irb, jrb) = {tempCellSq};
+                            cellSq_ = cellSq_';
+                            blk_(irb, jrb) = {cellSq_};
                         end
                     end
                 end
                 
-                tempBlkExp = cell(obj.no.rb * obj.no.t_step, ...
+                blkExp_ = cell(obj.no.rb * obj.no.t_step, ...
                     obj.no.rb * obj.no.t_step);
                 for i = 1:obj.no.rb
                     for j = 1:obj.no.rb
                         if i <= j
-                            tempBlkExp((i - 1) * obj.no.t_step + 1 : ...
+                            blkExp_((i - 1) * obj.no.t_step + 1 : ...
                                 i * obj.no.t_step, ...
                                 (j - 1) * obj.no.t_step + 1 : ...
-                                j * obj.no.t_step) = tempBlk{i, j};
+                                j * obj.no.t_step) = blk_{i, j};
                         else
-                            tempBlkExp((i - 1) * obj.no.t_step + 1 : ...
+                            blkExp_((i - 1) * obj.no.t_step + 1 : ...
                                 i * obj.no.t_step, ...
                                 (j - 1) * obj.no.t_step + 1 : ...
                                 j * obj.no.t_step) = cell(1);
                         end
                     end
                 end
-                idx = cellfun('isempty', tempBlkExp);
-                c = cellfun(@transpose, tempBlkExp.', 'un', 0);
-                tempBlkExp(idx) = c(idx);
+                idx = cellfun('isempty', blkExp_);
+                c = cellfun(@transpose, blkExp_.', 'un', 0);
+                blkExp_(idx) = c(idx);
                 
-                eTe = triu(cell2mat(tempBlkExp));
+                eTe = triu(cell2mat(blkExp_));
                 
                 if iPre == 1
                     
@@ -1786,14 +1818,14 @@ classdef beam < handle
         function obj = rvLTePrervL(obj)
             % this method multiply left singular vectors from collected reduced
             % variables with pre-computed eTe
-            if obj.indicator.enrichment == 1 && obj.indicator.refinement == 0
+            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                 for i = 1:obj.no.pre.hhat
                     obj.err.pre.hhat{i, 5} = obj.resp.rv.L' * ...
                         obj.err.pre.hhat{i, 5} * obj.resp.rv.L;
                 end
                 
-            elseif obj.indicator.enrichment == 0 && ...
-                    obj.indicator.refinement == 1
+            elseif obj.indicator.enrich == 0 && ...
+                    obj.indicator.refine == 1
                 
                 for i = 1:obj.no.itplAdd
                     obj.err.pre.hhat{obj.no.itplEx + i, 5} = ...
@@ -1879,7 +1911,7 @@ classdef beam < handle
             for i = 1:nBlk
                 % pmIter is the single expo pm value for current iteration.
                 pmIter = obj.pmExpo.iter;
-                % pmBlkCell is the cell block of itpl pm domain values. 
+                % pmBlkCell is the cell block of itpl pm domain values.
                 pmBlkDom = pmBlk{i}(:, 2:obj.no.inc + 1);
                 pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
                     ones(size(pmBlkDom, 2), 1));
@@ -1902,15 +1934,15 @@ classdef beam < handle
                         [~, obj.err.itpl.otpt] = ...
                             lagrange(pmIter{:}, pmCell, gridy);
                         
-%                         lagCoef = lagrange(pmIter{:}, pmCell);
-%                         cfTcf = lagCoef * lagCoef';
-%                         eTe = zeros(length(obj.indicator.nonzeroi));
-%                         eiTei = obj.err.pre.hhat{};
-%                         eiTej =
-%                         ejTej =
-%                         for i = 1:4
-%                             eTe = eTe +
-%                         end
+                        %                         lagCoef = lagrange(pmIter{:}, pmCell);
+                        %                         cfTcf = lagCoef * lagCoef';
+                        %                         eTe = zeros(length(obj.indicator.nonzeroi));
+                        %                         eiTei = obj.err.pre.hhat{};
+                        %                         eiTej =
+                        %                         ejTej =
+                        %                         for i = 1:4
+                        %                             eTe = eTe +
+                        %                         end
                     end
                 elseif obj.no.inc == 2
                     if inpolygon(pmIter{:}, pmBlkCell{:}) == 1
@@ -1983,8 +2015,8 @@ classdef beam < handle
                 % the refined blocks, and modify ehat surface at new
                 % blocks to get ehhat surface.
                 % NO H-REF
-            elseif obj.indicator.refinement == 0 && ...
-                    obj.indicator.enrichment == 1
+            elseif obj.indicator.refine == 0 && ...
+                    obj.indicator.enrich == 1
                 % hat surface needs to be interpolated everywhere.
                 obj.err.store.surf.hat(iIter) = 0;
                 obj.inpolyItpl('hat');
@@ -2006,8 +2038,8 @@ classdef beam < handle
                     obj.errStoreSurfs('hhat');
                 end
                 
-            elseif obj.indicator.refinement == 1 && ...
-                    obj.indicator.enrichment == 0
+            elseif obj.indicator.refine == 1 && ...
+                    obj.indicator.enrich == 0
                 % if refine, let ehat surface = ehhat surface, interpolate new
                 % blocks, modify ehat surface at new blocks to get ehhat.
                 % H-REF
@@ -2343,8 +2375,8 @@ classdef beam < handle
         %%
         function obj = localHrefinement(obj)
             % local h-refinement
-            obj.indicator.refinement = 1;
-            obj.indicator.enrichment = 0;
+            obj.indicator.refine = 1;
+            obj.indicator.enrich = 0;
             obj.pmExpo.hat = obj.pmExpo.hhat;
             obj.pmExpo.block.hat = obj.pmExpo.block.hhat;
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
@@ -2754,8 +2786,8 @@ classdef beam < handle
                     pmExptoTest = obj.pmExpo.max;
             end
             
-            pmExpInpPmTemp = cell2mat(obj.pmExpo.block.hat);
-            pmExpInpPm = pmExpInpPmTemp(:, 2:obj.no.inc + 1);
+            pmExpInpPm_ = cell2mat(obj.pmExpo.block.hat);
+            pmExpInpPm = pmExpInpPm_(:, 2:obj.no.inc + 1);
             pmExpInpRaw = unique(pmExpInpPm, 'rows');
             nBlk = length(obj.pmExpo.block.hat);
             % find which block max pm point is in, refine.
@@ -2796,22 +2828,22 @@ classdef beam < handle
                 end
             end
             obj.pmExpo.block.hhat(jRec, :) = [];
-            pmExpOtptTemp = obj.pmExpo.block.hhat;
+            pmExpOtpt_ = obj.pmExpo.block.hhat;
             
             if obj.no.inc == 1
                 % if dimension = 1, always add 1 itpl point each refinement;
                 obj.pmExpo.block.hhat = [length(obj.pmExpo.hat) + 1 ...
                     obj.pmExpo.block.hhat];
             elseif obj.no.inc == 2
-                % compare pmEXP_otptTemp with pmEXP_inptRaw, only to find
+                % compare pmExpOtpt_ with pmEXP_inptRaw, only to find
                 % whether there is a repeated pm point.
                 % elseif dimension = 2, may add 4 or 5 itpl points each
                 % refinement, depending on whether there is a repeated pm
                 % point.
                 aRec = [];
-                for iComp = 1:size(pmExpOtptTemp, 1)
+                for iComp = 1:size(pmExpOtpt_, 1)
                     
-                    a = ismember(pmExpOtptTemp(iComp, :), pmExpInpRaw, 'rows');
+                    a = ismember(pmExpOtpt_(iComp, :), pmExpInpRaw, 'rows');
                     aRec = [aRec; a];
                     if a == 1
                         pmIdx = iComp;
@@ -2823,19 +2855,19 @@ classdef beam < handle
                     % points and put the old pm point at the beginning.
                     idxToAdd = 4;
                     pmExpOtptSpecVal = obj.pmExpo.block.hhat(pmIdx, :);
-                    pmExpOtptTemp(pmIdx, :) = [];
+                    pmExpOtpt_(pmIdx, :) = [];
                     
-                    for iComp1 = 1:length(pmExpInpPmTemp)
+                    for iComp1 = 1:length(pmExpInpPm_)
                         b = ismember(pmExpOtptSpecVal, ...
-                            pmExpInpPmTemp(iComp1, 2:3), 'rows');
+                            pmExpInpPm_(iComp1, 2:3), 'rows');
                         if b == 1
-                            pmExpOtptSpecIdx = pmExpInpPmTemp(iComp1, 1);
+                            pmExpOtptSpecIdx = pmExpInpPm_(iComp1, 1);
                         end
                     end
                     
                     obj.pmExpo.block.hhat = [[pmExpOtptSpecIdx ...
                         pmExpOtptSpecVal]; ...
-                        [(1:idxToAdd)' + length(pmExpInpRaw) pmExpOtptTemp]];
+                        [(1:idxToAdd)' + length(pmExpInpRaw) pmExpOtpt_]];
                     
                 else
                     % if there is no repeated point, add 5 indices.
@@ -2867,8 +2899,8 @@ classdef beam < handle
             
             % find the pm with indices in asending order.
             pmExpOtptPm = cell2mat(obj.pmExpo.block.hhat);
-            pmExpOtptTemp = sortrows(pmExpOtptPm);
-            obj.pmExpo.hhat = unique(pmExpOtptTemp, 'rows');
+            pmExpOtpt_ = sortrows(pmExpOtptPm);
+            obj.pmExpo.hhat = unique(pmExpOtpt_, 'rows');
             obj.pmVal.hhat = 10 .^ obj.pmExpo.hhat(:, 2:obj.no.inc + 1);
             obj.pmVal.hhat = [obj.pmExpo.hhat(:, 1) obj.pmVal.hhat];
             obj.pmVal.hat = 10 .^ obj.pmExpo.hat(:, 2:obj.no.inc + 1);

@@ -82,7 +82,7 @@ fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     nConsEnd);
 
 % read mass matrix. 
-fixie.readMTX2DOF(nDofPerNode);
+fixie.readMasMTX2DOF(nDofPerNode);
 
 % read constraint infomation.
 fixie.readINPconsFixie(nDofPerNode);
@@ -94,7 +94,7 @@ fixie.readINPgeoMultiInc;
 fixie.generatePmSpaceMultiDim;
 
 % read stiffness matrices.
-fixie.readMTX2DOFBCMod(nDofPerNode);
+fixie.readStiMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
 fixie.pmTrial;
