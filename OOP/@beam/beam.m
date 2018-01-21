@@ -1551,6 +1551,9 @@ classdef beam < handle
                 obj.uiTujSort(respStoretoTrans);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans;
             end
+            % the 5th column of obj.err.pre.hat is inherited from the first
+            % nhat rows of obj.err.pre.hhat. the 6th column is a
+            % recalculation using uiTui+1. 
             obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
                 obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
@@ -1899,13 +1902,15 @@ classdef beam < handle
                 case 'hhat'
                     nBlk = length(obj.pmExpo.block.hhat);
                     pmBlk = obj.pmExpo.block.hhat;
+                    ehats = obj.err.pre.hhat;
                 case 'hat'
                     nBlk = length(obj.pmExpo.block.hat);
                     pmBlk = obj.pmExpo.block.hat;
+                    ehats = obj.err.pre.hat;
                 case 'add' % this is the number of the newly divided blocks.
                     nBlk = 2 ^ obj.no.inc;
                     pmBlk = obj.pmExpo.block.add;
-                    
+                    ehats = obj.err.pre.hhat;
             end
             
             for i = 1:nBlk
@@ -1921,28 +1926,24 @@ classdef beam < handle
                     if inBetweenTwoPoints(pmIter{:}, pmBlkCell{:}) == 1
                         switch type
                             case 'hhat'
-                                gridy = obj.err.pre.hhat(pmBlk{i}(:, 1), 5);
+                                uiTui = ehats(pmBlk{i}(:, 1), 5);
+                                uiTuj = ehats(pmBlk{i}(:, 1), 6);
+                                ij = ehats(pmBlk{i}(:, 1), 2);
                             case 'hat'
-                                gridy = obj.err.pre.hat(pmBlk{i}(:, 1), 5);
+                                uiTui = ehats(pmBlk{i}(:, 1), 5);
+                                uiTuj = ehats(pmBlk{i}(:, 1), 6);
+                                ij = ehats(pmBlk{i}(:, 1), 2);
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{i};
-                                gridy = obj.err.pre.hhat(pmAdd(:, 1), 5);
+                                uiTui = ehats(pmAdd(:, 1), 5);
+                                uiTuj = ehats(pmAdd(:, 1), 6);
+                                ij = ehats(pmAdd(:, 1), 2);
                         end
-                        pmNum = cell2mat(pmBlkCell);
-                        pmCell = num2cell(pmNum);
+                        pmCell = num2cell(cell2mat(pmBlkCell));
                         [~, obj.err.itpl.otpt] = ...
-                            lagrange(pmIter{:}, pmCell, gridy);
-                        
-                        %                         lagCoef = lagrange(pmIter{:}, pmCell);
-                        %                         cfTcf = lagCoef * lagCoef';
-                        %                         eTe = zeros(length(obj.indicator.nonzeroi));
-                        %                         eiTei = obj.err.pre.hhat{};
-                        %                         eiTej =
-                        %                         ejTej =
-                        %                         for i = 1:4
-                        %                             eTe = eTe +
-                        %                         end
+                            lagrange(pmIter{:}, pmCell, uiTui);
+                        keyboard
                     end
                 elseif obj.no.inc == 2
                     if inpolygon(pmIter{:}, pmBlkCell{:}) == 1
@@ -1954,26 +1955,21 @@ classdef beam < handle
                         
                         [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
                         gridx = 10 .^ gridxVal;
-                        gridy = 10 .^ gridyVal;
+                        uiTui = 10 .^ gridyVal;
                         switch type
                             case 'hhat'
-                                gridzVal = ...
-                                    obj.err.pre.hhat(pmBlk{i}(:, 1), 5);
-                                
+                                gridzVal = ehats(pmBlk{i}(:, 1), 5);
                             case 'hat'
-                                gridzVal = ...
-                                    obj.err.pre.hat(pmBlk{i}(:, 1), 5);
-                                
+                                gridzVal = ehats(pmBlk{i}(:, 1), 5);
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{i};
-                                gridzVal = ...
-                                    obj.err.pre.hhat(pmAdd(:, 1), 5);
+                                gridzVal = ehats(pmAdd(:, 1), 5);
                         end
                         gridz = [gridzVal(1) gridzVal(2); ...
                             gridzVal(4) gridzVal(3)];
                         % interpolate in 2D.
-                        obj.LagItpl2Dmtx(gridx, gridy, gridz);
+                        obj.LagItpl2Dmtx(gridx, uiTui, gridz);
                     end
                 else
                     disp('dimension > 2')
