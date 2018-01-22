@@ -10,8 +10,8 @@ u0 = [0; 0];
 v0 = [0; 0];
 acce = 'average';
 
-nt = 4;
-nf = 3; % only m, c, k, no separate affined terms.
+nt = 10;
+nf = 3; % only m, c, k, no separate affined terms. CANNOT CHANGE!
 ni = 2; % use 1, 5 as interpolation samples.
 
 fFunc = [0 10]';
@@ -215,20 +215,28 @@ coefTcoef = lagCoef * lagCoef';
 ectec = cell(2, 2);
 for i = 1:2
     for j = 1:2
-        if j < i
-            ectec{i, j} = ectec{j, i}';
-        else
-            ectec{i, j} = respResStore{i}' * respResStore{j};
+        ete_ = respResStore{i}' * respResStore{j};
+        if i == 1 && j == 1
+            nonZ = [];
+            for inz = 1:nt * nr * nf
+                nonZ = [nonZ; any(ete_(:, inz))];
+            end
+            nonZ = find(nonZ);
         end
+        ete_ = triu(ete_(nonZ, nonZ));
+        ectec{i, j} = ete_;
     end
 end
 
-eteotpt = zeros(nt * nr * nf, nt * nr * nf);
+rvNZ = rvAllCol(nonZ);
+pmNZ = pmSlct(nonZ);
+
+eteotpt = zeros(length(nonZ), length(nonZ));
 for i = 1:4
-    eteotpt = eteotpt + ectec{i} * coefTcoef(i);
+    eteotpt = eteotpt + reConstruct(ectec{i}) * coefTcoef(i);
 end
 % this is the result from proposed method.
-ete = sqrt((rvAllCol .* pmSlct)' * eteotpt * (rvAllCol .* pmSlct));
+ete = sqrt((rvNZ .* pmNZ)' * eteotpt * (rvNZ .* pmNZ));
 
 %% interpolate pre-computed displacements. 2 operations with same results!!!%|
 % respnm == respnm1;                                                        %|
@@ -245,6 +253,10 @@ for i = 1:size(respItpl, 2)                                                 %|
 end                                                                         %|
                                                                             %|
 respnm = norm(respSum, 'fro');                                              %|
+
+%% test the original (wrong) method, interpolate 2 points only, no intersection.
+% there should be a connection between the wrong and the correct interpolation. 
+
 
 
 

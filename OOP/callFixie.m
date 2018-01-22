@@ -180,7 +180,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     for iIter = 1:nIter
         
         fixie.pmIter(iIter);
-         
+        
         fixie.reducedVar;
         
         fixie.pmPrepare;

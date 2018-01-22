@@ -1427,7 +1427,7 @@ classdef beam < handle
                         end
                         obj.indicator.nonzeroi = find(obj.indicator.nonzeroi);
                     end
-                    
+                    obj.no.nonZ = length(obj.indicator.nonzeroi);
                     respTransNonZero = ...
                         full(respTrans(obj.indicator.nonzeroi, ...
                         obj.indicator.nonzeroi));
@@ -1553,7 +1553,7 @@ classdef beam < handle
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
             % nhat rows of obj.err.pre.hhat. the 6th column is a
-            % recalculation using uiTui+1. 
+            % recalculation using uiTui+1.
             obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
                 obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
@@ -1915,7 +1915,7 @@ classdef beam < handle
             
             for i = 1:nBlk
                 % pmIter is the single expo pm value for current iteration.
-                pmIter = obj.pmExpo.iter;
+                pmIter = obj.pmExpo.iter{:};
                 % pmBlkCell is the cell block of itpl pm domain values.
                 pmBlkDom = pmBlk{i}(:, 2:obj.no.inc + 1);
                 pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
@@ -1923,30 +1923,39 @@ classdef beam < handle
                 
                 % generate x-y (1 inclusion) or x-y-z (2 inclusions) domain.
                 if obj.no.inc == 1
-                    if inBetweenTwoPoints(pmIter{:}, pmBlkCell{:}) == 1
+                    if inBetweenTwoPoints(pmIter, pmBlkCell{:}) == 1
                         switch type
                             case 'hhat'
                                 uiTui = ehats(pmBlk{i}(:, 1), 5);
-                                uiTuj = ehats(pmBlk{i}(:, 1), 6);
-                                ij = ehats(pmBlk{i}(:, 1), 2);
+                                uiTuj = ehats(pmBlk{i}(1, 1), 6);
                             case 'hat'
                                 uiTui = ehats(pmBlk{i}(:, 1), 5);
-                                uiTuj = ehats(pmBlk{i}(:, 1), 6);
-                                ij = ehats(pmBlk{i}(:, 1), 2);
+                                uiTuj = ehats(pmBlk{i}(1, 1), 6);
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{i};
                                 uiTui = ehats(pmAdd(:, 1), 5);
-                                uiTuj = ehats(pmAdd(:, 1), 6);
-                                ij = ehats(pmAdd(:, 1), 2);
+                                uiTuj = ehats(pmAdd(1, 1), 6);
                         end
                         pmCell = num2cell(cell2mat(pmBlkCell));
                         [~, obj.err.itpl.otpt] = ...
-                            lagrange(pmIter{:}, pmCell, uiTui);
+                            lagrange(pmIter, pmCell, uiTui);
+                        coefOtpt = lagrange(pmIter, pmCell);
+                        cfcfT = coefOtpt * coefOtpt';
+                        uiCell = cell(2, 2);
+                        for iut = 1:2
+                            uiCell{iut, iut} = reConstruct(uiTui{iut});
+                        end
+                        uiCell{1, 2} = uiTuj{:};
+                        uiCell{2, 1} = uiTuj{:}';
+                        uTuOtpt = zeros(obj.no.nonZ, obj.no.nonZ);
+                        for iut = 1:4
+                            uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
+                        end
                         keyboard
                     end
                 elseif obj.no.inc == 2
-                    if inpolygon(pmIter{:}, pmBlkCell{:}) == 1
+                    if inpolygon(pmIter, pmBlkCell{:}) == 1
                         
                         xl = min(pmBlk{i}(:, 2));
                         xr = max(pmBlk{i}(:, 2));
