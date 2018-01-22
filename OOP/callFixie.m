@@ -31,8 +31,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 5;
-domLengs = 5;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
