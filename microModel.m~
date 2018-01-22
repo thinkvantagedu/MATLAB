@@ -257,10 +257,11 @@ respnm = norm(respSum, 'fro');                                              %|
 %% test the original (wrong) method, interpolate 2 points only, no intersection.
 % there should be a connection between the wrong and the correct interpolation. 
 
+uiTuiCell = cellfun(@(v) v' * v, respResStore, 'un', 0);
+uiTui = cellfun(@(v) v(nonZ, nonZ), uiTuiCell, 'un', 0);
+[~, utuItpl] = lagrange(x3, xc, uiTui);
 
-
-
-
+respnmOri
 
 
 

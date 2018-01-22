@@ -1952,7 +1952,7 @@ classdef beam < handle
                         for iut = 1:4
                             uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
                         end
-                        keyboard
+                        obj.err.itpl.otpt = triu(uTuOtpt);
                     end
                 elseif obj.no.inc == 2
                     if inpolygon(pmIter, pmBlkCell{:}) == 1

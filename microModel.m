@@ -257,10 +257,16 @@ respnm = norm(respSum, 'fro');                                              %|
 %% test the original (wrong) method, interpolate 2 points only, no intersection.
 % there should be a connection between the wrong and the correct interpolation. 
 
-
-
-
-
+% the wrong interpolation only interpolates the two uiTui, not considering
+% uiTui+1. Therefore not complete.
+uiTuiCell = cellfun(@(v) v' * v, respResStore, 'un', 0);
+uiTui = cellfun(@(v) v(nonZ, nonZ), uiTuiCell, 'un', 0);
+[~, utuItpl] = lagrange(x3, xc, uiTui);
+nmpb = norm(utuItpl, 'fro');
+% the correct interpolation considers uiTui+1, thus part of the correct
+% interpolation should equals to the wrong interpolation, i.e. nmpa = nmpb.
+parta = reConstruct(ectec{1, 1} * lagCoef(1) + ectec{2, 2} * lagCoef(2));
+nmpa = norm(parta, 'fro');
 
 
 
