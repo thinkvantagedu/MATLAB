@@ -643,6 +643,7 @@ classdef beam < handle
             obj.err.store.loc.hhat = [];
             obj.err.store.loc.hat = [];
             obj.err.store.loc.diff = [];
+            obj.err.store.allSurf = {};
             obj.err.pre.hhat = cell(obj.no.pre.hhat, 6); % 6 cols in total,
             % 2 extra for the pyramid base shape cell elements, 1extra for
             % pm exponential values.
@@ -659,6 +660,7 @@ classdef beam < handle
             
             obj.err.store.max = [];
             obj.err.store.loc = [];
+            obj.err.store.allSurf = {};
             
         end
         %%
@@ -1344,8 +1346,12 @@ classdef beam < handle
                         obj.no.rb - obj.no.phiAdd + 1 : end);
                     
                     if svdSwitch == 0
+                        % respCol changes respPmPass from nD to 2D.
+                        % respPmPass has DIM(ni, nf, nt, nr). respColaligns
+                        % in the order of (nf, nt, nr), i.e. loop nf first,
+                        % then nt, nr.
                         respCol = sparse(cat(2, respPmPass{:}));
-                        
+                        % change sign here.
                         if obj.countGreedy == 1
                             respCol = [obj.resp.store.fce.hhat{iPre} -respCol];
                         else
@@ -1438,7 +1444,7 @@ classdef beam < handle
                 % obj.err.pre.hhat.
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans);
-                obj.err.pre.hhat(:, end) = obj.err.pre.trans;
+                obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
                 
             elseif obj.indicator.enrich == 0 && ...
                     obj.indicator.refine == 1
@@ -1547,9 +1553,11 @@ classdef beam < handle
                 end
                 % compute uiTui+1 and store in the last column of
                 % obj.err.pre.hhat.
+                
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans);
-                obj.err.pre.hhat(:, end) = obj.err.pre.trans;
+                obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
+                
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
             % nhat rows of obj.err.pre.hhat. the 6th column is a
@@ -1558,18 +1566,18 @@ classdef beam < handle
                 obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
             obj.uiTujSort(respStoretoTrans);
-            obj.err.pre.hat(:, 6) = obj.err.pre.trans;
+            obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 3);
             
         end
         %%
-        function [obj, respStoreCellUnsort] = uiTujSort(obj, respStoreInpt)
+        function obj = uiTujSort(obj, respStoreInpt)
             % sort stored displacements, perform uiTui+1, then sort back to
             % previous order, put in the last column of obj.err.pre.hhat,
             % to be ready to be interpolated.
-            [respStoreSort, respIdx] = sortrows(respStoreInpt, 2);
+            respStoreSort = sortrows(respStoreInpt, 2);
             % a temp cell to store uiTui+1, should contain a void
             % after filling.
-            respStoreCell_ = cell(size(respStoreSort, 1), 1);
+            respStoreCell_ = cell(size(respStoreSort, 1), 3);
             for iPre = 1:size(respStoreSort, 1)
                 % respStoreSort_ should contain n-1 uiTui+1 matrix element
                 %  and 1 void element.
@@ -1582,10 +1590,11 @@ classdef beam < handle
                 elseif iPre == size(respStoreSort, 1)
                     respTransSortNonZero = [];
                 end
-                respStoreCell_(iPre) = {respTransSortNonZero};
+                respStoreCell_(iPre, 1) = {respStoreSort{iPre, 1}};
+                respStoreCell_(iPre, 2) = {respStoreSort{iPre, 2}};
+                respStoreCell_(iPre, 3) = {respTransSortNonZero};
             end
-            respStoreCellUnsort = respStoreCell_(respIdx);
-            obj.err.pre.trans = respStoreCellUnsort;
+            obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
         %%
         function obj = resptoErrPreCompPartTime(obj, qoiSwitchTime, ...
@@ -1799,7 +1808,7 @@ classdef beam < handle
             obj.dis.re.reVar = obj.dis.reduce;
         end
         %%
-        function obj = rvSVD(obj)
+        function obj = rvSVD(obj, nRvSVD)
             % this method performs SVD on the stored reduced variables.
             rvStore = cell2mat(obj.resp.rv.store);
             [rvL, rvSig, rvR] = svd(rvStore, 0);
@@ -1810,9 +1819,9 @@ classdef beam < handle
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
             
-            rvL = rvL(:, 1:length(rvSig));
-            rvR = rvR(:, 1:length(rvSig));
-            obj.resp.rv.sig = rvSig;
+            rvL = rvL(:, 1:nRvSVD);
+            rvR = rvR(:, 1:nRvSVD);
+            obj.resp.rv.sig = rvSig(1:nRvSVD, 1:nRvSVD);
             obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
             
@@ -1825,18 +1834,27 @@ classdef beam < handle
                 for i = 1:obj.no.pre.hhat
                     obj.err.pre.hhat{i, 5} = obj.resp.rv.L' * ...
                         obj.err.pre.hhat{i, 5} * obj.resp.rv.L;
+                    if size(obj.err.pre.hhat{i, 6}, 1) == ...
+                            size(obj.resp.rv.L, 1)
+                        obj.err.pre.hhat{i, 6} = obj.resp.rv.L' * ...
+                            obj.err.pre.hhat{i, 6} * obj.resp.rv.L;
+                    end
                 end
-                
             elseif obj.indicator.enrich == 0 && ...
                     obj.indicator.refine == 1
                 
-                for i = 1:obj.no.itplAdd
-                    obj.err.pre.hhat{obj.no.itplEx + i, 5} = ...
-                        obj.resp.rv.L' * ...
-                        obj.err.pre.hhat{obj.no.itplEx + i, 5} * ...
-                        obj.resp.rv.L;
+                for i = 1:obj.no.pre.hhat
+                    if size(obj.err.pre.hhat{i, 5}, 1) == ...
+                            size(obj.resp.rv.L, 1)
+                        obj.err.pre.hhat{i, 5} = obj.resp.rv.L' * ...
+                            obj.err.pre.hhat{i, 5} * obj.resp.rv.L;
+                    end
+                    if size(obj.err.pre.hhat{i, 6}, 1) == ...
+                            size(obj.resp.rv.L, 1)
+                        obj.err.pre.hhat{i, 6} = obj.resp.rv.L' * ...
+                            obj.err.pre.hhat{i, 6} * obj.resp.rv.L;
+                    end
                 end
-                
             end
             
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
@@ -1883,7 +1901,7 @@ classdef beam < handle
             rvDisRow = rvDis';
             rvDisRow = rvDisRow(:);
             rvDisRow = rvDisRow';
-            %
+            % manually duplicate rv vector for nphy times.
             rvDisRepRow = repmat(rvDisRow, obj.no.inc + 1, 1);
             rvAllRow = [rvAccRow; rvVelRow; rvDisRepRow];
             rvAllCol = rvAllRow(:);
@@ -1932,23 +1950,30 @@ classdef beam < handle
                                 uiTui = ehats(pmBlk{i}(:, 1), 5);
                                 uiTuj = ehats(pmBlk{i}(1, 1), 6);
                             case 'add'
-                                % pmBlk is the added block now.
+                                % pmBlk is the added block now, there are 2
+                                % blocks in 1D case.
                                 pmAdd = pmBlk{i};
                                 uiTui = ehats(pmAdd(:, 1), 5);
                                 uiTuj = ehats(pmAdd(1, 1), 6);
                         end
                         pmCell = num2cell(cell2mat(pmBlkCell));
-                        [~, obj.err.itpl.otpt] = ...
-                            lagrange(pmIter, pmCell, uiTui);
                         coefOtpt = lagrange(pmIter, pmCell);
                         cfcfT = coefOtpt * coefOtpt';
                         uiCell = cell(2, 2);
-                        for iut = 1:2
-                            uiCell{iut, iut} = reConstruct(uiTui{iut});
+                        % if 1st col of lower tri contains n-1 0s, then
+                        % reConstruct.
+                        if any(uiTui{1}(2:end, 1)) == 0
+                            for iut = 1:2
+                                uiCell{iut, iut} = reConstruct(uiTui{iut});
+                            end
+                        else
+                            for iut = 1:2
+                                uiCell{iut, iut} = uiTui{iut};
+                            end
                         end
                         uiCell{1, 2} = uiTuj{:};
                         uiCell{2, 1} = uiTuj{:}';
-                        uTuOtpt = zeros(obj.no.nonZ, obj.no.nonZ);
+                        uTuOtpt = zeros(size(uiCell{2}));
                         for iut = 1:4
                             uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
                         end
@@ -2075,13 +2100,11 @@ classdef beam < handle
                 case 'add'
                     e = obj.err.itpl.add;
             end
-            
+            % recover eTe
+            e = reConstruct(e);
             if rvSvdSwitch == 0
-                % recover eTe
-                e = reConstruct(e);
                 ePreSqrt = (obj.pmVal.rvCol .* obj.pmVal.pmCol)' * e * ...
                     (obj.pmVal.rvCol .* obj.pmVal.pmCol);
-                
                 switch type
                     case {'hhat', 'add'}
                         obj.err.norm{1} = ...
@@ -2092,9 +2115,7 @@ classdef beam < handle
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
                 end
-                
             elseif rvSvdSwitch == 1
-                
                 ePreSqrtMtx = obj.resp.rv.R * e * obj.resp.rv.R';
                 ePreMtx = sqrt(abs(ePreSqrtMtx)) / ...
                     norm(obj.dis.qoi.trial, 'fro');
@@ -2105,7 +2126,6 @@ classdef beam < handle
                     case 'hat'
                         obj.err.norm{2} = ePreDiag(iIter);
                 end
-                
             end
         end
         %%
@@ -2161,7 +2181,8 @@ classdef beam < handle
             
             if obj.no.inc == 1
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
-                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd(:, 2)), pmExpoAdd);
+                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd(:, 2)), ...
+                    pmExpoAdd);
             elseif obj.no.inc == 2
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
                     (pmIterCell{:}, pmExpoAdd(:, 2), ...
@@ -2203,7 +2224,18 @@ classdef beam < handle
                     obj.err.store.surf(idx) = obj.err.store.surf(idx) + ...
                         obj.err.val;
             end
-            
+        end
+        %%
+        function obj = errStoreAllSurfs(obj, type)
+            % store all error response surfaces.
+            switch type
+                case 'original'
+                    obj.err.store.allSurf = [obj.err.store.allSurf; ...
+                        obj.err.store.surf];
+                case 'hhat'
+                    obj.err.store.allSurf = [obj.err.store.allSurf; ...
+                        obj.err.store.surf.hhat];
+            end
         end
         %%
         function obj = rvPmErrProdSumSlct(obj)
@@ -2800,14 +2832,16 @@ classdef beam < handle
                 
                 if obj.no.inc == 1
                     if inBetweenTwoPoints(pmExptoTest{:}, ...
-                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc + 1)) == 1
+                            obj.pmExpo.block.hat{iBlk}...
+                            (:, obj.no.inc + 1)) == 1
                         obj = refineGrid(obj, iBlk);
                         iRec = iBlk;
                     end
                 elseif obj.no.inc == 2
                     if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
                             obj.pmExpo.block.hat{iBlk}(:, obj.no.inc), ...
-                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc + 1)) == 1
+                            obj.pmExpo.block.hat{iBlk}...
+                            (:, obj.no.inc + 1)) == 1
                         obj = refineGrid(obj, iBlk);
                         iRec = iBlk;
                     end
@@ -2893,6 +2927,7 @@ classdef beam < handle
             % block: +5.
             obj.pmExpo.temp.inpt = [obj.pmExpo.block.hat{iRec}; ...
                 obj.pmExpo.block.hhat];
+            
             obj.gridtoBlockwithIndx;
             
             % delete original block which needs to be refined, put final

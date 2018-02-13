@@ -31,8 +31,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter.
-domLengi = 9;
-domLengs = 9;
+domLengi = 17;
+domLengs = 17;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -67,12 +67,13 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.04;
+refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 7;
-
+drawCol = 1;
+nPhiInitial = 2;
+nPhiEnrich = 1;
 %% trial solution
 % use subclass: canbeam to create cantilever beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
@@ -117,8 +118,6 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution. 
-nPhiInitial = 1;
-nPhiEnrich = 2;
 fixie.rbInitial(nPhiInitial);
 % rbCtrlThres = 0.1;
 % canti.rbCtrlInitial(rbCtrlThres);
@@ -153,13 +152,14 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     fixie.extractMaxPmInfo(typeSwitch);
     fixie.storeErrorInfoOriginal;
     
+    fixie.errStoreAllSurfs('original');
     figure(1)
     
     if fixie.countGreedy == 1
         axisLim = fixie.err.max.val.slct;
     end
     
-    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, typeSwitch);
+    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, typeSwitch, 'k');
     
     fixie.maxErrorDisplay(typeSwitch);
     if fixie.countGreedy >= drawRow * drawCol

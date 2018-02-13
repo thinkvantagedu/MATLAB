@@ -1,5 +1,5 @@
 function obj = plotSurfGrid(obj, drawRow, drawCol, gridSwitch, axisLim, ...
-    originalSwitch)
+    originalSwitch, lineColor)
 % This function plots error response surface for the desired cases.
 % The location of the maximum error is also marked on the surface.
 switch originalSwitch
@@ -74,14 +74,14 @@ elseif gridSwitch == 0
     if obj.no.inc == 1
         
         % for single inclusion case, plot error response curve.
-        hAx = semilogy(obj.pmExpo.i{:}, eSurf, 'k', 'LineWidth', 2);
+        hAx = semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 1);
         
         % text of current maximum error.
         txtPlotCurrentMax = sprintf('[%d %.4g]', obj.pmLoc.max, ...
             obj.err.max.val.slct);
         % add text to figure location.
         errTxt = text(obj.pmExpo.max{:}, errMax, txtPlotCurrentMax, ...
-            'color', '[0 0 1]', 'Fontsize', 15);
+            'color', '[0 0 0]', 'Fontsize', 10);
         
 %         plot(obj.pmExpo.max{:}, errMax, '^')
         xlabel('Inclusion')
@@ -101,7 +101,7 @@ elseif gridSwitch == 0
             obj.pmLoc.max(1), obj.pmLoc.max(2), obj.err.max.val.slct);
         % add text to figure location.
         errTxt = text(obj.pmExpo.max{:}, errMax, ...
-            txtPlotCurrentMax, 'color', '[0 0 1]', 'Fontsize', 20);
+            txtPlotCurrentMax, 'color', '[0 0 0]', 'Fontsize', 20);
         xlabel('I1')
         ylabel('I2')
         set(hAx,'zscale','log')
@@ -113,6 +113,7 @@ elseif gridSwitch == 0
         disp('number of inclusions exceeds 2')
     end
     uistack(errTxt, 'top')
+    
     if obj.countGreedy > 1
         % location of previous maximum error.
         eLocPrevMax = num2cell(eLoc(obj.countGreedy - 1, :));
@@ -129,12 +130,12 @@ elseif gridSwitch == 0
             txtPlotPrevMax = sprintf('[%d %.4g]', eLocPrevMax{1}, ...
                 eValPrevMaxCurrent);
             text(pmExpoPrev, eValPrevMaxCurrent, txtPlotPrevMax, ...
-                'color', '[0 0 0]', 'Fontsize', 15);
+                'color', '[0 0 1]', 'Fontsize', 10);
         elseif obj.no.inc == 2
             txtPlotPrevMax = sprintf('[%d %d, %d]', ...
                 eLocPrevMax{1}, eLocPrevMax{2}, eValPrevMaxCurrent);
             text(pmExpoPrev(1), pmExpoPrev(2), eValPrevMaxCurrent, ...
-                txtPlotPrevMax, 'color', '[0 0 0]', 'Fontsize', 20);
+                txtPlotPrevMax, 'color', '[0 0 1]', 'Fontsize', 20);
             axis(hAx,'square')
             axis(hAx,'tight', 'manual')
             
@@ -148,8 +149,9 @@ elseif gridSwitch == 0
     grid on
     
 end
+
 % set(hAx,'zlim',axi_lim)
 shading faceted
 colormap(cool)
 set(gca,'fontsize',20)
-set(legend,'FontSize',20);
+% set(legend,'FontSize',20);

@@ -1,4 +1,4 @@
-clear; clc;
+clear; clc; 
 tOffTime = 0;
 route = '/home/xiaohan/Desktop/Temp';
 figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
@@ -31,8 +31,8 @@ singularSwitch = 0;
 randomSwitch = 0;
 
 %% data for parameter class.
-domLengi = 9;
-domLengs = 9;
+domLengi = 17;
+domLengs = 17;
 nIter = prod(domLengi);
 bondL1 = 1;
 bondR1 = 2;
@@ -67,13 +67,15 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.04;
+refiThres = 0.15;
 
 %% plot surfaces and grids
 drawRow = 1;
-drawCol = 7;
+drawCol = 1;
+nPhiInitial = 2;
+nPhiEnrich = 1;
 
-%% trial s5olution
+%% trial solution
 % use subclass: canbeam to create fixed beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
@@ -117,8 +119,6 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
 % compute initial reduced basis from trial solution.
-nPhiInitial = 1;
-nPhiEnrich = 2;
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
@@ -155,9 +155,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     fixie.impGenerate;
     
     fixie.respTdiffComputation(svdSwitch);
-    
-    %     canti.resptoErrPreCompPartTime(qoiSwitchTime, qoiSwitchSpace);
-    
+        
     switch timeType
         
         case 'allTime'
@@ -167,6 +165,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
             switch svdType
                 
                 case 'noSVD'
+                    
                     % CHANGE SIGN in this method!
                     fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
                     
@@ -196,9 +195,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     end
     
     %     disp('online end')
-    %     canti.clearmemory;
+    %     fixie.clearmemory;
     %% extract error information
-    %     canti.extractErrorInfo('errwRb');
+    %     fixie.extractErrorInfo('errwRb');
     
     fixie.extractMaxErrorInfo('hhat');
     fixie.extractMaxErrorInfo('hat');
@@ -219,8 +218,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
         
-        figure(3)
-        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat');
+        fixie.errStoreAllSurfs('hhat');
+        figure(1)
+        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat', 'g');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')

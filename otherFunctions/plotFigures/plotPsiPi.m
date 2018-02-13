@@ -20,4 +20,4 @@ rv = ones(66, 1);
 rv(25:42) = 0;
 spy(rv, 'k')
 set(gca, 'xtick', [])
-set(gca, 'ytick',  [])
+set(gca, 'ytick', [])

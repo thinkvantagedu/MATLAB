@@ -3,6 +3,7 @@ function [obj] = gridtoBlockwithIndx(obj)
 % determining whether coord is within the block.
 % new edit: add row index to inpt, index will follow the otpt.
 
+% the following examples will work with added indices.
 % clear variables; clc;
 % inpt = [-1 -1; -1 1; 1 -1; 1 1; -1 0; 0 -1; 0 0; 0 1; 1 0];
 
