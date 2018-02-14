@@ -67,7 +67,7 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold.
-refiThres = 0.15;
+refiThres = 0.1;
 
 %% plot surfaces and grids
 drawRow = 1;
@@ -220,7 +220,8 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
         fixie.errStoreAllSurfs('hhat');
         figure(1)
-        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat', 'g');
+        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
+            typeSwitch, 'g-^', 'proposed');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')

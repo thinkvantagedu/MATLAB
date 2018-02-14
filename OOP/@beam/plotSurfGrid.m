@@ -1,5 +1,5 @@
 function obj = plotSurfGrid(obj, drawRow, drawCol, gridSwitch, axisLim, ...
-    originalSwitch, lineColor)
+    originalSwitch, lineColor, lgnd)
 % This function plots error response surface for the desired cases.
 % The location of the maximum error is also marked on the surface.
 switch originalSwitch
@@ -83,8 +83,7 @@ elseif gridSwitch == 0
         errTxt = text(obj.pmExpo.max{:}, errMax, txtPlotCurrentMax, ...
             'color', '[0 0 0]', 'Fontsize', 10);
         
-%         plot(obj.pmExpo.max{:}, errMax, '^')
-        xlabel('Inclusion')
+        xlabel('Youngs Modulus')
         ylabel('Error')
         hold on
         axis square
@@ -149,7 +148,7 @@ elseif gridSwitch == 0
     grid on
     
 end
-
+% legend(lgnd)
 % set(hAx,'zlim',axi_lim)
 shading faceted
 colormap(cool)

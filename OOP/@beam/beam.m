@@ -1358,7 +1358,8 @@ classdef beam < handle
                             respCol = -respCol;
                         end
                         obj.resp.store.all(iPre, 1) = {iPre};
-                        obj.resp.store.all(iPre, 2) = {obj.pmExpo.hhat(iPre, 2)};
+                        obj.resp.store.all(iPre, 2) = ...
+                            {obj.pmExpo.hhat(iPre, 2)};
                         obj.resp.store.all{iPre, 3} = ...
                             [obj.resp.store.all{iPre, 3} respCol];
                         respAllCol = obj.resp.store.all{iPre, 3};
@@ -1398,7 +1399,7 @@ classdef beam < handle
                         pmMtx = pmRep * pmRep';
                         obj.pmVal.pmCol = pmRep;
                         eTe = respAllCol' * respAllCol;
-                        respTrans = eTe .* pmMtx;
+                        respTrans = triu(eTe .* pmMtx);
                         
                     elseif rvSvdSwitch == 0
                         % compute eTe, including all zero elements, then take
@@ -1444,8 +1445,8 @@ classdef beam < handle
                 % obj.err.pre.hhat.
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans);
+                % uiTuj CANNOT be applied to triu!
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
-                
             elseif obj.indicator.enrich == 0 && ...
                     obj.indicator.refine == 1
                 
@@ -1475,8 +1476,10 @@ classdef beam < handle
                         obj.resp.store.all(obj.no.itplEx + iPre, 2) = ...
                             {obj.pmExpo.hhat(obj.no.itplEx + iPre, 2)};
                         obj.resp.store.all{obj.no.itplEx + iPre, 3} = ...
-                            [obj.resp.store.all{obj.no.itplEx + iPre, 3} respCol];
-                        respAllCol = obj.resp.store.all{obj.no.itplEx + iPre, 3};
+                            [obj.resp.store.all{obj.no.itplEx + iPre, 3} ...
+                            respCol];
+                        respAllCol = ...
+                            obj.resp.store.all{obj.no.itplEx + iPre, 3};
                         
                     elseif svdSwitch == 1
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
@@ -1498,7 +1501,8 @@ classdef beam < handle
                         obj.resp.store.all{obj.no.itplEx + iPre, 3} = ...
                             [obj.resp.store.all{obj.no.itplEx + iPre, 3}; ...
                             respCol];
-                        respAllCol = obj.resp.store.all{obj.no.itplEx + iPre, 2};
+                        respAllCol = ...
+                            obj.resp.store.all{obj.no.itplEx + iPre, 2};
                     end
                     
                     if rvSvdSwitch == 1
@@ -1513,7 +1517,7 @@ classdef beam < handle
                         pmMtx = pmRep * pmRep';
                         obj.pmVal.pmCol = pmRep;
                         eTe = respAllCol' * respAllCol;
-                        respTrans = eTe .* pmMtx;
+                        respTrans = triu(eTe .* pmMtx);
                         
                     elseif rvSvdSwitch == 0
                         % compute eTe, including all zero elements, then take
@@ -1557,7 +1561,6 @@ classdef beam < handle
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
-                
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
             % nhat rows of obj.err.pre.hhat. the 6th column is a
@@ -1597,8 +1600,7 @@ classdef beam < handle
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
         %%
-        function obj = resptoErrPreCompPartTime(obj, qoiSwitchTime, ...
-                qoiSwitchSpace)
+        function obj = resptoErrPreCompPartTime(obj, qoiSwitchTime, ~)
             obj.err.pre.blk = cell(obj.no.pre.hhat, 1);
             nVecShift = obj.no.phy;
             obj.indicator.nonzeroi = [];
@@ -1830,35 +1832,21 @@ classdef beam < handle
         function obj = rvLTePrervL(obj)
             % this method multiply left singular vectors from collected reduced
             % variables with pre-computed eTe
-            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                for i = 1:obj.no.pre.hhat
-                    obj.err.pre.hhat{i, 5} = obj.resp.rv.L' * ...
-                        obj.err.pre.hhat{i, 5} * obj.resp.rv.L;
-                    if size(obj.err.pre.hhat{i, 6}, 1) == ...
-                            size(obj.resp.rv.L, 1)
-                        obj.err.pre.hhat{i, 6} = obj.resp.rv.L' * ...
-                            obj.err.pre.hhat{i, 6} * obj.resp.rv.L;
-                    end
+            for i = 1:obj.no.pre.hhat
+                if size(obj.err.pre.hhat{i, 5}, 1) == ...
+                        size(obj.resp.rv.L, 1)
+                    errReCons5 = reConstruct(obj.err.pre.hhat{i, 5});
+                    obj.err.pre.hhat{i, 5} = ...
+                        obj.resp.rv.L' * errReCons5 * obj.resp.rv.L;
                 end
-            elseif obj.indicator.enrich == 0 && ...
-                    obj.indicator.refine == 1
-                
-                for i = 1:obj.no.pre.hhat
-                    if size(obj.err.pre.hhat{i, 5}, 1) == ...
-                            size(obj.resp.rv.L, 1)
-                        obj.err.pre.hhat{i, 5} = obj.resp.rv.L' * ...
-                            obj.err.pre.hhat{i, 5} * obj.resp.rv.L;
-                    end
-                    if size(obj.err.pre.hhat{i, 6}, 1) == ...
-                            size(obj.resp.rv.L, 1)
-                        obj.err.pre.hhat{i, 6} = obj.resp.rv.L' * ...
-                            obj.err.pre.hhat{i, 6} * obj.resp.rv.L;
-                    end
+                if size(obj.err.pre.hhat{i, 6}, 1) == ...
+                        size(obj.resp.rv.L, 1)
+                    errReCons6 = obj.err.pre.hhat{i, 6};
+                    obj.err.pre.hhat{i, 6} = ...
+                        obj.resp.rv.L' * errReCons6 * obj.resp.rv.L;
                 end
             end
-            
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
-            
         end
         %%
         function obj = pmPrepare(obj)
@@ -1957,6 +1945,8 @@ classdef beam < handle
                                 uiTuj = ehats(pmAdd(1, 1), 6);
                         end
                         pmCell = num2cell(cell2mat(pmBlkCell));
+                        % this is the Lagrange coefficient matrix, 2 by 2
+                        % for linear interpolations.
                         coefOtpt = lagrange(pmIter, pmCell);
                         cfcfT = coefOtpt * coefOtpt';
                         uiCell = cell(2, 2);
@@ -1977,8 +1967,14 @@ classdef beam < handle
                         for iut = 1:4
                             uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
                         end
+                        % non-diag entries of uiCell are not symmetric, but
+                        % once sum all cells of uiCell becomes symmetric,
+                        % therefore triu can be used.
                         obj.err.itpl.otpt = triu(uTuOtpt);
+                        % here triu is for method rvPmErrProdSum to apply
+                        % reConstruct.
                     end
+                    
                 elseif obj.no.inc == 2
                     if inpolygon(pmIter, pmBlkCell{:}) == 1
                         
@@ -2525,11 +2521,10 @@ classdef beam < handle
                     obj.refinement.condition = abs((obj.err.max.val.hhat - ...
                         obj.err.max.val.hat) / obj.err.max.val.hat);
                 case 'maxSurf'
-                    % maximum distance between 2 surfaces.
+                    % maximum distance between same locations of 2 surfaces.
                     obj.refinement.condition = ...
                         abs(max(obj.err.store.surf.diff(:)) / ...
                         obj.err.max.val.hat);
-                    
             end
         end
         %%
@@ -2976,5 +2971,3 @@ classdef beam < handle
     end
     
 end
-
-

@@ -1,4 +1,4 @@
-clear; clc;
+clear; clc; clf
 tOffTime = 0;
 route = '/home/xiaohan/Desktop/Temp';
 figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
@@ -159,7 +159,8 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         axisLim = fixie.err.max.val.slct;
     end
     
-    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, typeSwitch, 'k');
+    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, ...
+        typeSwitch, '-.k', 'original');
     
     fixie.maxErrorDisplay(typeSwitch);
     if fixie.countGreedy >= drawRow * drawCol
