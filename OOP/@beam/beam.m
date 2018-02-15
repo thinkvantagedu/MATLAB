@@ -1397,7 +1397,6 @@ classdef beam < handle
                         pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
                         pmRep = [1; pmRep];
                         pmMtx = pmRep * pmRep';
-                        obj.pmVal.pmCol = pmRep;
                         eTe = respAllCol' * respAllCol;
                         respTrans = triu(eTe .* pmMtx);
                         
@@ -1815,12 +1814,13 @@ classdef beam < handle
             rvStore = cell2mat(obj.resp.rv.store);
             [rvL, rvSig, rvR] = svd(rvStore, 0);
             rvL = rvL * rvSig;
+%             reductionRatio = sum() / sum();
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
             % rvL' * eTe * rvL * rvR') = domain size * domain size
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
-            
+            keyboard
             rvL = rvL(:, 1:nRvSVD);
             rvR = rvR(:, 1:nRvSVD);
             obj.resp.rv.sig = rvSig(1:nRvSVD, 1:nRvSVD);
@@ -1832,6 +1832,7 @@ classdef beam < handle
         function obj = rvLTePrervL(obj)
             % this method multiply left singular vectors from collected reduced
             % variables with pre-computed eTe
+            
             for i = 1:obj.no.pre.hhat
                 if size(obj.err.pre.hhat{i, 5}, 1) == ...
                         size(obj.resp.rv.L, 1)
@@ -1847,6 +1848,7 @@ classdef beam < handle
                 end
             end
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
+            
         end
         %%
         function obj = pmPrepare(obj)
@@ -1901,7 +1903,30 @@ classdef beam < handle
             
         end
         %%
+        function obj = pmMultiRv(obj)
+            % this method multiplies the same dim rv vector with pm vector,
+            % ready for the POD on rv. 
+            pmVec = obj.pmVal.pmCol;
+            rvVec = obj.pmVal.rvCol;
+            obj.pmVal.pmrv = pmVec .* rvVec;
+            
+        end
+        %%
+        function obj = rvColStore(obj, iIter)
+            % this method stores reduced variables to perform SVD.
+            rvCol = obj.pmVal.rvCol;
+            obj.resp.rv.store(iIter) = {rvCol};
+        end
+        %%
+        function obj = rvpmColStore(obj, iIter)
+            % this method stores reduced variables to perform SVD.
+            rvpmCol = obj.pmVal.pmrv;
+            obj.resp.rv.store(iIter) = {rvpmCol};
+        end
+        %%
         function obj = inpolyItpl(obj, type)
+            % this method interpolates within 2 points (1D) or 1 polygon
+            % (2D).
             % nBlk is the number of pm blocks in current iteration.
             % pmBlk is the pm blocks.
             switch type
@@ -2037,6 +2062,7 @@ classdef beam < handle
                 obj.err.store.surf.hat(iIter) = 0;
                 obj.errStoreSurfs('hhat');
                 obj.errStoreSurfs('hat');
+                
                 % if enrich, interpolate ehat. For ehhat, only interpolate
                 % the refined blocks, and modify ehat surface at new
                 % blocks to get ehhat surface.
@@ -2074,6 +2100,7 @@ classdef beam < handle
                     % otherwise all hat = hhat.
                     obj.err.store.surf.hat = obj.err.store.surf.hhat;
                 end
+                
                 % Determine whether point is in refined block.
                 obj.inAddBlockIndicator;
                 if any(obj.indicator.inBlock) == 1
@@ -2106,6 +2133,7 @@ classdef beam < handle
                         obj.err.norm{1} = ...
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
+                        
                     case 'hat'
                         obj.err.norm{2} = ...
                             sqrt(abs(ePreSqrt)) / ...
@@ -2383,7 +2411,7 @@ classdef beam < handle
             % when extracting maximum error information, values and
             % locations of maximum error can be different, for example, use
             % eDiff to decide maximum error location (eMaxPmLoc =
-            % canti.err.maxLoc.diff), and use ehat (canti.err.maxLoc.hat) to
+            % obj.err.maxLoc.diff), and use ehat (obj.err.maxLoc.hat) to
             % decide parameter value regarding maximum error.
             
             switch type
@@ -2943,12 +2971,6 @@ classdef beam < handle
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
             
-        end
-        %%
-        function obj = rvColStore(obj, iIter)
-            % this method stores reduced variables to perform SVD.
-            rvCol = obj.pmVal.rvCol;
-            obj.resp.rv.store(iIter) = {rvCol};
         end
         %%
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);

@@ -1,82 +1,11 @@
 clear; clc; 
-tOffTime = 0;
-route = '/home/xiaohan/Desktop/Temp';
-figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
-% route = '/Users/kevin/Documents/Temp';
-
-oopPath = strcat(route, '/MATLAB/OOP');
-addpath(genpath(oopPath));
-%% data for beam class.
 trialName = 'l9h2SingleInc';
-lin = 1;
-[INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
-    trialCaseSelect(trialName, lin);
-noStruct = 1;
-noMas = 1;
-noDam = 1;
-dam = 0;
-nDofPerNode = 2;
-
-%% all switches
 typeSwitch = 'hhat';
-gridSwitch = 0;
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
-% SVD on responses.
-svdSwitch = 0;
-% SVD on reduced variables.
 rvSvdSwitch = 0;
-ratioSwitch = 0;
-singularSwitch = 0;
-randomSwitch = 0;
-
-%% data for parameter class.
-domLengi = 17;
-domLengs = 17;
-nIter = prod(domLengi);
-bondL1 = 1;
-bondR1 = 2;
-bondL2 = 1;
-bondR2 = 2;
-domBondi = {[bondL1 bondR1]};
-nConsEnd = 2;
-domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
-domMid = domMid';
-
-%% data for time.
-tMax = 0.09;
-tStep = 0.01;
-
-%% data for external nodal force.
-% fNode needs to be manually updated.
-fNode = 9;
-ftime = 0.02;
-fRange = 5;
-
-%% parameter location for trial iteration.
-trial = 1;
-
-%% error informations
-errLowBond = 1e-12;
-errMaxValInit = 1;
-errRbCtrl = 1;
-errRbCtrlThres = 0.01;
-errRbCtrlTNo = 1;
-
-%% counter
-cntInit = 1;
-
-%% refinement threshold.
-refiThres = 0.1;
-
-%% plot surfaces and grids
-drawRow = 1;
-drawCol = 1;
-nPhiInitial = 2;
-nPhiEnrich = 1;
+callPreliminary;
 
 %% trial solution
-% use subclass: canbeam to create fixed beam.
+% use subclass: fixbeam to create beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
@@ -107,12 +36,9 @@ fixie.velInpt;
 fixie.disInpt;
 
 % generate nodal force.
-debugMode = 0;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
-% quantity of interest
-nQoiT = 2;
-manual = 1;
+% quantity of interest.
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 
 % compute initial exact solution.
@@ -122,21 +48,12 @@ fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
-reductionRatio = 0.9;
 
 % initialise interpolation samples.
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
 
-% set types.
-refindicator = 0;
-
-timeType = 'allTime';
-svdType = 'noSVD';
-normType = 'fro';
-
 % prepare essential storage for error and responses.
-nRespSVD = 4;
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemain;
 fixie.impPrepareRemain;
@@ -149,7 +66,6 @@ fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 while fixie.err.max.val.slct > fixie.err.lowBond
     %% OFFLINE
     %     disp('offline start')
-    
     fixie.errPrepareSetZero;
     
     fixie.impGenerate;
@@ -191,7 +107,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.errStoreSurfs('diff');
         
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
-        
+        disp(fixie.err.norm)
     end
     
     %     disp('online end')

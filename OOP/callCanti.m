@@ -1,5 +1,4 @@
 clear; clc;
-tOffTime = 0;
 route = '/home/xiaohan/Desktop/Temp';
 figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
 % route = '/Users/kevin/Documents/Temp';
