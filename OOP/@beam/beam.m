@@ -647,6 +647,7 @@ classdef beam < handle
             obj.err.pre.hhat = cell(obj.no.pre.hhat, 6); % 6 cols in total,
             % 2 extra for the pyramid base shape cell elements, 1extra for
             % pm exponential values.
+            obj.err.norm = zeros(1, 2);
             if obj.no.inc == 1
                 obj.err.store.surf.hhat = zeros(obj.no.dom.discretisation, 1);
                 obj.err.store.surf.hat = zeros(obj.no.dom.discretisation, 1);
@@ -1320,8 +1321,7 @@ classdef beam < handle
             end
         end
         %%
-        function obj = resptoErrPreCompAllTimeMatrix...
-                (obj, svdSwitch, rvSvdSwitch)
+        function obj = resptoErrPreCompAllTimeMatrix(obj, svdSwitch)
             % CHANGE SIGN in this method!
             % here the index follows the refind grid sequence, not a
             % sequencial sequence.
@@ -1387,38 +1387,21 @@ classdef beam < handle
                         respAllCol = obj.resp.store.all{iPre, 3};
                     end
                     
-                    if rvSvdSwitch == 1
-                        % if SVD on reduced variables, pm needs to be
-                        % interpolated, therefore here pre-multiply pm to
-                        % related responses (note: pmPrepare in online
-                        % stage is not needed).
-                        pmhhat = obj.pmVal.hhat(iPre, 2:end);
-                        pmAll = [1; 1; pmhhat'; obj.pmVal.s.fix];
-                        pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
-                        pmRep = [1; pmRep];
-                        pmMtx = pmRep * pmRep';
-                        eTe = respAllCol' * respAllCol;
-                        respTrans = triu(eTe .* pmMtx);
-                        
-                    elseif rvSvdSwitch == 0
-                        % compute eTe, including all zero elements, then take
-                        % upper triangle only.
-                        if svdSwitch == 0
-                            respTrans = respAllCol' * respAllCol;
-                            respTrans = triu(respTrans);
-                            
-                        elseif svdSwitch == 1
-                            respTrans = ...
-                                zeros(numel(respAllCol), numel(respAllCol));
-                            % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
-                            for i = 1:numel(respAllCol)
-                                u1 = respAllCol{i};
-                                for j = i:numel(respAllCol)
-                                    u2 = respAllCol{j};
-                                    respTrans(i, j) = ...
-                                        trace(u1{3} * u1{2}' * u1{1}' * ...
-                                        u2{1} * u2{2} * u2{3}');
-                                end
+                    % compute eTe, including all zero elements, then take
+                    % upper triangle only.
+                    if svdSwitch == 0
+                        respTrans = respAllCol' * respAllCol;
+                    elseif svdSwitch == 1
+                        respTrans = ...
+                            zeros(numel(respAllCol), numel(respAllCol));
+                        % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
+                        for i = 1:numel(respAllCol)
+                            u1 = respAllCol{i};
+                            for j = i:numel(respAllCol)
+                                u2 = respAllCol{j};
+                                respTrans(i, j) = ...
+                                    trace(u1{3} * u1{2}' * u1{1}' * ...
+                                    u2{1} * u2{2} * u2{3}');
                             end
                         end
                     end
@@ -1504,38 +1487,21 @@ classdef beam < handle
                             obj.resp.store.all{obj.no.itplEx + iPre, 2};
                     end
                     
-                    if rvSvdSwitch == 1
-                        % if SVD on reduced variables, pm needs to be
-                        % interpolated, therefore here pre-multiply pm to
-                        % related responses (note: pmPrepare in online
-                        % stage is not needed).
-                        pmhhat = obj.pmVal.add(iPre, 2:end);
-                        pmAll = [1; 1; pmhhat'; obj.pmVal.s.fix];
-                        pmRep = repmat(pmAll, obj.no.t_step * obj.no.rb, 1);
-                        pmRep = [1; pmRep];
-                        pmMtx = pmRep * pmRep';
-                        obj.pmVal.pmCol = pmRep;
-                        eTe = respAllCol' * respAllCol;
-                        respTrans = triu(eTe .* pmMtx);
-                        
-                    elseif rvSvdSwitch == 0
-                        % compute eTe, including all zero elements, then take
-                        % upper triangle only.
-                        if svdSwitch == 0
-                            respTrans = respAllCol' * respAllCol;
-                            respTrans = triu(respTrans);
-                        elseif svdSwitch == 1
-                            respTrans = ...
-                                zeros(numel(respAllCol), numel(respAllCol));
-                            % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
-                            for i = 1:numel(respAllCol)
-                                u1 = respAllCol{i};
-                                for j = i:numel(respAllCol)
-                                    u2 = respAllCol{j};
-                                    respTrans(i, j) = ...
-                                        trace(u1{3} * u1{2}' * u1{1}' * ...
-                                        u2{1} * u2{2} * u2{3}');
-                                end
+                    % compute eTe, including all zero elements, then take
+                    % upper triangle only.
+                    if svdSwitch == 0
+                        respTrans = respAllCol' * respAllCol;
+                    elseif svdSwitch == 1
+                        respTrans = ...
+                            zeros(numel(respAllCol), numel(respAllCol));
+                        % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
+                        for i = 1:numel(respAllCol)
+                            u1 = respAllCol{i};
+                            for j = i:numel(respAllCol)
+                                u2 = respAllCol{j};
+                                respTrans(i, j) = ...
+                                    trace(u1{3} * u1{2}' * u1{1}' * ...
+                                    u2{1} * u2{2} * u2{3}');
                             end
                         end
                     end
@@ -1814,13 +1780,21 @@ classdef beam < handle
             rvStore = cell2mat(obj.resp.rv.store);
             [rvL, rvSig, rvR] = svd(rvStore, 0);
             rvL = rvL * rvSig;
-%             reductionRatio = sum() / sum();
+            rvSigCol = diag(rvSig);
+            for isig = 1:length(rvSigCol)
+                sigSumRatio = sum(rvSigCol(1:(length(rvSigCol) - isig))) /...
+                    sum(rvSigCol);
+                if sigSumRatio < 0.99
+                    nRvSVD = length(rvSigCol) - isig + 1;
+                    break
+                end
+            end
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
             % rvL' * eTe * rvL * rvR') = domain size * domain size
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
-            keyboard
+            
             rvL = rvL(:, 1:nRvSVD);
             rvR = rvR(:, 1:nRvSVD);
             obj.resp.rv.sig = rvSig(1:nRvSVD, 1:nRvSVD);
@@ -1836,15 +1810,15 @@ classdef beam < handle
             for i = 1:obj.no.pre.hhat
                 if size(obj.err.pre.hhat{i, 5}, 1) == ...
                         size(obj.resp.rv.L, 1)
-                    errReCons5 = reConstruct(obj.err.pre.hhat{i, 5});
+                    eTe5 = obj.err.pre.hhat{i, 5};
                     obj.err.pre.hhat{i, 5} = ...
-                        obj.resp.rv.L' * errReCons5 * obj.resp.rv.L;
+                        obj.resp.rv.L' * eTe5 * obj.resp.rv.L;
                 end
                 if size(obj.err.pre.hhat{i, 6}, 1) == ...
                         size(obj.resp.rv.L, 1)
-                    errReCons6 = obj.err.pre.hhat{i, 6};
+                    eTe6 = obj.err.pre.hhat{i, 6};
                     obj.err.pre.hhat{i, 6} = ...
-                        obj.resp.rv.L' * errReCons6 * obj.resp.rv.L;
+                        obj.resp.rv.L' * eTe6 * obj.resp.rv.L;
                 end
             end
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
@@ -1905,17 +1879,11 @@ classdef beam < handle
         %%
         function obj = pmMultiRv(obj)
             % this method multiplies the same dim rv vector with pm vector,
-            % ready for the POD on rv. 
+            % ready for the POD on rv.
             pmVec = obj.pmVal.pmCol;
             rvVec = obj.pmVal.rvCol;
             obj.pmVal.pmrv = pmVec .* rvVec;
             
-        end
-        %%
-        function obj = rvColStore(obj, iIter)
-            % this method stores reduced variables to perform SVD.
-            rvCol = obj.pmVal.rvCol;
-            obj.resp.rv.store(iIter) = {rvCol};
         end
         %%
         function obj = rvpmColStore(obj, iIter)
@@ -1975,17 +1943,11 @@ classdef beam < handle
                         coefOtpt = lagrange(pmIter, pmCell);
                         cfcfT = coefOtpt * coefOtpt';
                         uiCell = cell(2, 2);
-                        % if 1st col of lower tri contains n-1 0s, then
-                        % reConstruct.
-                        if any(uiTui{1}(2:end, 1)) == 0
-                            for iut = 1:2
-                                uiCell{iut, iut} = reConstruct(uiTui{iut});
-                            end
-                        else
-                            for iut = 1:2
-                                uiCell{iut, iut} = uiTui{iut};
-                            end
+                        
+                        for iut = 1:2
+                            uiCell{iut, iut} = uiTui{iut};
                         end
+                            
                         uiCell{1, 2} = uiTuj{:};
                         uiCell{2, 1} = uiTuj{:}';
                         uTuOtpt = zeros(size(uiCell{2}));
@@ -1993,11 +1955,8 @@ classdef beam < handle
                             uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
                         end
                         % non-diag entries of uiCell are not symmetric, but
-                        % once sum all cells of uiCell becomes symmetric,
-                        % therefore triu can be used.
-                        obj.err.itpl.otpt = triu(uTuOtpt);
-                        % here triu is for method rvPmErrProdSum to apply
-                        % reConstruct.
+                        % once sum all cells of uiCell becomes symmetric.
+                        obj.err.itpl.otpt = uTuOtpt;
                     end
                     
                 elseif obj.no.inc == 2
@@ -2039,6 +1998,7 @@ classdef beam < handle
                 case 'add'
                     obj.err.itpl.add = obj.err.itpl.otpt;
             end
+            
         end
         %%
         function obj = conditionalItplProdRvPm(obj, iIter, rvSvdSwitch)
@@ -2115,6 +2075,7 @@ classdef beam < handle
         end
         %%
         function obj = rvPmErrProdSum(obj, type, rvSvdSwitch, iIter)
+            
             switch type
                 case 'hhat'
                     e = obj.err.itpl.hhat;
@@ -2123,19 +2084,16 @@ classdef beam < handle
                 case 'add'
                     e = obj.err.itpl.add;
             end
-            % recover eTe
-            e = reConstruct(e);
             if rvSvdSwitch == 0
                 ePreSqrt = (obj.pmVal.rvCol .* obj.pmVal.pmCol)' * e * ...
                     (obj.pmVal.rvCol .* obj.pmVal.pmCol);
                 switch type
                     case {'hhat', 'add'}
-                        obj.err.norm{1} = ...
+                        obj.err.norm(1) = ...
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
-                        
                     case 'hat'
-                        obj.err.norm{2} = ...
+                        obj.err.norm(2) = ...
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
                 end
@@ -2146,9 +2104,11 @@ classdef beam < handle
                 ePreDiag = diag(ePreMtx);
                 switch type
                     case {'hhat', 'add'}
-                        obj.err.norm{1} = ePreDiag(iIter);
+                        % in case add, obj.err.norm(2) doesn't change,
+                        % fixes to the last value of the previous iteration.
+                        obj.err.norm(1) = ePreDiag(iIter);
                     case 'hat'
-                        obj.err.norm{2} = ePreDiag(iIter);
+                        obj.err.norm(2) = ePreDiag(iIter);
                 end
             end
         end
@@ -2224,29 +2184,29 @@ classdef beam < handle
             else
                 surfSize = obj.domLeng.i;
             end
+            % use idx here cause in 2d, subindices need to be transformed
+            % into xy coords.
             idx = sub2ind(surfSize, pmLocIter{:});
             switch type
                 case 'hhat'
                     obj.err.store.surf.hhat(idx) = ...
-                        obj.err.store.surf.hhat(idx) + obj.err.norm{1};
+                        obj.err.store.surf.hhat(idx) + obj.err.norm(1);
                     
                 case 'hat'
                     obj.err.store.surf.hat(idx) = ...
-                        obj.err.store.surf.hat(idx) + obj.err.norm{2};
+                        obj.err.store.surf.hat(idx) + obj.err.norm(2);
                     
                 case 'diff'
-                    obj.err.store.surf.diff(idx) = ...
-                        obj.err.store.surf.diff(idx) + ...
-                        abs(obj.err.store.surf.hhat(idx) - ...
-                        obj.err.store.surf.hat(idx));
+                    obj.err.store.surf.diff = ...
+                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat);
                     
                 case 'errwRb'
                     obj.err.store.surf.errwRb(idx) = ...
                         obj.err.store.surf.errwRb(idx) + obj.err.errwRb;
                     
                 case 'original'
-                    obj.err.store.surf(idx) = obj.err.store.surf(idx) + ...
-                        obj.err.val;
+                    obj.err.store.surf(idx) = ...
+                        obj.err.store.surf(idx) + obj.err.val;
             end
         end
         %%
@@ -2515,15 +2475,6 @@ classdef beam < handle
             
         end
         %%
-        function obj = clearmemory(obj)
-            
-            obj.err.reConstruct = [];
-            obj.err.reConstructOtpt = [];
-            obj.err.lagItplCoeff = [];
-            obj.err.itpl = [];
-            
-        end
-        %%
         function obj = reducedMatrices(obj)
             % this method constructs the reduced system after reduced basis
             % is computed.
@@ -2546,6 +2497,11 @@ classdef beam < handle
             switch type
                 case 'maxValue'
                     % maximum distance between maximum values of 2 surfaces.
+                    % 'maxValue' may have a problem: the maximum values are 
+                    % at the same location (corners), which are interpolation
+                    % samples, result in the same value, and the refinement
+                    % condition = 0, so there is no refinement, which is
+                    % not good.
                     obj.refinement.condition = abs((obj.err.max.val.hhat - ...
                         obj.err.max.val.hat) / obj.err.max.val.hat);
                 case 'maxSurf'

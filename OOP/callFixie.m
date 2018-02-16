@@ -62,7 +62,7 @@ fixie.respStorePrepareRemain(svdType, timeType);
 % initial computation of force responses.
 fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 
-%% main while loop
+%% main while loop.
 while fixie.err.max.val.slct > fixie.err.lowBond
     %% OFFLINE
     %     disp('offline start')
@@ -83,7 +83,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
                 case 'noSVD'
                     
                     % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
+                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch);
                     
             end
     end
@@ -104,21 +104,16 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         
         fixie.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         
-        fixie.errStoreSurfs('diff');
-        
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
-        disp(fixie.err.norm)
+        
     end
-    
     %     disp('online end')
-    %     fixie.clearmemory;
+    
     %% extract error information
     %     fixie.extractErrorInfo('errwRb');
-    
+    fixie.errStoreSurfs('diff');
     fixie.extractMaxErrorInfo('hhat');
     fixie.extractMaxErrorInfo('hat');
-    
-    fixie.err.max.val.slct = fixie.err.max.val.hhat; %
     
     fixie.refiCond('maxSurf');
     % this line extracts parameter values of maximum error and
@@ -133,11 +128,10 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.maxErrorDisplay('hhat');
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
-        
         fixie.errStoreAllSurfs('hhat');
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
-            typeSwitch, 'g-^', 'proposed');
+            typeSwitch, 'g-^');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')

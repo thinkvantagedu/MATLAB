@@ -195,7 +195,6 @@ while canti.err.max.val.slct > canti.err.lowBond
     end
     
     %     disp('online end')
-    %     canti.clearmemory;
     %% extract error information
     %     canti.extractErrorInfo('errwRb');
     

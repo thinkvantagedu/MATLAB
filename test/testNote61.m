@@ -1,6 +1,6 @@
 clear; clc;
 % this script tests note 61.
-%% matrix case
+%% matrix case, y1, y2 are pre-computed displacements.
 y1 = [1 2; 3 4];
 y2 = [8 7; 6 5];
 
@@ -30,24 +30,26 @@ for i=1:length(xco)
     coefStore(i) = coefStore(i) + coef;
     
 end
-
+% otpt is the interpolation result of DISPLACEMENT, not eTe.
+% eteotpt is the most original eTe, i.e. interpolate disp, then find eTe.
+% 1. original approach.
 eteotpt = otpt' * otpt;
 
-yty = cell(length(xco), length(xco));
+% 2. new approach: find eiTej first,
+eiTej = cell(length(xco), length(xco));
 for i = 1:length(xco)
     yt1 = yco{i};
     for j = 1:length(xco)
         yt2 = yco{j};
-        yty{i, j} = yt1' * yt2;
+        eiTej{i, j} = yt1' * yt2;
     end
 end
-
+% find coefTcoef,
 ctc = num2cell(coefStore * coefStore');
-
-ytc = cellfun(@(u, v) u * v, yty, ctc, 'un', 0);
-
+% multiply cTc with eiTej,
+ytc = cellfun(@(u, v) u * v, eiTej, ctc, 'un', 0);
+% sum all elements.
 etesum = zeros(2, 2);
-
 for i = 1:numel(ytc)
     etesum = etesum + ytc{i};
 end

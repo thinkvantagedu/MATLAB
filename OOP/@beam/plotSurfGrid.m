@@ -1,5 +1,5 @@
 function obj = plotSurfGrid(obj, drawRow, drawCol, gridSwitch, axisLim, ...
-    originalSwitch, lineColor, lgnd)
+    originalSwitch, lineColor)
 % This function plots error response surface for the desired cases.
 % The location of the maximum error is also marked on the surface.
 switch originalSwitch
@@ -148,7 +148,6 @@ elseif gridSwitch == 0
     grid on
     
 end
-% legend(lgnd)
 % set(hAx,'zlim',axi_lim)
 shading faceted
 colormap(cool)

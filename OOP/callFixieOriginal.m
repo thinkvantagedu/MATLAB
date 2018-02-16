@@ -84,7 +84,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     end
     
     fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, ...
-        typeSwitch, '-.k', 'original');
+        typeSwitch, '-.k');
     
     fixie.maxErrorDisplay(typeSwitch);
     if fixie.countGreedy >= drawRow * drawCol
