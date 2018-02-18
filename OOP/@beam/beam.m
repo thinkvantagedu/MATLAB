@@ -1998,6 +1998,7 @@ classdef beam < handle
                     obj.err.itpl.hhat = obj.err.itpl.otpt;
                 case 'hat'
                     obj.err.itpl.hat = obj.err.itpl.otpt;
+                    keyboard
                 case 'add'
                     obj.err.itpl.add = obj.err.itpl.otpt;
             end
@@ -2019,6 +2020,7 @@ classdef beam < handle
             if obj.no.block.hat == 1
                 obj.inpolyItpl('hhat');
                 obj.inpolyItpl('hat');
+                keyboard
                 obj.rvPmErrProdSum('hhat', rvSvdSwitch, iIter);
                 obj.rvPmErrProdSum('hat', rvSvdSwitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
@@ -2100,6 +2102,7 @@ classdef beam < handle
                             sqrt(abs(ePreSqrt)) / ...
                             norm(obj.dis.qoi.trial, 'fro');
                 end
+                
             elseif rvSvdSwitch == 1
                 ePreSqrtMtx = obj.resp.rv.R * e * obj.resp.rv.R';
                 ePreMtx = sqrt(abs(ePreSqrtMtx)) / ...
@@ -2113,6 +2116,7 @@ classdef beam < handle
                     case 'hat'
                         obj.err.norm(2) = ePreDiag(iIter);
                 end
+                
             end
         end
         %%
@@ -2522,6 +2526,7 @@ classdef beam < handle
                         abs(max(obj.err.store.surf.diff(:)) / ...
                         obj.err.max.val.hat);
             end
+            keyboard
         end
         %%
         function obj = refiCondDisplay(obj, type)
@@ -2946,6 +2951,14 @@ classdef beam < handle
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
+            
+        end
+        %% 
+        function obj = plot1DrefineDomain(obj)
+            % this method plot the 1D refined pm domain under the 2D error
+            % response surfaces. Color matches the surfaces. 
+            
+            
             
         end
         %%

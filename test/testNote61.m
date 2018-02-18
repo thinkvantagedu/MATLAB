@@ -1,35 +1,20 @@
 clear; clc;
 % this script tests note 61.
+% 2 cases: 1. interpolate u, then uTu; 2. uTu, then interpolate.
 %% matrix case, y1, y2 are pre-computed displacements.
-y1 = [1 2; 3 4];
-y2 = [8 7; 6 5];
+y1 = [1 2; 3 4; 5 6];
+y2 = [8 7; 6 5; 4 3];
 
 x1 = 1;
 x2 = 5;
 
-xco = [x1; x2];
+xco = {x1; x2};
 yco = {y1; y2};
 
 inptx = 4;
 % compute Lagrange interpolation.
-otpt = sparse(0);
-coefStore = zeros(length(xco), 1);
+[coefStore, otpt] = lagrange(inptx, xco, yco);
 
-for i=1:length(xco)
-    
-    % fix ith sample x value, to obtain ith Lagrange polynomial.
-    afterFix = [xco(1:i - 1); xco(i + 1:end)];
-    % denominator, [fix - x1; fix - x2; ... ; fix - xn].
-    de = xco(i) - afterFix;
-    % numerator, [inptx - x1; inptx - x2; ... ; inptx - xn].
-    nu = inptx - afterFix;
-    % prod(nu)) / (prod(de) is the polynomial value at inptx, see wiki
-    % example.
-    coef = prod(nu) / prod(de);
-    otpt = otpt + yco{i} * coef;
-    coefStore(i) = coefStore(i) + coef;
-    
-end
 % otpt is the interpolation result of DISPLACEMENT, not eTe.
 % eteotpt is the most original eTe, i.e. interpolate disp, then find eTe.
 % 1. original approach.
@@ -57,26 +42,11 @@ end
 % result: eteotpt = etesum.
 
 %% vector case.
-y1v = [1 2 3 4]';
-y2v = [8 7 6 5]';
+y1v = [1 2 3 4 5 6]';
+y2v = [8 7 6 5 4 3]';
 
 yvco = {y1v; y2v};
-otptv = sparse(0);
-
-for i=1:length(xco)
-    
-    % fix ith sample x value, to obtain ith Lagrange polynomial.
-    afterFix = [xco(1:i - 1); xco(i + 1:end)];
-    % denominator, [fix - x1; fix - x2; ... ; fix - xn].
-    de = xco(i) - afterFix;
-    % numerator, [inptx - x1; inptx - x2; ... ; inptx - xn].
-    nu = inptx - afterFix;
-    % prod(nu)) / (prod(de) is the polynomial value at inptx, see wiki
-    % example.
-    coef = prod(nu) / prod(de);
-    otptv = otptv + yvco{i} * coef;
-    
-end
+[~, otptv] = lagrange(inptx, xco, yvco);
 
 ycol = [y1v y2v];
 yctyc = ycol' * ycol;
