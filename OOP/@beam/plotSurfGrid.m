@@ -4,7 +4,7 @@ function obj = plotSurfGrid(obj, drawRow, drawCol, gridSwitch, axisLim, ...
 % The location of the maximum error is also marked on the surface.
 switch originalSwitch
     case 'original'
-        obj.err.max.pass = obj.err.max.val.slct;
+        obj.err.max.pass = obj.err.max.val;
         obj.err.store.pass = obj.err.store.surf;
     case 'hhat'
         obj.err.max.pass = obj.err.max.val.hhat;
@@ -77,8 +77,13 @@ elseif gridSwitch == 0
         hAx = semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 1);
         
         % text of current maximum error.
-        txtPlotCurrentMax = sprintf('[%d %.4g]', obj.pmLoc.max, ...
-            obj.err.max.val.slct);
+        switch originalSwitch
+            case 'original'
+                eMaxVal = obj.err.max.val;
+            case 'hhat'
+                eMaxVal = obj.err.max.val.hhat;
+        end
+        txtPlotCurrentMax = sprintf('[%d %.4g]', obj.pmLoc.max, eMaxVal);
         % add text to figure location.
         errTxt = text(obj.pmExpo.max{:}, errMax, txtPlotCurrentMax, ...
             'color', '[0 0 0]', 'Fontsize', 10);

@@ -44,7 +44,8 @@ fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
 % compute initial exact solution.
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
 
-% compute initial reduced basis from trial solution. 
+% compute initial reduced basis from trial solution. There are different
+% approaches.
 fixie.rbInitial(nPhiInitial);
 % fixie.rbCtrlInitial(rbCtrlThres);
 % fixie.rbSingularInitial(reductionRatio);
@@ -54,7 +55,7 @@ fixie.reducedMatrices;
 fixie.errPrepareRemainOriginal;
 
 
-while fixie.err.max.val.slct > fixie.err.lowBond
+while fixie.err.max.val > fixie.err.lowBond
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
     
@@ -79,11 +80,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
     fixie.errStoreAllSurfs('original');
     figure(1)
     
-    if fixie.countGreedy == 1
-        axisLim = fixie.err.max.val.slct;
-    end
-    
-    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, axisLim, ...
+    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
         typeSwitch, '-.k');
     
     fixie.maxErrorDisplay(typeSwitch);

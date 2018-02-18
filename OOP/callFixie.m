@@ -55,7 +55,7 @@ fixie.refineGridLocalwithIdx('initial');
 
 % prepare essential storage for error and responses.
 fixie.otherPrepare(nRespSVD);
-fixie.errPrepareRemain;
+fixie.errPrepareRemainHats;
 fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(svdType, timeType);
 
@@ -63,9 +63,9 @@ fixie.respStorePrepareRemain(svdType, timeType);
 fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
 
 %% main while loop.
-while fixie.err.max.val.slct > fixie.err.lowBond
+while fixie.err.max.val.hhat > fixie.err.lowBond
     %% OFFLINE
-    %     disp('offline start')
+    % disp('offline start')
     fixie.errPrepareSetZero;
     
     fixie.impGenerate;
@@ -87,10 +87,10 @@ while fixie.err.max.val.slct > fixie.err.lowBond
                     
             end
     end
-    %     disp('offline end')
+    % disp('offline end')
     %% ONLINE
     
-    %     disp('online start')
+    % disp('online start')
     
     for iIter = 1:nIter
         
@@ -107,10 +107,9 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
-    %     disp('online end')
+    % disp('online end')
     
     %% extract error information
-    %     fixie.extractErrorInfo('errwRb');
     fixie.errStoreSurfs('diff');
     fixie.extractMaxErrorInfo('hhat');
     fixie.extractMaxErrorInfo('hat');
@@ -131,7 +130,7 @@ while fixie.err.max.val.slct > fixie.err.lowBond
         fixie.errStoreAllSurfs('hhat');
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
-            typeSwitch, 'g-^');
+            typeSwitch, 'b-^');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')

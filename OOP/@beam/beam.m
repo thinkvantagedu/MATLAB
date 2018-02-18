@@ -81,7 +81,7 @@ classdef beam < handle
             obj.pmExpo.mid = domMid;
             
             obj.err.lowBond = errLowBond;
-            obj.err.max.val.slct = errMaxValInit;
+            obj.err.max.val = errMaxValInit;
             obj.err.rbCtrl = errRbCtrl;
             obj.err.rbCtrlThres = errRbCtrlThres;
             obj.err.rbCtrlTrialNo = errRbCtrlTNo;
@@ -634,7 +634,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = errPrepareRemain(obj)
+        function obj = errPrepareRemainHats(obj)
             obj.err.store.max.errwRb = [];
             obj.err.store.max.hhat = [];
             obj.err.store.max.hat = [];
@@ -655,6 +655,9 @@ classdef beam < handle
                 obj.err.store.surf.hhat = zeros(obj.no.dom.discretisation);
                 obj.err.store.surf.hat = zeros(obj.no.dom.discretisation);
             end
+            % initialise maximum error
+            obj.err.max = rmfield(obj.err.max, 'val');
+            obj.err.max.val.hhat = 1;
         end
         %%
         function obj = errPrepareRemainOriginal(obj)
@@ -1775,7 +1778,7 @@ classdef beam < handle
             obj.dis.re.reVar = obj.dis.reduce;
         end
         %%
-        function obj = rvSVD(obj, nRvSVD)
+        function obj = rvSVD(obj, rvSVDreRatio)
             % this method performs SVD on the stored reduced variables.
             rvStore = cell2mat(obj.resp.rv.store);
             [rvL, rvSig, rvR] = svd(rvStore, 0);
@@ -1784,7 +1787,7 @@ classdef beam < handle
             for isig = 1:length(rvSigCol)
                 sigSumRatio = sum(rvSigCol(1:(length(rvSigCol) - isig))) /...
                     sum(rvSigCol);
-                if sigSumRatio < 0.99
+                if sigSumRatio < rvSVDreRatio
                     nRvSVD = length(rvSigCol) - isig + 1;
                     break
                 end
@@ -2314,7 +2317,7 @@ classdef beam < handle
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
                     pmValRow = obj.pmVal.comb.space(eMaxLocIdx, :);
-                    obj.err.max.val.slct = eMaxVal;
+                    obj.err.max.val = eMaxVal;
                     
                     if randomSwitch == 1
                         if obj.countGreedy == 1
@@ -2362,7 +2365,7 @@ classdef beam < handle
         %%
         function obj = storeErrorInfoOriginal(obj)
             
-            obj.err.store.max = [obj.err.store.max; obj.err.max.val.slct];
+            obj.err.store.max = [obj.err.store.max; obj.err.max.val];
             obj.err.store.loc = [obj.err.store.loc; obj.err.max.loc];
             
         end
@@ -2398,12 +2401,19 @@ classdef beam < handle
             % local h-refinement
             obj.indicator.refine = 1;
             obj.indicator.enrich = 0;
+            % let hat surface = hhat surface. 
             obj.pmExpo.hat = obj.pmExpo.hhat;
             obj.pmExpo.block.hat = obj.pmExpo.block.hhat;
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
             obj.no.block.hat = size(obj.pmExpo.block.hat, 1);
             % nExist + nAdd should equal to nhhat.
             obj.no.itplEx = obj.no.pre.hat;
+            % find where the maximum distance is between hhat and hat
+            % surfaces.
+            if obj.no.inc == 1
+                [~, maxDistLoc] = max(obj.err.store.surf.diff);
+                obj.pmExpo.maxDist = {obj.pmExpo.i{:}(maxDistLoc)};
+            end
             obj = refineGridLocalwithIdx(obj, 'iteration');
             obj.no.block.add = 2 ^ obj.no.inc - 1;
         end
@@ -2502,6 +2512,8 @@ classdef beam < handle
                     % samples, result in the same value, and the refinement
                     % condition = 0, so there is no refinement, which is
                     % not good.
+                    % another problem of maxValue is we do not know where
+                    % to refine. 
                     obj.refinement.condition = abs((obj.err.max.val.hhat - ...
                         obj.err.max.val.hat) / obj.err.max.val.hat);
                 case 'maxSurf'
@@ -2526,18 +2538,23 @@ classdef beam < handle
         %%
         function obj = maxErrorDisplay(obj, type)
             % this method displays maximum error value.
-            disp(strcat('maximum error ', {' = '}, ...
-                num2str(obj.err.max.val.slct)));
+            
             switch type
                 case 'original'
                     disp(strcat('location ', {' = '}, ...
                         num2str(obj.err.max.loc)));
+                    disp(strcat('maximum error ', {' = '}, ...
+                        num2str(obj.err.max.val)));
                 case 'hhat'
                     disp(strcat('location ', {' = '}, ...
                         num2str(obj.err.max.loc.hhat)));
+                    disp(strcat('maximum error ', {' = '}, ...
+                        num2str(obj.err.max.val.hhat)));
                 case 'hat'
                     disp(strcat('location ', {' = '}, ...
                         num2str(obj.err.max.loc.hat)));
+                    disp(strcat('maximum error ', {' = '}, ...
+                        num2str(obj.err.max.val.hat)));
             end
         end
         %%
@@ -2797,9 +2814,12 @@ classdef beam < handle
             
             switch type
                 case 'initial'
+                    % initial iteration refine the entire domain.
                     pmExptoTest = obj.pmExpo.mid;
                 case 'iteration'
-                    pmExptoTest = obj.pmExpo.max;
+                    % following iterations refine where maximum difference
+                    % is (between hhat and hat surfaces).
+                    pmExptoTest = obj.pmExpo.maxDist;
             end
             
             pmExpInpPm_ = cell2mat(obj.pmExpo.block.hat);
