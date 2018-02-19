@@ -55,7 +55,7 @@ refiThres = 0.19;
 
 %% plot surfaces and grids. (frequently change in debugging)
 drawRow = 1;
-drawCol = 1;
+drawCol = 2;
 nPhiInitial = 2;
 nPhiEnrich = 3;
 

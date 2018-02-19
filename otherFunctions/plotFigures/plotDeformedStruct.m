@@ -1,5 +1,7 @@
-function PlotDeformedStruct(node, elem, dis, deformFactor, labelSwitch)
-%% input displacement and structure info, plot deformed structure, for triangular elements.
+function plotDeformedStruct(node, elem, dis, deformFactor, labelSwitch)
+% input displacement and structure info, plot deformed structure, 
+% for triangular elements.
+
 %% deform factor decides how much the deformation is enlarged.
 % dis = Dis.OR.otpt.trial.exact(:, 2);
 % label_switch = 0;
@@ -32,6 +34,6 @@ if labelSwitch == 1
     end
 end
 
-axis([-10 100 -5 25]);
+% axis([-10 100 -5 25]);
 
 axis equal

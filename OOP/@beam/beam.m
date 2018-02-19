@@ -1998,7 +1998,6 @@ classdef beam < handle
                     obj.err.itpl.hhat = obj.err.itpl.otpt;
                 case 'hat'
                     obj.err.itpl.hat = obj.err.itpl.otpt;
-                    keyboard
                 case 'add'
                     obj.err.itpl.add = obj.err.itpl.otpt;
             end
@@ -2020,7 +2019,6 @@ classdef beam < handle
             if obj.no.block.hat == 1
                 obj.inpolyItpl('hhat');
                 obj.inpolyItpl('hat');
-                keyboard
                 obj.rvPmErrProdSum('hhat', rvSvdSwitch, iIter);
                 obj.rvPmErrProdSum('hat', rvSvdSwitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
@@ -2526,7 +2524,6 @@ classdef beam < handle
                         abs(max(obj.err.store.surf.diff(:)) / ...
                         obj.err.max.val.hat);
             end
-            keyboard
         end
         %%
         function obj = refiCondDisplay(obj, type)
