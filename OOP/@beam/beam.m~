@@ -1537,7 +1537,7 @@ classdef beam < handle
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
             obj.uiTujSort(respStoretoTrans);
             obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 3);
-            
+            keyboard
         end
         %%
         function obj = uiTujSort(obj, respStoreInpt)

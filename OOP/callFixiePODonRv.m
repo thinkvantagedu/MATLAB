@@ -134,7 +134,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    fixie.extractMaxPmInfo('hhat');
+    fixie.extractMaxPmInfo(typeSwitch);
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
@@ -142,7 +142,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.maxErrorDisplay('hhat');
         fixie.storeErrorInfo('hhat');
         fixie.storeErrorInfo('hat');
-        fixie.errStoreAllSurfs('hhat');
+        fixie.errStoreAllSurfs(typeSwitch);
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
             typeSwitch, 'g-*');

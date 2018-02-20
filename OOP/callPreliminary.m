@@ -28,7 +28,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.19; 
+tMax = 0.29; 
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -51,13 +51,13 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.2;
+refiThres = 0.1;
 
 %% plot surfaces and grids. (frequently change in debugging) ==========
 drawRow = 1;
-drawCol = 3;
-nPhiInitial = 2;
-nPhiEnrich = 3;
+drawCol = 1;
+nPhiInitial = 1;
+nPhiEnrich = 2;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
