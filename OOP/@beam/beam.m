@@ -1430,7 +1430,6 @@ classdef beam < handle
                 % obj.err.pre.hhat.
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans);
-                % uiTuj CANNOT be applied to triu!
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
             elseif obj.indicator.enrich == 0 && ...
                     obj.indicator.refine == 1
@@ -1807,8 +1806,8 @@ classdef beam < handle
         end
         %%
         function obj = rvLTePrervL(obj)
-            % this method multiply left singular vectors from collected reduced
-            % variables with pre-computed eTe
+            % this method multiplies left singular vectors from collected 
+            % reduced variables with pre-computed eTe.
             
             for i = 1:obj.no.pre.hhat
                 if size(obj.err.pre.hhat{i, 5}, 1) == ...
@@ -1824,7 +1823,21 @@ classdef beam < handle
                         obj.resp.rv.L' * eTe6 * obj.resp.rv.L;
                 end
             end
-            obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
+            
+            for i = 1:obj.no.pre.hat
+                if size(obj.err.pre.hat{i, 5}, 1) == ...
+                        size(obj.resp.rv.L, 1)
+                    eTe5 = obj.err.pre.hat{i, 5};
+                    obj.err.pre.hat{i, 5} = ...
+                        obj.resp.rv.L' * eTe5 * obj.resp.rv.L;
+                end
+                if size(obj.err.pre.hat{i, 6}, 1) == ...
+                        size(obj.resp.rv.L, 1)
+                    eTe6 = obj.err.pre.hat{i, 6};
+                    obj.err.pre.hat{i, 6} = ...
+                        obj.resp.rv.L' * eTe6 * obj.resp.rv.L;
+                end
+            end
             
         end
         %%
@@ -2523,6 +2536,7 @@ classdef beam < handle
                     obj.refinement.condition = ...
                         abs(max(obj.err.store.surf.diff(:)) / ...
                         obj.err.max.val.hat);
+                    
             end
         end
         %%

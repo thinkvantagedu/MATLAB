@@ -14,7 +14,7 @@ noDam = 1;
 dam = 0;
 nDofPerNode = 2;
 
-%% data for parameter class.
+%% data for parameter class. ==========
 domLengi = 9;
 domLengs = 9;
 nIter = prod(domLengi);
@@ -27,8 +27,8 @@ nConsEnd = 2;
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
-%% data for time.
-tMax = 0.19;
+%% data for time. ==========
+tMax = 0.19; 
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -50,12 +50,12 @@ errRbCtrlTNo = 1;
 %% counter.
 cntInit = 1;
 
-%% refinement threshold.
-refiThres = 0.19;
+%% refinement threshold. ==========
+refiThres = 0.2;
 
-%% plot surfaces and grids. (frequently change in debugging)
+%% plot surfaces and grids. (frequently change in debugging) ==========
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 nPhiInitial = 2;
 nPhiEnrich = 3;
 
@@ -75,7 +75,7 @@ rbCtrlThres = 0.1;
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
 nRespSVD = 4;
-% ratio of SVD erro reduction for POD on rv.
+% ratio of SVD erro reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
 %% set types
