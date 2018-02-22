@@ -68,6 +68,27 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % disp('offline start')
     fixie.errPrepareSetZero;
     
+    % OFFLINE POD.
+    % collect all reduced variables to perform POD.
+    for iIter = 1:nIter
+        
+        fixie.pmIter(iIter);
+        
+        fixie.reducedVar;
+        
+        fixie.pmPrepare(rvSvdSwitch);
+        
+        fixie.rvPrepare(rvSvdSwitch);
+        
+        fixie.pmMultiRv;
+        
+        fixie.rvpmColStore(iIter);
+        
+    end
+    
+    % SVD on the collected reduced variables.
+    fixie.rvSVD(rvSVDreRatio);
+    
     fixie.impGenerate;
     
     fixie.respTdiffComputation(svdSwitch);
@@ -83,31 +104,11 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
                 case 'noSVD'
                     
                     % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch);
+                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
                     
             end
     end
     
-    % OFFLINE POD.
-    % collect all reduced variables to perform POD.
-    for iIter = 1:nIter
-        
-        fixie.pmIter(iIter);
-        
-        fixie.reducedVar;
-        
-        fixie.pmPrepare;
-        
-        fixie.rvPrepare;
-        
-        fixie.pmMultiRv;
-        
-        fixie.rvpmColStore(iIter);
-        
-    end
-    
-    % SVD on the collected reduced variables.
-    fixie.rvSVD(rvSVDreRatio);
     fixie.rvLTePrervL;
     % disp('offline end')
     

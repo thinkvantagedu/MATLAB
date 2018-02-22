@@ -83,7 +83,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
                 case 'noSVD'
                     
                     % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch);
+                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
                     
             end
     end
@@ -98,9 +98,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.reducedVar;
         
-        fixie.pmPrepare;
+        fixie.pmPrepare(rvSvdSwitch);
         
-        fixie.rvPrepare;
+        fixie.rvPrepare(rvSvdSwitch);
         
         fixie.conditionalItplProdRvPm(iIter, rvSvdSwitch);
         

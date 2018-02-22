@@ -635,11 +635,9 @@ classdef beam < handle
         end
         %%
         function obj = errPrepareRemainHats(obj)
-            obj.err.store.max.errwRb = [];
             obj.err.store.max.hhat = [];
             obj.err.store.max.hat = [];
             obj.err.store.max.diff = [];
-            obj.err.store.loc.errwRb = [];
             obj.err.store.loc.hhat = [];
             obj.err.store.loc.hat = [];
             obj.err.store.loc.diff = [];
@@ -670,10 +668,8 @@ classdef beam < handle
         %%
         function obj = errPrepareSetZero(obj)
             if obj.no.inc == 1
-                obj.err.store.surf.errwRb = obj.err.setZ.sInc;
                 obj.err.store.surf.diff = obj.err.setZ.sInc;
             else
-                obj.err.store.surf.errwRb = obj.err.setZ.mInc;
                 obj.err.store.surf.diff = obj.err.setZ.mInc;
             end
         end
@@ -1324,7 +1320,8 @@ classdef beam < handle
             end
         end
         %%
-        function obj = resptoErrPreCompAllTimeMatrix(obj, svdSwitch)
+        function obj = resptoErrPreCompAllTimeMatrix...
+                (obj, svdSwitch, rvSvdSwitch)
             % CHANGE SIGN in this method!
             % here the index follows the refind grid sequence, not a
             % sequencial sequence.
@@ -1408,28 +1405,32 @@ classdef beam < handle
                             end
                         end
                     end
-                    
-                    % find the nonzero elements and interpolate these only.
-                    % find indicator by only dealing with iPre = 1.
-                    if iPre == 1
-                        for iTrans = 1:size(respTrans, 2)
+                    if rvSvdSwitch == 1
+                        obj.err.pre.hhat(iPre, 5) = {respTrans};
+                    elseif rvSvdSwitch == 0
+                        % find the nonzero elements and interpolate these only.
+                        % find indicator by only dealing with iPre = 1.
+                        if iPre == 1
+                            for iTrans = 1:size(respTrans, 2)
+                                obj.indicator.nonzeroi = ...
+                                    [obj.indicator.nonzeroi; ...
+                                    any(respTrans(:, iTrans))];
+                            end
                             obj.indicator.nonzeroi = ...
-                                [obj.indicator.nonzeroi; ...
-                                any(respTrans(:, iTrans))];
+                                find(obj.indicator.nonzeroi);
                         end
-                        obj.indicator.nonzeroi = find(obj.indicator.nonzeroi);
+                        obj.no.nonZ = length(obj.indicator.nonzeroi);
+                        respTransNonZero = ...
+                            full(respTrans(obj.indicator.nonzeroi, ...
+                            obj.indicator.nonzeroi));
+                        
+                        obj.err.pre.hhat(iPre, 5) = {respTransNonZero};
                     end
-                    obj.no.nonZ = length(obj.indicator.nonzeroi);
-                    respTransNonZero = ...
-                        full(respTrans(obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi));
-                    
-                    obj.err.pre.hhat(iPre, 5) = {respTransNonZero};
                 end
                 % compute uiTui+1 and store in the last column of
                 % obj.err.pre.hhat.
                 respStoretoTrans = obj.resp.store.all;
-                obj.uiTujSort(respStoretoTrans);
+                obj.uiTujSort(respStoretoTrans, rvSvdSwitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
             elseif obj.indicator.enrich == 0 && ...
                     obj.indicator.refine == 1
@@ -1508,25 +1509,30 @@ classdef beam < handle
                         end
                     end
                     
-                    if iPre == 1
-                        for i = 1:size(respTrans, 2)
+                    if rvSvdSwitch == 1
+                        obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = {respTrans};
+                    elseif rvSvdSwitch == 0
+                        if iPre == 1
+                            for i = 1:size(respTrans, 2)
+                                obj.indicator.nonzeroi = ...
+                                    [obj.indicator.nonzeroi; ...
+                                    any(respTrans(:, i))];
+                            end
                             obj.indicator.nonzeroi = ...
-                                [obj.indicator.nonzeroi; any(respTrans(:, i))];
+                                find(obj.indicator.nonzeroi);
                         end
-                        obj.indicator.nonzeroi = find(obj.indicator.nonzeroi);
+                        
+                        respTransNonZero = respTrans(obj.indicator.nonzeroi, ...
+                            obj.indicator.nonzeroi);
+                        
+                        obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
+                            {respTransNonZero};
                     end
-                    
-                    respTransNonZero = respTrans(obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi);
-                    
-                    obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
-                        {respTransNonZero};
                 end
                 % compute uiTui+1 and store in the last column of
                 % obj.err.pre.hhat.
-                
                 respStoretoTrans = obj.resp.store.all;
-                obj.uiTujSort(respStoretoTrans);
+                obj.uiTujSort(respStoretoTrans, rvSvdSwitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
@@ -1535,12 +1541,12 @@ classdef beam < handle
             obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
                 obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
-            obj.uiTujSort(respStoretoTrans);
+            obj.uiTujSort(respStoretoTrans, rvSvdSwitch);
             obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 3);
             
         end
         %%
-        function obj = uiTujSort(obj, respStoreInpt)
+        function obj = uiTujSort(obj, respStoreInpt, rvSvdSwitch)
             % sort stored displacements, perform uiTui+1, then sort back to
             % previous order, put in the last column of obj.err.pre.hhat,
             % to be ready to be interpolated.
@@ -1554,15 +1560,19 @@ classdef beam < handle
                 if iPre < size(respStoreSort, 1)
                     respTransSort = respStoreSort{iPre, 3}' * ...
                         respStoreSort{iPre + 1, 3};
-                    respTransSortNonZero = full(respTransSort...
-                        (obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi));
+                    if rvSvdSwitch == 0
+                        respTransSorttoStore = full(respTransSort...
+                            (obj.indicator.nonzeroi, ...
+                            obj.indicator.nonzeroi));
+                    elseif rvSvdSwitch == 1
+                        respTransSorttoStore = respTransSort;
+                    end
                 elseif iPre == size(respStoreSort, 1)
-                    respTransSortNonZero = [];
+                    respTransSorttoStore = [];
                 end
                 respStoreCell_(iPre, 1) = {respStoreSort{iPre, 1}};
                 respStoreCell_(iPre, 2) = {respStoreSort{iPre, 2}};
-                respStoreCell_(iPre, 3) = {respTransSortNonZero};
+                respStoreCell_(iPre, 3) = {respTransSorttoStore};
             end
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
@@ -1842,7 +1852,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = pmPrepare(obj)
+        function obj = pmPrepare(obj, rvSvdSwitch)
             % This method prepares parameter values to fit and multiply
             % related reduced variables.
             % The interpolated responses need to be saved for each
@@ -1850,16 +1860,22 @@ classdef beam < handle
             % variable.
             % Repeat for nt times to fit length of pre-computed
             % responses.
+            % if rvSvdSwitch = 1, there is no need to find the nonzero
+            % elements.
             pmPass = cell2mat(obj.pmVal.iter);
             pmSlct = repmat([1; 1; pmPass], obj.no.t_step * obj.no.rb, 1);
             pmSlct = [1; pmSlct];
-            pmNonZeroCol = pmSlct(obj.indicator.nonzeroi, :);
-            obj.pmVal.pmCol = pmNonZeroCol;
+            if rvSvdSwitch == 0
+                pmNonZeroCol = pmSlct(obj.indicator.nonzeroi, :);
+                obj.pmVal.pmCol = pmNonZeroCol;
+            elseif rvSvdSwitch == 1
+                obj.pmVal.pmCol = pmSlct;
+            end
             
         end
         
         %%
-        function obj = rvPrepare(obj)
+        function obj = rvPrepare(obj, rvSvdSwitch)
             % This method prepares reduced variables
             % to fit and multiply related reduced variables.
             % The interpolated responses need to be saved for each
@@ -1867,8 +1883,9 @@ classdef beam < handle
             % variable.
             % Repeat for nt times to fit length of pre-computed
             % responses.
-            
             % size of original rv is nr * nt.
+            % if rvSvdSwitch = 1, there is no need to find the nonzero
+            % elements.
             rvAcc = obj.acc.re.reVar;
             rvVel = obj.vel.re.reVar;
             rvDis = obj.dis.re.reVar;
@@ -1887,10 +1904,13 @@ classdef beam < handle
             rvAllRow = [rvAccRow; rvVelRow; rvDisRepRow];
             rvAllCol = rvAllRow(:);
             rvAllCol = [1; rvAllCol(:)];
-            %
-            rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
-            obj.no.totalResp = size(rvAllCol, 1);
-            obj.pmVal.rvCol = rvNonZeroCol;
+            
+            if rvSvdSwitch == 0
+                rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
+                obj.pmVal.rvCol = rvNonZeroCol;
+            elseif rvSvdSwitch == 1
+                obj.pmVal.rvCol = rvAllCol;
+            end
             
         end
         %%
@@ -2219,10 +2239,6 @@ classdef beam < handle
                     obj.err.store.surf.diff = ...
                         abs(obj.err.store.surf.hhat - obj.err.store.surf.hat);
                     
-                case 'errwRb'
-                    obj.err.store.surf.errwRb(idx) = ...
-                        obj.err.store.surf.errwRb(idx) + obj.err.errwRb;
-                    
                 case 'original'
                     obj.err.store.surf(idx) = ...
                         obj.err.store.surf(idx) + obj.err.val;
@@ -2263,50 +2279,8 @@ classdef beam < handle
             
         end
         %%
-        function obj = exactErrwithRB(obj, qoiSwitchTime, qoiSwitchSpace)
-            % compute exact error with the enriched RB, which is U^h - \phi *
-            % \alpha. Requires exact solution in pm domain.
-            
-            relativeErrSq = @(xNum, xInit) ...
-                (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
-            
-            obj.sti.iter = cellfun(@(v, w) v * w, ...
-                obj.sti.mtxCell, obj.pmVal.iter, 'un', 0);
-            obj.sti.iter = cellfun(@full, obj.sti.iter, 'un', 0);
-            obj.sti.iter = sum(cat(3, obj.sti.iter{:}), 3);
-            obj.sti.full = obj.sti.iter;
-            obj.fce.pass = obj.fce.val;
-            obj = NewmarkBetaReducedMethodOOP(obj, 'full');
-            
-            respRecons = obj.phi.val * obj.dis.re.reVar;
-            obj.dis.errwRb = obj.dis.full;
-            
-            if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                obj.dis.qoi.errwRb = obj.dis.errwRb;
-                
-            elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                obj.dis.qoi.errwRb = obj.dis.errwRb(:, obj.qoi.t);
-                respRecons = respRecons(:, obj.qoi.t);
-                
-            elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                obj.dis.qoi.errwRb = obj.dis.errwRb(obj.qoi.dof, :);
-                respRecons = respRecons(obj.qoi.dof, :);
-                
-            elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                obj.dis.qoi.errwRb = obj.dis.errwRb(obj.qoi.dof, obj.qoi.t);
-                respRecons = respRecons(obj.qoi.dof, obj.qoi.t);
-                
-            end
-            
-            obj.err.errwRb = ...
-                relativeErrSq(obj.dis.qoi.errwRb - respRecons, ...
-                obj.dis.qoi.trial);
-        end
-        %%
         function obj = extractMaxErrorInfo(obj, type, randomSwitch)
-            % extract error max and location from surfaces. The maximum
-            % error value displayed in main script is errwRb.
-            
+            % extract error max and location from surfaces. 
             switch type
                 
                 case 'hhat'
@@ -2322,13 +2296,6 @@ classdef beam < handle
                     pmValRowhat = obj.pmVal.comb.space(eMaxLocIdxhat, :);
                     obj.err.max.loc.hat = pmValRowhat(:, 1:obj.no.inc);
                     obj.err.max.val.hat = eMaxValhat;
-                    
-                case 'errwRb'
-                    [eMaxValerrwRb, eMaxLocIdxerrwRb] = ...
-                        max(obj.err.store.surf.errwRb(:));
-                    pmValRowerrwRb = obj.pmVal.comb.space(eMaxLocIdxerrwRb, :);
-                    obj.err.max.loc.errwRb = pmValRowerrwRb(:, 1:obj.no.inc);
-                    obj.err.max.val.errwRb = eMaxValerrwRb;
                     
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
@@ -2356,11 +2323,6 @@ classdef beam < handle
         function obj = storeErrorInfo(obj, type)
             % store error information for each Greedy iterations.
             switch type
-                case 'errwRb'
-                    obj.err.store.max.errwRb = ...
-                        [obj.err.store.max.errwRb; obj.err.max.val.errwRb];
-                    obj.err.store.loc.errwRb = ...
-                        [obj.err.store.loc.errwRb; obj.err.max.loc.errwRb];
                 case 'hhat'
                     obj.err.store.max.hhat = ...
                         [obj.err.store.max.hhat; obj.err.max.val.hhat];
