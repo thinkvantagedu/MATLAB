@@ -284,7 +284,7 @@ classdef beam < handle
             obj.elem.inc = incConn;
             obj.node.inc = nodeIncCell;
             obj.no.node.inc = size(cell2mat(obj.node.inc), 1);
-            obj.no.node.mtx = obj.no.dof - obj.no.node.inc;
+            obj.no.node.mtx = obj.no.node.all - obj.no.node.inc;
             obj.no.incNode = cellfun(@(v) size(v, 1), obj.node.inc, 'un', 0);
             obj.no.incNode = (cell2mat(obj.no.incNode))';
             
@@ -1791,6 +1791,7 @@ classdef beam < handle
                     break
                 end
             end
+            
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
             % rvL' * eTe * rvL * rvR') = domain size * domain size
