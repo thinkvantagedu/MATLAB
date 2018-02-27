@@ -83,7 +83,8 @@ elseif gridSwitch == 0
             case 'hhat'
                 eMaxVal = obj.err.max.val.hhat;
         end
-        txtPlotCurrentMax = sprintf('[%d %.4g]', obj.pmLoc.max, eMaxVal);
+        txtPlotCurrentMax = sprintf('[%d %.2g %d]', obj.pmLoc.max, eMaxVal, ...
+            obj.countGreedy);
         % add text to figure location.
         errTxt = text(obj.pmExpo.max{:}, errMax, txtPlotCurrentMax, ...
             'color', '[0 0 0]', 'Fontsize', 10);
@@ -131,10 +132,10 @@ elseif gridSwitch == 0
             pmExpoPrev = [pmExpoPrev, obj.pmExpo.i{i}(eLocPrevMax{i})];
         end
         if obj.no.inc == 1
-            txtPlotPrevMax = sprintf('[%d %.4g]', eLocPrevMax{1}, ...
+            txtPlotPrevMax = sprintf('[%d %.2g]', eLocPrevMax{1}, ...
                 eValPrevMaxCurrent);
             text(pmExpoPrev, eValPrevMaxCurrent, txtPlotPrevMax, ...
-                'color', '[0 0 1]', 'Fontsize', 10);
+                'color', '[1 0 1]', 'Fontsize', 10);
         elseif obj.no.inc == 2
             txtPlotPrevMax = sprintf('[%d %d, %d]', ...
                 eLocPrevMax{1}, eLocPrevMax{2}, eValPrevMaxCurrent);

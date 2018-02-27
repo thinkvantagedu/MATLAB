@@ -38,7 +38,7 @@ ftime = 0.02;
 fRange = 5;
 
 %% parameter data for trial iteration.
-trial = 1;
+trial = 8;
 
 %% error informations.
 errLowBond = 1e-12;
@@ -51,9 +51,9 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.05;
+refiThres = 0.01;
 
-%% plot surfaces and grids. (frequently change in debugging) ==========
+%% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
 drawCol = 3;
 nPhiInitial = 3;
@@ -64,7 +64,7 @@ debugMode = 0;
 
 %% quantity of interest.
 nQoiT = 2;
-manual = 1;
+
 
 %% initial error reductions.
 % reduction ratio for method: rbSingularInitial and rbReVarInitial. 
@@ -85,8 +85,9 @@ normType = 'fro';
 
 %% all switches
 gridSwitch = 0;
-qoiSwitchSpace = 0;
+qoiSwitchSpace = 1;
 qoiSwitchTime = 0;
+qoiSwitchManual = 1;
 % SVD on responses.
 svdSwitch = 0;
 % SVD on reduced variables.

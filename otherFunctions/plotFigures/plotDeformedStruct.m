@@ -23,10 +23,10 @@ disFreeRow = disFreeRow';
 %% add deformation to coordinates, obtain deformed structure.
 defNode = node(:, 2:3) + disFreeRow * deformFactor;
 
-%% plot deformed triangular elements
+%% plot deformed triangular elements.
 triplot(enode, defNode(:, 1), defNode(:, 2), 'color', [0.5 0.5 0.5]);
 
-%% label each node
+%% label each node.
 if labelSwitch == 1
     for i3 = 1:nnode
         node_str = num2str(node(i3, 1));

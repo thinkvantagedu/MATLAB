@@ -39,7 +39,7 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(nQoiT, nDofPerNode, manual);
+fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
 
 % compute initial exact solution.
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);

@@ -1,10 +1,8 @@
 clear; clc;
 tOffTime = 0;
 route = '/home/xiaohan/Desktop/Temp';
-
 oopPath = strcat(route, '/MATLAB/OOP');
 addpath(genpath(oopPath));
-
 %% data for beam class.
 trialName = 'l9h2SingleInc';
 lin = 1;
@@ -15,17 +13,6 @@ noMas = 1;
 noDam = 1;
 dam = 0;
 nDofPerNode = 2;
-
-%% all switches
-typeSwitch = 'original';
-gridSwitch = 0;
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
-svdSwitch = 0;
-rvSvdSwitch = 0;
-ratioSwitch = 0;
-singularSwitch = 0;
-randomSwitch = 0;
 
 %% data for parameter class.
 domLengi = 5;
@@ -70,16 +57,27 @@ refiThres = 0.0002;
 drawRow = 2;
 drawCol = 5;
 
+%% all switches
+typeSwitch = 'original';
+gridSwitch = 0;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+svdSwitch = 0;
+rvSvdSwitch = 0;
+ratioSwitch = 0;
+singularSwitch = 0;
+randomSwitch = 0;
 %% trial solution
-% use subclass: canbeam to create cantilever beam.
-fixie = canbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
+fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
     domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
-    nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, ...
+    fRange, nConsEnd);
 % read mass matrix.
-fixie.readMTX2DOF(nDofPerNode);
+fixie.readMasMTX2DOF(nDofPerNode);
 plotMeshSwitch = 1;
-fixie.readINPgeoMultiIncPlot(plotMeshSwitch, [1 1 0.5], [0.2 0.5 1]);
+labelSwitch = 1;
+fixie.readINPgeoMultiIncPlot(plotMeshSwitch, [1 1 0.5], [0.2 0.5 1], ...
+    labelSwitch);
 set(gca, 'Fontsize', 25);
 axis equal

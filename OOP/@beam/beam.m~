@@ -1363,7 +1363,28 @@ classdef beam < handle
                         obj.resp.store.all{iPre, 3} = ...
                             [obj.resp.store.all{iPre, 3} respCol];
                         respAllCol = obj.resp.store.all{iPre, 3};
-                        
+                        if rvSvdSwitch == 1
+                            respTrans_ = respAllCol * obj.resp.rv.L;
+                            respTrans = respTrans_' * respTrans_;
+                        elseif rvSvdSwitch == 0
+                            % find the nonzero elements and interpolate
+                            % these only.
+                            % find indicator by only dealing with iPre = 1.
+                            respTrans = respAllCol' * respAllCol;
+                            if iPre == 1
+                                for iTrans = 1:size(respTrans, 2)
+                                    obj.indicator.nonzeroi = ...
+                                        [obj.indicator.nonzeroi; ...
+                                        any(respTrans(:, iTrans))];
+                                end
+                                obj.indicator.nonzeroi = ...
+                                    find(obj.indicator.nonzeroi);
+                            end
+                            obj.no.nonZ = length(obj.indicator.nonzeroi);
+                            respTrans = respTrans(obj.indicator.nonzeroi, ...
+                                obj.indicator.nonzeroi);
+                        end
+                        obj.err.pre.hhat(iPre, 5) = {respTrans};
                     elseif svdSwitch == 1
                         % reshape multi dim cell to 2d cell array.
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
@@ -1385,13 +1406,6 @@ classdef beam < handle
                         obj.resp.store.all{iPre, 3} = ...
                             [obj.resp.store.all{iPre, 3}; respCol];
                         respAllCol = obj.resp.store.all{iPre, 3};
-                    end
-                    
-                    % compute eTe, including all zero elements, then take
-                    % upper triangle only.
-                    if svdSwitch == 0
-                        respTrans = respAllCol' * respAllCol;
-                    elseif svdSwitch == 1
                         respTrans = ...
                             zeros(numel(respAllCol), numel(respAllCol));
                         % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
@@ -1405,32 +1419,11 @@ classdef beam < handle
                             end
                         end
                     end
-                    if rvSvdSwitch == 1
-                        obj.err.pre.hhat(iPre, 5) = respTrans;
-                    elseif rvSvdSwitch == 0
-                        % find the nonzero elements and interpolate these only.
-                        % find indicator by only dealing with iPre = 1.
-                        if iPre == 1
-                            for iTrans = 1:size(respTrans, 2)
-                                obj.indicator.nonzeroi = ...
-                                    [obj.indicator.nonzeroi; ...
-                                    any(respTrans(:, iTrans))];
-                            end
-                            obj.indicator.nonzeroi = ...
-                                find(obj.indicator.nonzeroi);
-                        end
-                        obj.no.nonZ = length(obj.indicator.nonzeroi);
-                        respTransNonZero = ...
-                            full(respTrans(obj.indicator.nonzeroi, ...
-                            obj.indicator.nonzeroi));
-                        
-                        obj.err.pre.hhat(iPre, 5) = {respTransNonZero};
-                    end
                 end
                 % compute uiTui+1 and store in the last column of
                 % obj.err.pre.hhat.
                 respStoretoTrans = obj.resp.store.all;
-                obj.uiTujSort(respStoretoTrans);
+                obj.uiTujSort(respStoretoTrans, rvSvdSwitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
             elseif obj.indicator.enrich == 0 && ...
                     obj.indicator.refine == 1
@@ -1465,7 +1458,25 @@ classdef beam < handle
                             respCol];
                         respAllCol = ...
                             obj.resp.store.all{obj.no.itplEx + iPre, 3};
-                        
+                        if rvSvdSwitch == 1
+                            respTrans_ = respAllCol * obj.resp.rv.L;
+                            respTrans = respTrans_' * respTrans_;
+                        elseif rvSvdSwitch == 0
+                            respTrans = respAllCol' * respAllCol;
+                            if iPre == 1
+                                for i = 1:size(respTrans, 2)
+                                    obj.indicator.nonzeroi = ...
+                                        [obj.indicator.nonzeroi; ...
+                                        any(respTrans(:, i))];
+                                end
+                                obj.indicator.nonzeroi = ...
+                                    find(obj.indicator.nonzeroi);
+                            end
+                            respTrans = respTrans(obj.indicator.nonzeroi, ...
+                                obj.indicator.nonzeroi);
+                        end
+                        obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
+                            {respTrans};
                     elseif svdSwitch == 1
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
                         if obj.countGreedy == 1
@@ -1488,13 +1499,6 @@ classdef beam < handle
                             respCol];
                         respAllCol = ...
                             obj.resp.store.all{obj.no.itplEx + iPre, 2};
-                    end
-                    
-                    % compute eTe, including all zero elements, then take
-                    % upper triangle only.
-                    if svdSwitch == 0
-                        respTrans = respAllCol' * respAllCol;
-                    elseif svdSwitch == 1
                         respTrans = ...
                             zeros(numel(respAllCol), numel(respAllCol));
                         % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
@@ -1508,26 +1512,11 @@ classdef beam < handle
                             end
                         end
                     end
-                    
-                    if iPre == 1
-                        for i = 1:size(respTrans, 2)
-                            obj.indicator.nonzeroi = ...
-                                [obj.indicator.nonzeroi; any(respTrans(:, i))];
-                        end
-                        obj.indicator.nonzeroi = find(obj.indicator.nonzeroi);
-                    end
-                    
-                    respTransNonZero = respTrans(obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi);
-                    
-                    obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
-                        {respTransNonZero};
                 end
                 % compute uiTui+1 and store in the last column of
                 % obj.err.pre.hhat.
-                
                 respStoretoTrans = obj.resp.store.all;
-                obj.uiTujSort(respStoretoTrans);
+                obj.uiTujSort(respStoretoTrans, rvSvdSwitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
@@ -1536,12 +1525,12 @@ classdef beam < handle
             obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
                 obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
-            obj.uiTujSort(respStoretoTrans);
+            obj.uiTujSort(respStoretoTrans, rvSvdSwitch);
             obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 3);
             
         end
         %%
-        function obj = uiTujSort(obj, respStoreInpt)
+        function obj = uiTujSort(obj, respStoreInpt, rvSvdSwitch)
             % sort stored displacements, perform uiTui+1, then sort back to
             % previous order, put in the last column of obj.err.pre.hhat,
             % to be ready to be interpolated.
@@ -1555,15 +1544,20 @@ classdef beam < handle
                 if iPre < size(respStoreSort, 1)
                     respTransSort = respStoreSort{iPre, 3}' * ...
                         respStoreSort{iPre + 1, 3};
-                    respTransSortNonZero = full(respTransSort...
-                        (obj.indicator.nonzeroi, ...
-                        obj.indicator.nonzeroi));
+                    if rvSvdSwitch == 0
+                        respTransSorttoStore = respTransSort...
+                            (obj.indicator.nonzeroi, obj.indicator.nonzeroi);
+                    elseif rvSvdSwitch == 1
+                        respTransSorttoStore = ...
+                            obj.resp.rv.L' * respStoreSort{iPre, 3}' * ...
+                            respStoreSort{iPre + 1, 3} * obj.resp.rv.L;
+                    end
                 elseif iPre == size(respStoreSort, 1)
-                    respTransSortNonZero = [];
+                    respTransSorttoStore = [];
                 end
                 respStoreCell_(iPre, 1) = {respStoreSort{iPre, 1}};
                 respStoreCell_(iPre, 2) = {respStoreSort{iPre, 2}};
-                respStoreCell_(iPre, 3) = {respTransSortNonZero};
+                respStoreCell_(iPre, 3) = {respTransSorttoStore};
             end
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
@@ -1804,11 +1798,12 @@ classdef beam < handle
             obj.resp.rv.sig = rvSig(1:nRvSVD, 1:nRvSVD);
             obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
+            obj.no.nRvSVD = nRvSVD;
             
         end
         %%
         function obj = rvLTePrervL(obj)
-            % this method multiplies left singular vectors from collected 
+            % this method multiplies left singular vectors from collected
             % reduced variables with pre-computed eTe.
             
             for i = 1:obj.no.pre.hhat
@@ -1975,7 +1970,7 @@ classdef beam < handle
                         for iut = 1:2
                             uiCell{iut, iut} = uiTui{iut};
                         end
-                            
+                        
                         uiCell{1, 2} = uiTuj{:};
                         uiCell{2, 1} = uiTuj{:}';
                         uTuOtpt = zeros(size(uiCell{2}));
@@ -2271,7 +2266,7 @@ classdef beam < handle
         end
         %%
         function obj = extractMaxErrorInfo(obj, type, randomSwitch)
-            % extract error max and location from surfaces. 
+            % extract error max and location from surfaces.
             switch type
                 
                 case 'hhat'
@@ -2370,7 +2365,7 @@ classdef beam < handle
             % local h-refinement
             obj.indicator.refine = 1;
             obj.indicator.enrich = 0;
-            % let hat surface = hhat surface. 
+            % let hat surface = hhat surface.
             obj.pmExpo.hat = obj.pmExpo.hhat;
             obj.pmExpo.block.hat = obj.pmExpo.block.hhat;
             obj.no.pre.hat = size(obj.pmExpo.hat, 1);
@@ -2476,13 +2471,13 @@ classdef beam < handle
             switch type
                 case 'maxValue'
                     % maximum distance between maximum values of 2 surfaces.
-                    % 'maxValue' may have a problem: the maximum values are 
+                    % 'maxValue' may have a problem: the maximum values are
                     % at the same location (corners), which are interpolation
                     % samples, result in the same value, and the refinement
                     % condition = 0, so there is no refinement, which is
                     % not good.
                     % another problem of maxValue is we do not know where
-                    % to refine. 
+                    % to refine.
                     obj.refinement.condition = abs((obj.err.max.val.hhat - ...
                         obj.err.max.val.hat) / obj.err.max.val.hat);
                 case 'maxSurf'
@@ -2536,7 +2531,7 @@ classdef beam < handle
             end
         end
         %%
-        function obj = qoiSpaceTime(obj, nQoiT, ndpn, manual)
+        function obj = qoiSpaceTime(obj, nQoiT, nDofPerNode, manual)
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             
@@ -2567,17 +2562,15 @@ classdef beam < handle
                 obj.qoi.vecInd);
             
             obj.qoi.node = obj.node.inc;
-            obj.qoi.dof = zeros(ndpn * obj.no.node.inc, 1);
             
-            for i = 1:obj.no.inc
+            if nDofPerNode == 2
                 
-                obj.qoi.dof(i * ndpn - (ndpn - 1) : i * ndpn) = ...
-                    obj.qoi.dof(i * ndpn - (ndpn - 1) : i * ndpn) + ...
-                    (ndpn * obj.qoi.node{i} - (ndpn - 1) : ...
-                    ndpn * obj.qoi.node{i})';
+                qoiInc = [obj.qoi.node{1}(:, 1) * 2 - 1, ...
+                    obj.qoi.node{1}(:, 1) * 2];
                 
             end
-            
+            obj.qoi.dof = qoiInc;
+            keyboard
         end
         %%
         function obj = NewmarkBetaMethod(obj, mas, dam, sti, fce, ...
@@ -2658,7 +2651,7 @@ classdef beam < handle
         end
         %%
         function obj = readINPgeoMultiIncPlot(obj, plotMeshSwitch, ...
-                colorStruct, colorInc)
+                colorStruct, colorInc, labelSwitch)
             % read INP file and extract node and element informations.
             lineNode = [];
             lineElem = [];
@@ -2776,7 +2769,14 @@ classdef beam < handle
                 end
                 
                 axis equal
-                
+            end
+            
+            % label each node
+            if labelSwitch == 1
+                for i3 = 1:size(obj.node.all, 1)
+                    node_str = num2str(obj.node.all(i3, 1));
+                    text(obj.node.all(i3, 2), obj.node.all(i3, 3), node_str);
+                end
             end
         end
         %%
@@ -2926,10 +2926,10 @@ classdef beam < handle
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
             
         end
-        %% 
+        %%
         function obj = plot1DrefineDomain(obj)
             % this method plot the 1D refined pm domain under the 2D error
-            % response surfaces. Color matches the surfaces. 
+            % response surfaces. Color matches the surfaces.
             
             
             
