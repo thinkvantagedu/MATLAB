@@ -2,8 +2,8 @@ clear; clc;
 
 % jobPath = '/home/xiaohan/abaqus/6.14-1/code/bin/abq6141 noGUI job=';
 % jobName = 'l9h2SingleInc';
-inpPath = '/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/';
-inpName = 'l9h2SingleInc';
+inpPath = '/home/xiaohan/Desktop/Temp/AbaqusModels/cantileverBeam/';
+inpName = 'L2H1_dynamics';
 
 % runStr = strcat(jobPath, jobName, ' inp=', inpPath, inpName, '.inp interactive');
 
@@ -12,12 +12,7 @@ inpName = 'l9h2SingleInc';
 inpText = fopen(strcat(inpPath, inpName, '.inp'));
 rawStrCell = textscan(inpText, '%s', 'delimiter', '\n', 'whitespace', '');
 fclose(inpText);
-pmStr = '*Material, name=Material-I1';
+pmStr = '*Elastic';
 
-for iStr = 1:length(rawStrCell{1})
-    if strcmp(rawStrCell{1}{iStr}, pmStr) == 1
-        lineStr = iStr;
-    end
-end
-
-lineMod = lineStr + 4;
+for iStr = 1:length(rawStrCell)
+    if strcmp()

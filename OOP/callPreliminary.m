@@ -65,7 +65,6 @@ debugMode = 0;
 %% quantity of interest.
 nQoiT = 2;
 
-
 %% initial error reductions.
 % reduction ratio for method: rbSingularInitial and rbReVarInitial.
 reductionRatio = 0.9;
@@ -85,9 +84,9 @@ normType = 'fro';
 
 %% all switches
 gridSwitch = 0;
-qoiSwitchSpace = 1;
-qoiSwitchTime = 1;
-qoiSwitchManual = 1;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+qoiSwitchManual = 0;
 % SVD on responses.
 svdSwitch = 0;
 % SVD on reduced variables.
