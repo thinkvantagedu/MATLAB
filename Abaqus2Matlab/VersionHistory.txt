@@ -1,0 +1,81 @@
+﻿Abaqus2Matlab Version History file
+---------------------------------
+
+
+v1.00 - 14 January 2016
+-----------------------
+Original (first) version of the program
+
+v1.01 - 23 January 2016
+-----------------------
+1) GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   Documentation configured to be more user-friendly
+
+v1.02 - 19 November 2016
+-----------------------
+1) AMMAR ALSHEGHRI (McGill University)
+   A bug noted in function Fil2str.m, as follows:
+   Error using textscan
+   CollectOutput must be a numeric scalar.
+   Error in Fil2str (line 41)
+   C = textscan (fileID, '%s', 'CollectOutput', '1', 'delimiter', ...
+   which has been corrected with a try-catch statement, in order to ensure compatibility of the toolbox with older versions of Matlab.
+2) LIBING (College of Mechanical Engineering, GuangXi University)
+   In Documentation.m, lines 50 & 51:
+   S = which('Documentation.m');
+   S = S(1:end-16);
+   have been replaced by only one line:
+   S = pwd;
+3) SASCHA DUCZEK (Otto-von-Guericke-Universitaet Magdeburg, sascha.duczek@gmx.de)
+   In Fil2str replace the regexprep command by two strrep commands (the function has become faster by an estimated 130 times)
+4) EMILIO MARTINEZ PANEDA (Technical University of Denmark)
+   Two Rec functions (Rec78.m and Rec401.m) have been coded and sent to George Papazafeiropoulos. The files X.inp, VerifyX.m, AbaqusInputFileX.m, HelpRecX.m have also been added and the Documentation revised accordingly.
+5) MIGUEL MUNIZ CALVENTE (University of Oviedo)
+5) MIGUEL MUNIZ CALVENTE (University of Oviedo)
+   Asked for function Rec1991.m. Provided by George Papazafeiropoulos along with 1991.inp, Verify1991.m, AbaqusInputFile1991.m, HelpRec1991.m and documentation revised accordingly.
+6) MIGUEL MUNIZ CALVENTE (University of Oviedo)
+   In Documentation.m, after line 54:
+   addpath(genpath(S));
+   the following line has been added, which allows running Documentation.m only once (usually when the program is installed), and it allows to run any function of Abaqus2Matlab from any directory in the PC:
+   savepath
+7) GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   The headings in 1900.inp, 1901.inp and 1980.inp files have been corrected
+8) GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   The folder MatlabExamples is renamed as Verification
+9) GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   In the function Fil2str.m an if-statement has been added after opening the results file for reading, which throws an error if the file or directory input in the function are not found. If this is not present, the code throws an irrelevant error stemming from the textscan command.
+10)GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   18 new RecX functions added, i.e. Rec401,Rec402,Rec403,Rec404,Rec405,Rec406,Rec407,Rec408,Rec409,Rec410,Rec411,Rec45,Rec88,Rec1902,Rec1911,Rec1940,Rec1921,Rec2000. The files X.inp, VerifyX.m, AbaqusInputFileX.m, HelpRecX.m have also been added and the Documentation revised accordingly.
+11)GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   The copyright section in each file (which can be either code script or publication script) is changed as follows:
+   <<
+   ________________________________________________________________________
+   Abaqus2Matlab - www.abaqus2matlab.com
+   Copyright (c) 2016 by George Papazafeiropoulos
+   
+   If using this toolbox for research or industrial purposes, please cite:
+   G. Papazafeiropoulos, M. Muniz-Calvente, E. Martinez-Paneda.
+   Abaqus2Matlab: a suitable tool for finite element post-processing
+   (submitted)
+   >>
+12)GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   The term <<3. Redistribution of source code is permitted provided that the footer of each sript is not suppressed>> has been added in the license file.
+
+v1.03 - 5 January 2017
+-----------------------
+1) GEORGE PAPAZAFEIROPOULOS (National Technical University of Athens)
+   In Documentation.m, line 50:
+   S=pwd;
+   has been replaced by the following lines:
+   S = mfilename('fullpath');
+   namelength=numel('Documentation');
+   S=S(1:end-1-namelength);
+   
+   
+   
+   
+   
+   
+   
+   
+   

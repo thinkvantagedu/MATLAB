@@ -1,0 +1,185 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>AbaqusInputFile88</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-01-05"><meta name="DC.source" content="AbaqusInputFile88.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">type(<span class="string">'88.inp'</span>)
+</pre><pre class="codeoutput">
+*HEADING
+ VERIFICATION OF ABAQUS THERMAL STRAINS OUTPUT TO MATLAB (THE, RECORD KEY 88)
+*PREPRINT,ECHO=YES,HISTORY=NO,MODEL=NO
+*NODE
+  1, 0.  ,  0.
+  5, 0.5 ,  0.
+ 21, 0.  ,  0.5
+ 25, 0.5 ,  0.5
+ 61, 0.  ,  1.
+ 69, 1.  ,  0.
+ 81, 0.  ,  2.
+ 89, 2.  ,  0.
+151, 0.  ,  9.
+159, 9.  ,  0.
+161, 0.  ,  10.
+163, 4.14,  10.
+165, 10. ,  10.
+167, 10. ,  4.14
+169, 10. ,  0.
+*NGEN,NSET=SMBOT
+1,5,2
+*NGEN,NSET=SMTOP
+21,25,2
+*NFILL,NSET=SMBOX
+SMBOT,SMTOP,2,10
+*NGEN,NSET=CIRC61,LINE=C
+61,69,2
+*NGEN,NSET=CIRC81,LINE=C
+81,89,2
+*NGEN,NSET=CIRC151,LINE=C
+151,159,2
+*NFILL,NSET=CIRCS
+CIRC81,CIRC151,7,10
+*NGEN
+ 145,165,10
+*ELEMENT,TYPE=CPS3, ELSET=EALL
+  1, 1,13,11
+  2, 1, 3,13
+ 10,21,63,61
+ 11,21,23,63
+ 12,23,65,63
+ 13,23,25,65
+ 14,25,67,65
+ 15,25,15,67
+ 16,15,69,67
+ 17,15, 5,69
+ 30,81,103,101
+ 31,81,83,103
+*ELGEN, ELSET=EALL
+  1,2,2,2,2,10,4
+  2,2,2,2,2,10,4
+ 30,4,2,2,4,20,10
+ 31,4,2,2,4,20,10
+*NODE
+ 200, 0., 1.
+ 208, 1., 0.
+*NGEN,NSET=OUTER,LINE=C
+ 200,208,2
+*NSET,NSET=INNER
+ CIRC61,
+*ELEMENT,TYPE=CPS3, ELSET=EALL
+ 20,200,83,81
+ 21,200,202,83
+*ELGEN, ELSET=EALL
+ 20,4,2,2
+ 21,4,2,2
+*NSET,NSET=HOT,GENERATE
+ 1,25
+ 41,46
+ 51,59
+ 61,69
+*NSET,NSET=SYMX1,GENERATE
+ 1,5
+ 59,169,10
+*NSET,NSET=SYMX
+ 208,SYMX1
+*NSET,NSET=SYMY1,GENERATE
+ 1,21,5
+ 51,161,10
+*NSET,NSET=SYMY
+ 200,SYMY1
+*ELSET,ELSET=SPOT,GENERATE
+  1,8
+ 10,17
+*ELSET,ELSET=PRINT
+ 16,17
+ 26,27
+*EQUATION
+2, 
+INNER,1,1.,OUTER,1,-1.
+*EQUATION
+2, 
+INNER,2,1.,OUTER,2,-1.
+*MATERIAL,NAME=A1
+*ELASTIC
+ 100.E9,0.3
+*EXPANSION
+ 1.E-05, 
+*SOLID SECTION,MATERIAL=A1, ELSET=EALL
+*BOUNDARY
+ SYMX,2
+ SYMY,1
+*STEP
+*STATIC
+*TEMPERATURE
+ HOT,100.
+*FILE FORMAT, ASCII
+*EL FILE,ELSET=PRINT,POSITION=AVERAGED AT NODES
+ THE
+*END STEP
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2015a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+type('88.inp')
+##### SOURCE END #####
+--></body></html>

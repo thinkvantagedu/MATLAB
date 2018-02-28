@@ -1,0 +1,242 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>AbaqusInputFile405</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-01-05"><meta name="DC.source" content="AbaqusInputFile405.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">type(<span class="string">'405.inp'</span>)
+</pre><pre class="codeoutput">
+*HEADING
+ VERIFICATION OF ABAQUS ELEMENT PRINCIPAL LOGARITHMIC STRAINS OUTPUT TO MATLAB (LEP, RECORD KEY 405)
+*RESTART,WRITE
+*NODE, NSET=NALL
+1,
+2,1.,
+*ELEMENT,TYPE=PIPE31,ELSET=EALL
+1,1,2,
+*BEAM SECTION,SECTION=PIPE,ELSET=EALL,MATERIAL=COPPER
+1.01,0.02,
+*MATERIAL,NAME=COPPER
+*ELASTIC
+104.E3,0.3
+*PLASTIC,HARD=COMBINED,DATA TYPE=STABILIZED
+ 0.46940E+02, 0.0000
+ 0.52044E+02, 0.50927E-04
+ 0.56826E+02, 0.10494E-03
+ 0.61273E+02, 0.16218E-03
+ 0.65813E+02, 0.21853E-03
+ 0.69556E+02, 0.27253E-03
+ 0.72703E+02, 0.34228E-03
+ 0.76541E+02, 0.39538E-03
+ 0.79630E+02, 0.49568E-03
+ 0.82886E+02, 0.55437E-03
+ 0.85974E+02, 0.61468E-03
+ 0.88910E+02, 0.69644E-03
+ 0.91647E+02, 0.76012E-03
+ 0.94263E+02, 0.83498E-03
+ 0.96266E+02, 0.92571E-03
+ 0.99020E+02, 0.99923E-03
+ 0.10099E+03, 0.10803E-02
+ 0.10310E+03, 0.11600E-02
+ 0.10534E+03, 0.12385E-02
+ 0.10691E+03, 0.13233E-02
+ 0.10846E+03, 0.14085E-02
+ 0.11054E+03, 0.14785E-02
+ 0.11252E+03, 0.15795E-02
+ 0.11328E+03, 0.16621E-02
+ 0.11521E+03, 0.17336E-02
+ 0.11612E+03, 0.18248E-02
+ 0.11769E+03, 0.19197E-02
+ 0.11906E+03, 0.20065E-02
+ 0.12018E+03, 0.20858E-02
+ 0.12137E+03, 0.21743E-02
+ 0.12239E+03, 0.22746E-02
+ 0.12338E+03, 0.23550E-02
+ 0.12467E+03, 0.24426E-02
+ 0.12500E+03, 0.25494E-02
+ 0.12649E+03, 0.26351E-02
+ 0.12715E+03, 0.27288E-02
+ 0.12805E+03, 0.28101E-02
+ 0.12879E+03, 0.29130E-02
+ 0.12980E+03, 0.30033E-02
+ 0.13040E+03, 0.30875E-02
+ 0.13049E+03, 0.31867E-02
+ 0.13165E+03, 0.32855E-02
+ 0.13191E+03, 0.33830E-02
+ 0.13263E+03, 0.34660E-02
+ 0.13324E+03, 0.35602E-02
+ 0.13386E+03, 0.36642E-02
+ 0.13398E+03, 0.37631E-02
+ 0.13501E+03, 0.38632E-02
+ 0.13513E+03, 0.39620E-02
+ 0.13614E+03, 0.40423E-02
+ 0.13623E+03, 0.41314E-02
+ 0.13682E+03, 0.42358E-02
+ 0.13691E+03, 0.43349E-02
+ 0.13749E+03, 0.44193E-02
+ 0.13738E+03, 0.45304E-02
+ 0.13810E+03, 0.46234E-02
+ 0.13859E+03, 0.47087E-02
+ 0.13885E+03, 0.48062E-02
+ 0.13930E+03, 0.49019E-02
+ 0.13906E+03, 0.50042E-02
+ 0.13991E+03, 0.50960E-02
+ 0.13986E+03, 0.51965E-02
+ 0.13979E+03, 0.53072E-02
+ 0.14023E+03, 0.54030E-02
+ 0.14061E+03, 0.54893E-02
+ 0.14020E+03, 0.55933E-02
+ 0.14118E+03, 0.56838E-02
+ 0.14098E+03, 0.57958E-02
+ 0.14218E+03, 0.58542E-02
+ 0.14132E+03, 0.59825E-02
+ 0.14153E+03, 0.60705E-02
+ 0.14202E+03, 0.61658E-02
+ 0.14215E+03, 0.62746E-02
+ 0.14222E+03, 0.63738E-02
+ 0.14177E+03, 0.64682E-02
+ 0.14313E+03, 0.65651E-02
+ 0.14205E+03, 0.66755E-02
+ 0.14320E+03, 0.67744E-02
+ 0.14245E+03, 0.68817E-02
+ 0.14317E+03, 0.69447E-02
+ 0.14294E+03, 0.70670E-02
+ 0.14374E+03, 0.71492E-02
+ 0.14306E+03, 0.72558E-02
+ 0.14371E+03, 0.73596E-02
+ 0.14361E+03, 0.74605E-02
+ 0.14352E+03, 0.75514E-02
+ 0.14353E+03, 0.76412E-02
+ 0.14399E+03, 0.77468E-02
+ 0.14427E+03, 0.78441E-02
+ 0.14364E+03, 0.79502E-02
+ 0.14501E+03, 0.80370E-02
+ 0.14371E+03, 0.81495E-02
+ 0.14478E+03, 0.82393E-02
+ 0.14419E+03, 0.83449E-02
+ 0.14451E+03, 0.84318E-02
+ 0.14439E+03, 0.85430E-02
+ 0.14511E+03, 0.86360E-02
+ 0.14394E+03, 0.87473E-02
+ 0.14519E+03, 0.88253E-02
+ 0.14441E+03, 0.89427E-02
+ 0.14546E+03, 0.90327E-02
+ 0.14455E+03, 0.91414E-02
+ 0.14560E+03, 0.92313E-02
+ 0.14484E+03, 0.93386E-02
+ 0.14582E+03, 0.94193E-02
+ 0.14515E+03, 0.95357E-02
+ 0.14491E+03, 0.96179E-02
+ 0.14558E+03, 0.97215E-02
+ 0.14533E+03, 0.98239E-02
+ 0.14613E+03, 0.99062E-02
+ 0.14477E+03, 0.10029E-01
+ 0.14638E+03, 0.10104E-01
+ 0.14557E+03, 0.10212E-01
+ 0.14609E+03, 0.10307E-01
+ 0.14571E+03, 0.10420E-01
+ 0.14599E+03, 0.10518E-01
+ 0.14546E+03, 0.10623E-01
+ 0.14617E+03, 0.10706E-01
+ 0.14574E+03, 0.10790E-01
+ 0.14644E+03, 0.10903E-01
+ 0.14546E+03, 0.11013E-01
+ 0.14632E+03, 0.11104E-01
+ 0.14608E+03, 0.11207E-01
+ 0.14615E+03, 0.11306E-01
+ 0.14643E+03, 0.11403E-01
+ 0.14565E+03, 0.11501E-01
+ 0.14700E+03, 0.11588E-01
+ 0.14585E+03, 0.11699E-01
+ 0.14714E+03, 0.11787E-01
+ 0.14537E+03, 0.11914E-01
+*CYCLIC HARDENING
+13.,0.000
+13.,0.0068
+29.37,.034
+50.13,.0612
+63.91,.0884
+73.01,.1156
+80.76,.1428
+86.25,.1700
+90.498,.1972
+93.95,.2244
+96.155,.2516
+*BOUNDARY
+1,1,6
+*STEP,INC=10
+*STATIC,DIRECT
+0.1,1.,
+*BOUNDARY
+2,1,1,0.01
+*FILE FORMAT, ASCII
+*EL FILE
+LEP
+*END STEP
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2015a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+type('405.inp')
+##### SOURCE END #####
+--></body></html>

@@ -28,7 +28,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.19; 
+tMax = 0.19;
 tStep = 0.01;
 
 %% data for external nodal force.
@@ -38,7 +38,7 @@ ftime = 0.02;
 fRange = 5;
 
 %% parameter data for trial iteration.
-trial = 8;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-12;
@@ -67,7 +67,7 @@ nQoiT = 2;
 
 
 %% initial error reductions.
-% reduction ratio for method: rbSingularInitial and rbReVarInitial. 
+% reduction ratio for method: rbSingularInitial and rbReVarInitial.
 reductionRatio = 0.9;
 % error tolerance for method: rbCtrlInitial.
 rbCtrlThres = 0.1;
@@ -86,7 +86,7 @@ normType = 'fro';
 %% all switches
 gridSwitch = 0;
 qoiSwitchSpace = 1;
-qoiSwitchTime = 0;
+qoiSwitchTime = 1;
 qoiSwitchManual = 1;
 % SVD on responses.
 svdSwitch = 0;
