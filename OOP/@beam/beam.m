@@ -326,7 +326,7 @@ classdef beam < handle
         function obj = rbEnrichment(obj, nEnrich, reductionRatio, ...
                 singularSwitch, ratioSwitch)
             % this method add a new basis vector to current basis. New basis
-            % vector = SVD(current exact -  previous approximation).
+            % vector = SVD(current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
             
             % new basis from error (phi * phi' * response).
