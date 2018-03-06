@@ -3,7 +3,7 @@ figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
 % route = '/Users/kevin/Documents/Temp';
 oopPath = strcat(route, '/MATLAB/OOP');
 addpath(genpath(oopPath));
-
+cd /home/xiaohan/Desktop/Temp/MATLAB/OOP;
 %% data for beam class.
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...

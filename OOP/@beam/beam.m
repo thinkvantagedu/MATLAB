@@ -2134,7 +2134,6 @@ classdef beam < handle
                     case 'hat'
                         obj.err.norm(2) = ePreDiag(iIter);
                 end
-                
             end
         end
         %%

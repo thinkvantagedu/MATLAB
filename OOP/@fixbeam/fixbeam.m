@@ -79,6 +79,7 @@ classdef fixbeam < beam
                 obj.fce.val(obj.fce.dof, 1:length(obj.fce.gaus)) + ...
                 obj.fce.gaus;
 %             obj.fce.val = -obj.fce.val;
+            
         end
         %%
         function obj = readINPconsFixie(obj, dim)
