@@ -1,93 +1,92 @@
 clear; clc;
-
-jobPath = '/home/xiaohan/abaqus/6.14-1/code/bin/abq6141 noGUI job=';
-inpName = 'l9h2SingleInc';
-inpPath = '/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/';
+% set up the model informations.
 nnode = 517;
-dof = (1:nnode)';
-cons = [3 4 7 8 36:44 88:96]';
-dof(cons) = [];
-% inpName = 'L2H1_dynamics';
-% inpPath = '/home/xiaohan/Desktop/Temp/AbaqusModels/cantileverBeam/';
-% dof = [2; 4; 5; 6];
-% nd = 6;
-datName = inpName;
-datPath = '/home/xiaohan/Desktop/Temp/AbaqusModels/pmIterModels/';
-otptPath = '/home/xiaohan/Desktop/Temp/AbaqusModels/modified/';
+node = (1:nnode)';
+nodeFix = [3 4 7 8 36:44 88:96]';
+node(nodeFix) = [];
 
-% read the entire .inp file.
-inpText = fopen(strcat(inpPath, inpName, '.inp'));
-rawStrCell = textscan(inpText, '%s', 'delimiter', '\n', 'whitespace', '');
-fclose(inpText);
-    
-% locate the string to be modified.
+% set up the unmodified inps.
+jobDef = '/home/xiaohan/abaqus/6.14-1/code/bin/abq6141 noGUI job=';
+abaqusPath = '/home/xiaohan/Desktop/Temp/AbaqusModels';
+inpNameUnmo = 'l9h2SingleInc1';
+inpPathUnmo = [abaqusPath '/fixBeam/'];
+
+% set up the output .dat file path, same path for all output files.
+iterStr = '_iter';
+datName = [inpNameUnmo iterStr];
+inpPathMo = [abaqusPath '/iterModels/'];
+
+% read the original unmodified .inp file.
+inpTextUnmo = fopen([inpPathUnmo, inpNameUnmo, '.inp']);
+rawInpStr = textscan(inpTextUnmo, '%s', 'delimiter', '\n', 'whitespace', '');
+fclose(inpTextUnmo);
+
+% locate the strings to be modified.
 pmStr = '*Material, name=Material-I1';
-for iStr = 1:length(rawStrCell{1})
-    if strcmp(rawStrCell{1}{iStr}, pmStr) == 1
-        lineStr = iStr;
+fceStrStart = '*Amplitude, name=Amp-af';
+fceStrEnd = '** MATERIALS';
+for iStr = 1:length(rawInpStr{1})
+    if strcmp(rawInpStr{1}{iStr}, pmStr) == 1
+        lineStrStart = iStr;
+    elseif strcmp(rawInpStr{1}{iStr}, fceStrStart) == 1
+        lineFceStart = iStr;
+    elseif strcmp(rawInpStr{1}{iStr}, fceStrEnd) == 1
+        lineFceEnd = iStr;
     end
+    
 end
-lineMod = lineStr + 4;
+lineMod = lineStrStart + 4;
 
-% split the strings, find the num str to be modified. 
-splitStr = strsplit(rawStrCell{:}{lineMod});
-posRatio = splitStr{2};
+% split the strings, find the num str to be modified.
+splitStr = strsplit(rawInpStr{:}{lineMod});
+posRatio = splitStr{end};
 
 % define the logarithm input.
-pmInp = 0.00000001;
+pmInp = 10;
+
 % set the text file to be written.
-
-otptStrCell = rawStrCell;
-
+otptInpStr = rawInpStr;
+% iteratively execute the Abaqus job.
 for iIter = 1:length(pmInp)
-    
-    inpNameIter = [otptPath, inpName, '_PmIter.inp'];
-    fid = fopen(inpNameIter, 'wt');
+    % modified inp file name.
+    inpNameMo = [inpNameUnmo, iterStr];
+    % print the modified inp file to the output path.
+    fid = fopen([inpPathMo inpNameMo, '.inp'], 'wt');
     pmIter = pmInp(iIter);
-    strIter = [num2str(pmIter), ', ', posRatio];
-    otptStrCell{:}(lineMod) = {strIter};
-    fprintf(fid, '%s\n', string(otptStrCell{:}));
+    strIter = [' ', num2str(pmIter), ', ', posRatio];
+    otptInpStr{:}(lineMod) = {strIter};
+    fprintf(fid, '%s\n', string(otptInpStr{:}));
     fclose(fid);
     % run Abaqus for each pm value.
-    cd(datPath)
-    runStr = strcat(jobPath, inpName, ' inp=', inpPath, ...
-        inpName, '.inp interactive ask_delete=OFF');
-    otpt = system(runStr);
+    cd(inpPathMo)
+    runStr = strcat(jobDef, inpNameMo, ' inp=', inpPathMo, ...
+        inpNameMo, '.inp interactive ask_delete=OFF');
+    system(runStr);
     
 end
 
 % read the .dat file.
-
-datText = fopen(strcat(datPath, datName, '.dat'));
-rawDatCell = textscan(datText, '%s', 'delimiter', '\n', 'whitespace', '');
+datText = fopen([inpPathMo, datName, '.dat']);
+rawDatStr = textscan(datText, '%s', 'delimiter', '\n', 'whitespace', '');
 fclose(datText);
 
-% locate the string to be modified.
-datStr = 'THE FOLLOWING TABLE IS PRINTED FOR ALL NODES';
-
-lineStr = [];
-for iStr = 1:length(rawDatCell{1})
-    if strcmp(strtrim(rawDatCell{1}{iStr}), datStr) == 1
-        lineStr = [lineStr; iStr];
+% locate the strings to be modified.
+datStrStart = 'THE FOLLOWING TABLE IS PRINTED FOR ALL NODES';
+datStrEnd = 'AT NODE';
+lineStrStart = [];
+lineStrEnd = [];
+for iStr = 1:length(rawDatStr{1})
+    datStrComp = strtrim(rawDatStr{1}{iStr});
+    if strcmp(datStrComp, datStrStart) == 1
+        lineStrStart = [lineStrStart; iStr];
+    end
+    if length(datStrComp) > 6
+        datStrCompEnd = datStrComp(1:7);
+        if strcmp(datStrCompEnd, datStrEnd) == 1
+            lineStrEnd = [lineStrEnd; iStr];
+        end
     end
 end
 
-lineMod = lineStr + 5;
-
-datStore = cell(length(lineMod), 1);
-% for iSet = 1:length(lineMod)
-for iSet = 1:length(lineMod)
-    
-    dat_ = {rawDatCell{1}{lineMod(iSet) : lineMod(iSet) + nnode - 1, :}};
-    dat_ = dat_';
-    dat_ = cellfun(@(v) str2num(v), dat_(:), 'un', 0);
-    dat_ = cell2mat(dat_);
-    if length(dat_) ~= length(dof)
-        dat_ = dat_(dof, :);
-    end
-    datStore{iSet} = dat_(:, 2:3);
-end
-
-disStore = cellfun(@(v) v(:), cellfun(@(v) v', datStore, 'un', 0), 'un', 0);
-disStore = cell2mat(disStore');
-
+lineModStart = lineStrStart + 5;
+lineModEnd = lineStrEnd

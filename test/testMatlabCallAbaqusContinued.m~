@@ -1,3 +1,0 @@
-fceCell = rawStrCell{:}(lineFceStart + 1 : lineFceEnd - 2, :);
-fceCell = cellfun(@(v) str2num(v), fceCell(:), 'un', 0);
-fceCell = cellfun()
