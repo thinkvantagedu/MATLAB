@@ -1,24 +1,24 @@
-function [U_r, V_r, A_r, U, V, A, t, time_step_NO] = NewmarkBetaReducedMethod...
-    (Phi, M_r, C_r, K_r, F_r, acce, dT, maxT, U0, V0)
+% function [U_r, V_r, A_r, U, V, A, t, time_step_NO] = NewmarkBetaReducedMethod...
+%     (Phi, M_r, C_r, K_r, F_r, acce, dT, maxT, U0, V0)
 % [U_r, V_r, A_r, U, V, A, t, time_step_NO]
 % (Phi, M_r, C_r, K_r, F_r, acce, dT, maxT, U0, V0)
 % hold on
 % clear variables; clc;
 % % for i = 1:16
-% Phi=eye(2);
-% K_r=[6 -2; -2 4];
-% M_r=[2 0; 0 1];
-% C_r=[0 0; 0 0];
-% 
-% F_r=zeros(2, 16);
-% for i_f0=1:length(F_r)
-%     F_r(:, i_f0)=F_r(:, i_f0)+[0; 10];
-% end
-% dT=0.28;
-% maxT=4.2;
-% U0=[0; 0];
-% V0=[0; 0];
-% acce='average';
+Phi=eye(2);
+K_r=[6 -2; -2 4];
+M_r=[2 0; 0 1];
+C_r=[0 0; 0 0];
+
+F_r=zeros(2, 15);
+for i_f0=1:length(F_r)
+    F_r(:, i_f0)=F_r(:, i_f0)+[0; 10];
+end
+dT=0.28;
+maxT=4.2;
+U0=[0; 0];
+V0=[0; 0];
+acce='average';
 
 switch acce
     case 'average'
@@ -50,7 +50,7 @@ a7 = gamma*dT;
 
 Khat = K_r+a0*M_r+a1*C_r;
 
-for i_nm = 1:length(t)-1
+for i_nm = 1:length(t) - 1
         
     dFhat = F_r(:, i_nm+1) + ...
         M_r*(a0*U_r(:, i_nm)+a2*V_r(:, i_nm)+a3*A_r(:, i_nm)) + ...

@@ -1,14 +1,16 @@
 clear; clc;
+%% part I: solve the parametric problem using Abaqus, read the output.
 % set up the model informations.
 nnode = 517;
 node = (1:nnode)';
 nodeFix = [3 4 7 8 36:44 88:96]';
 node(nodeFix) = [];
+dofFix = sort([nodeFix * 2; nodeFix * 2 - 1]);
 
 % set up the unmodified inps.
 jobDef = '/home/xiaohan/abaqus/6.14-1/code/bin/abq6141 noGUI job=';
 abaqusPath = '/home/xiaohan/Desktop/Temp/AbaqusModels';
-inpNameUnmo = 'l9h2SingleInc1';
+inpNameUnmo = 'l9h2SingleInc';
 inpPathUnmo = [abaqusPath '/fixBeam/'];
 
 % set up the output .dat file path, same path for all output files.
@@ -22,12 +24,15 @@ rawInpStr = textscan(inpTextUnmo, '%s', 'delimiter', '\n', 'whitespace', '');
 fclose(inpTextUnmo);
 
 % locate the strings to be modified.
-pmStr = '*Material, name=Material-I1';
+pmIstr = '*Material, name=Material-I1';
+pmSstr = '*Material, name=Material-S';
 fceStrStart = '*Amplitude, name=Amp-af';
 fceStrEnd = '** MATERIALS';
 for iStr = 1:length(rawInpStr{1})
-    if strcmp(rawInpStr{1}{iStr}, pmStr) == 1
-        lineStrStart = iStr;
+    if strcmp(rawInpStr{1}{iStr}, pmIstr) == 1
+        lineIstrStart = iStr;
+    elseif strcmp(rawInpStr{1}{iStr}, pmSstr) == 1
+        lineSstrStart = iStr;
     elseif strcmp(rawInpStr{1}{iStr}, fceStrStart) == 1
         lineFceStart = iStr;
     elseif strcmp(rawInpStr{1}{iStr}, fceStrEnd) == 1
@@ -35,26 +40,33 @@ for iStr = 1:length(rawInpStr{1})
     end
     
 end
-lineMod = lineStrStart + 4;
+lineImod = lineIstrStart + 4;
+lineSmod = lineSstrStart + 4;
+lineFceStart = lineFceStart + 1;
+lineFceEnd = lineFceEnd - 2;
 
 % split the strings, find the num str to be modified.
-splitStr = strsplit(rawInpStr{:}{lineMod});
+splitStr = strsplit(rawInpStr{:}{lineImod});
 posRatio = splitStr{end};
 
-% define the logarithm input.
-pmInp = 10;
+% define the logarithm input for inclusion and matrix.
+pmIinp = 10;
+pmS = 1000;
 
 % set the text file to be written.
 otptInpStr = rawInpStr;
 % iteratively execute the Abaqus job.
-for iIter = 1:length(pmInp)
+for iIter = 1:length(pmIinp)
     % modified inp file name.
     inpNameMo = [inpNameUnmo, iterStr];
     % print the modified inp file to the output path.
     fid = fopen([inpPathMo inpNameMo, '.inp'], 'wt');
-    pmIter = pmInp(iIter);
-    strIter = [' ', num2str(pmIter), ', ', posRatio];
-    otptInpStr{:}(lineMod) = {strIter};
+    % modify inclusion and matrix values individually.
+    pmIiter = pmIinp(iIter);
+    strIiter = [' ', num2str(pmIiter), ', ', posRatio];
+    strS = [' ', num2str(pmS), ', ', posRatio];
+    otptInpStr{:}(lineImod) = {strIiter};
+    otptInpStr{:}(lineSmod) = {strS};
     fprintf(fid, '%s\n', string(otptInpStr{:}));
     fclose(fid);
     % run Abaqus for each pm value.
@@ -71,15 +83,22 @@ rawDatStr = textscan(datText, '%s', 'delimiter', '\n', 'whitespace', '');
 fclose(datText);
 
 % locate the strings to be modified.
-datStrStart = 'THE FOLLOWING TABLE IS PRINTED FOR ALL NODES';
+datStrStart = 'THE FOLLOWING TABLE IS PRINTED FOR';
 datStrEnd = 'AT NODE';
-lineStrStart = [];
+lineIstrStart = [];
 lineStrEnd = [];
+
 for iStr = 1:length(rawDatStr{1})
+    % define string to compare.
     datStrComp = strtrim(rawDatStr{1}{iStr});
-    if strcmp(datStrComp, datStrStart) == 1
-        lineStrStart = [lineStrStart; iStr];
+    % compare the start string for nodal output.
+    if length(datStrComp) > 33
+        datStrCompStart = datStrComp(1:34);
+        if strcmp(datStrCompStart, datStrStart) == 1
+            lineIstrStart = [lineIstrStart; iStr];
+        end
     end
+    % compare the end string for nodal output.
     if length(datStrComp) > 6
         datStrCompEnd = datStrComp(1:7);
         if strcmp(datStrCompEnd, datStrEnd) == 1
@@ -88,5 +107,30 @@ for iStr = 1:length(rawDatStr{1})
     end
 end
 
-lineModStart = lineStrStart + 5;
-lineModEnd = lineStrEnd(1:2:end);
+% find the real locations of displacement outputs.
+lineModStart = lineIstrStart + 5;
+lineModEnd = lineStrEnd(1:2:end) - 3;
+
+% transform and store the displacement outputs.
+disAllStore = cell(length(lineModStart), 1);
+for iDis = 1:length(lineModStart)
+    
+    dis_ = rawDatStr{1}(lineModStart(iDis) : lineModEnd(iDis));
+    dis_ = str2num(cell2mat(dis_));
+    % fill non-exist spots with 0s.
+    if size(dis_, 1) ~= nnode
+        
+        disAllDof = zeros(nnode, 3);
+        disAllDof(dis_(:, 1), :) = dis_;
+        disAllDof(:, 1) = (1:nnode);
+    end
+    disAllStore(iDis) = {disAllDof};
+    
+end
+% reshape these u1 u2 displacements to standard space-time vectors, first
+% extract displacements without indices.
+disValStore = cellfun(@(v) v(:, 2:3), disAllStore, 'un', 0);
+disVecStore = cellfun(@(v) v', disValStore, 'un', 0);
+disVecStore = cellfun(@(v) v(:), disVecStore, 'un', 0);
+
+dis = cell2mat(disVecStore');

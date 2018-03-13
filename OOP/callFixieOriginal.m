@@ -1,4 +1,4 @@
-clear; clc; clf
+clear; clc;
 trialName = 'l9h2SingleInc';
 typeSwitch = 'original';
 rvSvdSwitch = 0;
@@ -54,7 +54,6 @@ disp(fixie.countGreedy)
 fixie.reducedMatrices;
 fixie.errPrepareRemainOriginal;
 
-
 while fixie.err.max.val > fixie.err.lowBond
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
@@ -78,8 +77,8 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     
     fixie.errStoreAllSurfs('original');
-    figure(1)
     
+    figure(1)
     fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
         typeSwitch, '-.k');
     

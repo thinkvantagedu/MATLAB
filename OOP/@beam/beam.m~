@@ -71,7 +71,7 @@ classdef beam < handle
             obj.no.inc = noIncl;
             obj.no.struct = noStruct;
             obj.no.phy = noIncl + noStruct + noMas + noDam;
-            obj.no.t_step = length((0:tStep:tMax));
+            obj.no.t_step = length((tStep:tStep:tMax));
             obj.no.Greedy = drawRow * drawCol;
             obj.no.nEnrich = 0;
             
@@ -3009,8 +3009,8 @@ classdef beam < handle
                 case 'reduced'
                     
                     obj.acc.reduce = obj.acc.val;
-                    obj.vel.reduce = obj.vel.val;
-                    obj.dis.reduce = obj.dis.val;
+                    obj.vel.reduce = obj.vel.val(:, 2:end);
+                    obj.dis.reduce = obj.dis.val(:, 2:end);
             end
         end
         %%
