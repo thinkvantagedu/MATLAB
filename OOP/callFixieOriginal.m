@@ -1,4 +1,4 @@
-clear; clc;
+clear; clc; clf;
 trialName = 'l9h2SingleInc';
 typeSwitch = 'original';
 rvSvdSwitch = 0;

@@ -51,7 +51,7 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.01;
+refiThres = 0.015;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
@@ -93,3 +93,4 @@ svdSwitch = 0;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
+AbaqusSwitch = 1;

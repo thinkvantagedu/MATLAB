@@ -407,7 +407,7 @@ classdef beam < handle
                     urOtpt = phi_ * obj.dis.val;
                     
                     relErr = norm(urOtpt - uOtpt, 'fro') / ...
-                        norm(obj.dis.trial, 'fro');
+                        norm(obj.dis.qoi.trial, 'fro');
                     if relErr <= egoal
                         break
                     end
@@ -433,7 +433,7 @@ classdef beam < handle
             % this method iteratively uses singular value to determine
             % how many basis vectors are needed in reduced basis.
             obj.no.nEnrich = 0;
-            [u, s, ~] = svd(obj.dis.trial, 0);
+            [u, s, ~] = svd(obj.dis.qoi.trial, 0);
             s = diag(s);
             ssum = sqrt(sum(s .^ 2));
             for i = 1:length(s)
@@ -458,7 +458,7 @@ classdef beam < handle
             % this method iteratively uses reduced variables to determine
             % how many vectors are needed in reduced basis (use phi * alpha).
             obj.no.nEnrich = 0;
-            [rb, ~, ~] = svd(obj.dis.trial, 0);
+            [rb, ~, ~] = svd(obj.dis.qoi.trial, 0);
             
             for i = 1:obj.no.dof
                 
@@ -473,8 +473,8 @@ classdef beam < handle
                 obj.NewmarkBetaMethod(mr, cr, kr, fr, vr0, ur0);
                 reVarDis = obj.dis.val;
                 ur = phi_ * reVarDis;
-                relErr = norm(ur - obj.dis.trial, 'fro') / ...
-                    norm(obj.dis.trial, 'fro');
+                relErr = norm(ur - obj.dis.qoi.trial, 'fro') / ...
+                    norm(obj.dis.qoi.trial, 'fro');
                 
                 if relErr <= 1 - reductionRatio
                     break
@@ -492,12 +492,15 @@ classdef beam < handle
             obj.no.nEnrich = 0;
             % Error controlled scheme for initial reduced basis from trial
             % point.
+            
             while obj.err.rbCtrl > rbCtrlThres
                 
-                [obj] = SVDoop(obj, 'rbCtrlInitial');
-                
+                snap = obj.dis.trial;
+                [phiVal, ~, ~] = svd(snap, 0);
+                obj.phi.val = phiVal(:, 1:obj.err.rbCtrlTrialNo);
                 obj.mas.re.mtx = obj.phi.val' * obj.mas.mtx * obj.phi.val;
-                obj.sti.re.mtx = obj.phi.val' * obj.sti.trial * obj.phi.val;
+                % here obj.sti.full is inherited from obj.exactSolution.
+                obj.sti.re.mtx = obj.phi.val' * obj.sti.full * obj.phi.val;
                 obj.dam.re.mtx = ...
                     sparse(length(obj.sti.re.mtx), length(obj.sti.re.mtx));
                 
@@ -508,9 +511,9 @@ classdef beam < handle
                 obj.mas.reduce = obj.mas.re.mtx;
                 obj.dam.reduce = obj.dam.re.mtx;
                 obj.fce.pass = obj.fce.val;
-                
-                obj = NewmarkBetaReducedMethodOOP(obj, 'rewRb');
-                obj.dis.errCtrl = obj.dis.full;
+                % 'rewRb' needs to be modified.
+                obj = NewmarkBetaReducedMethodOOP(obj, 'reduced'); 
+                obj.dis.errCtrl = obj.phi.val * obj.dis.reduce;
                 
                 obj.err.rbCtrl = (norm(obj.dis.trial - ...
                     obj.dis.errCtrl, 'fro')) / norm(obj.dis.trial, 'fro');
@@ -849,10 +852,10 @@ classdef beam < handle
             resphhat = obj.resp.store.hhat;
             resphat = obj.resp.store.hat;
             errhhat = cellfun(@(v) norm(v, 'fro') / ...
-                norm(obj.dis.trial, 'fro'), resphhat, 'un', 0);
+                norm(obj.dis.qoi.trial, 'fro'), resphhat, 'un', 0);
             obj.err.store.surf.hhat = cell2mat(errhhat);
             errhat = cellfun(@(v) norm(v, 'fro') / ...
-                norm(obj.dis.trial, 'fro'), resphat, 'un', 0);
+                norm(obj.dis.qoi.trial, 'fro'), resphat, 'un', 0);
             obj.err.store.surf.hat = cell2mat(errhat);
             
         end
@@ -2431,19 +2434,15 @@ classdef beam < handle
             
             if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                 obj.dis.qoi.resi = obj.dis.resi;
-                obj.dis.qoi.trial = obj.dis.trial;
                 
             elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
                 obj.dis.qoi.resi = obj.dis.resi(:, obj.qoi.t);
-                obj.dis.qoi.trial = obj.dis.trial(:, obj.qoi.t);
                 
             elseif qoiSwitchSpace == 1 && qoiSwitchTime == 0
                 obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, :);
-                obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, :);
                 
             elseif qoiSwitchSpace == 1 && qoiSwitchTime == 1
                 obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, obj.qoi.t);
-                obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, obj.qoi.t);
                 
             end
             
@@ -2949,16 +2948,13 @@ classdef beam < handle
             a7 = gamma * obj.time.step;
             
             switch type
-                
                 case 'full'
-                    
                     dis0 = obj.dis.inpt;
                     vel0 = obj.vel.inpt;
                     K = obj.sti.full;
                     M = obj.mas.mtx;
                     C = obj.dam.mtx;
                     fce = obj.fce.pass;
-                    
                 case {'reduced'}
                     dis0 = obj.dis.re.inpt;
                     vel0 = obj.vel.re.inpt;
@@ -2966,7 +2962,6 @@ classdef beam < handle
                     M = obj.mas.reduce;
                     C = obj.dam.reduce;
                     fce = obj.phi.val' * obj.fce.pass;
-                    
             end
             
             obj.dis.val = zeros(length(K), length(t));
@@ -3001,13 +2996,10 @@ classdef beam < handle
             
             switch type
                 case 'full'
-                    
                     obj.acc.full = obj.acc.val;
                     obj.vel.full = obj.vel.val;
                     obj.dis.full = obj.dis.val;
-                    
                 case 'reduced'
-                    
                     obj.acc.reduce = obj.acc.val;
                     obj.vel.reduce = obj.vel.val;
                     obj.dis.reduce = obj.dis.val;
