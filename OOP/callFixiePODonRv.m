@@ -7,15 +7,15 @@ callPreliminary;
 %% trial solution.
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
+    domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
-    nConsEnd);
+    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, ...
+    fNode, ftime, fRange, nConsEnd);
 
-% read mass matrix, 2 = 2d.
+% read mass matrix.
 fixie.readMasMTX2DOF(nDofPerNode);
 
-% read constraint infomation, 2 = 2d.
+% read constraint infomation.
 fixie.readINPconsFixie(nDofPerNode);
 
 % read geometric information.
@@ -24,7 +24,7 @@ fixie.readINPgeoMultiInc;
 % generate parameter space.
 fixie.generatePmSpaceMultiDim;
 
-% read stiffness matrices, 2 = 2d.
+% read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
@@ -42,7 +42,7 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
+fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
 
 % compute initial reduced basis from trial solution.
 fixie.rbInitial(nPhiInitial);
@@ -60,7 +60,7 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
-fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
+fixie.respfromFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
@@ -91,7 +91,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.impGenerate;
     
-    fixie.respTdiffComputation(svdSwitch);
+    fixie.respTdiffComputation(svdSwitch, AbaqusSwitch);
     
     switch timeType
         
@@ -109,7 +109,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             end
     end
     
-%     fixie.rvLTePrervL;
+    %     fixie.rvLTePrervL;
     % disp('offline end')
     
     %% ONLINE.
@@ -153,7 +153,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             break
         end
         
-        fixie.exactSolution('Greedy');
+        fixie.exactSolution('Greedy', ...
+            qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
@@ -169,7 +170,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.extractPmAdd;
         
-        fixie.respImpFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace);
+        fixie.respfromFce(svdSwitch, ...
+            qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
     end
 end

@@ -209,8 +209,9 @@ maxT = 9.9;
 %% plot the first N displacements with subplot.
 x = 0.1:0.1:9.9;
 y = 0:0.1:9.9;
-for iPlot = 26:35
-    subplot(2, 5, iPlot - 25)
+figure
+for iPlot = 1020:1025
+    subplot(2, 3, iPlot - 1019)
     plot(x, dis(iPlot, :), '->')
     hold on
     plot(y, u(iPlot, :), '-*')

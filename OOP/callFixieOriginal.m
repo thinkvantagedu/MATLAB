@@ -7,7 +7,7 @@ callPreliminary;
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domLengs, domBondi, domMid, trial, noIncl, noStruct, noMas, noDam,...
+    domBondi, domMid, trial, noIncl, noStruct, noMas, noDam,...
     tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
     errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
     nConsEnd);
@@ -42,7 +42,7 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace);
+fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
 
 % compute initial reduced basis from trial solution. There are different
 % approaches.
@@ -64,7 +64,8 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.reducedVar;
         
-        fixie.residualfromForce(normType, qoiSwitchSpace, qoiSwitchTime);
+        fixie.residualfromForce...
+            (normType, qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch);
         
         fixie.errStoreSurfs(typeSwitch);
         
@@ -88,7 +89,7 @@ while fixie.err.max.val > fixie.err.lowBond
         break
     end
     
-    fixie.exactSolution('Greedy');
+    fixie.exactSolution('Greedy', qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
     
     fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
     fixie.reducedMatrices;

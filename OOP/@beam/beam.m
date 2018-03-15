@@ -47,7 +47,7 @@ classdef beam < handle
     methods
         
         function obj = beam(masFile, damFile, stiFile, ...
-                locStart, locEnd, INPname, domLengi, domLengs, domBondi, ...
+                locStart, locEnd, INPname, domLengi, domBondi, ...
                 domMid, trial, noIncl, noStruct, noMas, noDam, tMax, tStep, ...
                 errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
@@ -63,9 +63,8 @@ classdef beam < handle
             
             obj.domBond.i = domBondi;
             obj.domLeng.i = domLengi;
-            obj.domLeng.s = domLengs;
             
-            obj.pmVal.s.fix = 1000;
+            obj.pmVal.s.fix = 10;
             obj.pmVal.comb.trial = trial;
             
             obj.no.inc = noIncl;
@@ -166,7 +165,8 @@ classdef beam < handle
                     globalMBC = M' + M;
                     
                     for i_tran=1:length(M)
-                        globalMBC(i_tran, i_tran) = globalMBC(i_tran, i_tran) / 2;
+                        globalMBC(i_tran, i_tran) = ...
+                            globalMBC(i_tran, i_tran) / 2;
                     end
                     
                     for i = 1:obj.no.consEnd
@@ -512,7 +512,7 @@ classdef beam < handle
                 obj.dam.reduce = obj.dam.re.mtx;
                 obj.fce.pass = obj.fce.val;
                 % 'rewRb' needs to be modified.
-                obj = NewmarkBetaReducedMethodOOP(obj, 'reduced'); 
+                obj = NewmarkBetaReducedMethodOOP(obj, 'reduced');
                 obj.dis.errCtrl = obj.phi.val * obj.dis.reduce;
                 
                 obj.err.rbCtrl = (norm(obj.dis.trial - ...
@@ -543,22 +543,28 @@ classdef beam < handle
             obj.no.phiAdd = nInit;
         end
         %%
-        function obj = exactSolution(obj, type, qoiSwitchTime, qoiSwitchSpace)
+        function obj = exactSolution(obj, type, ...
+                qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch)
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
-                    pmIcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
+                    pmValcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
                 case 'Greedy'
-                    pmIcell = [obj.pmVal.max'; obj.pmVal.s.fix];
+                    pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
             end
-            stiI = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc + 1
-                stiI = stiI + obj.sti.mtxCell{i} * pmIcell(i);
+            if AbaqusSwitch == 0
+                % use MATLAB Newmark code to obtain exact solutions.
+                stiPre = sparse(obj.no.dof, obj.no.dof);
+                for iSti = 1:obj.no.inc + 1
+                    stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValcell(iSti);
+                end
+                % compute trial solution
+                obj.sti.full = stiPre;
+                obj.fce.pass = obj.fce.val;
+                obj.NewmarkBetaReducedMethodOOP('full');
+            elseif AbaqusSwitch == 1
+                % use Abaqus to obtain exact solutions.
             end
-            % compute trial solution
-            obj.sti.full = stiI;
-            obj.fce.pass = obj.fce.val;
-            obj.NewmarkBetaReducedMethodOOP('full');
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
@@ -935,29 +941,29 @@ classdef beam < handle
             end
         end
         %%
-        function obj = respImpFce(obj, svdSwitch, qoiSwitchTime, qoiSwitchSpace)
+        function obj = respfromFce(obj, svdSwitch, ...
+                qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch)
             % only compute exact solutions regarding external force
             % when pm domain is refined.
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % if no refinement, only enrich, force related responses does
                 % not change since it's not related to new basis vectors.
                 for iPre = 1:obj.no.pre.hhat
-                    
-                    pmValI = obj.pmVal.hhat(iPre, 2:obj.no.inc + 1);
-                    pmValHhat = [pmValI obj.pmVal.s.fix];
-                    pmValCell = num2cell(pmValHhat');
-                    
-                    stiPreCell = cellfun(@(u, v) u * v, ...
-                        pmValCell, obj.sti.mtxCell, 'un', 0);
-                    
-                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                    for i = 1:length(stiPreCell)
-                        stiPre = stiPre + stiPreCell{i};
+                    pmValCell = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) ...
+                        obj.pmVal.s.fix];
+                    if AbaqusSwitch == 0
+                        % use MATLAB Newmark code to obtain exact solutions.
+                        stiPre = sparse(obj.no.dof, obj.no.dof);
+                        for iSti = 1:obj.no.inc + 1
+                            stiPre = stiPre + obj.sti.mtxCell{iSti} * ...
+                                pmValCell(iSti);
+                        end
+                        obj.sti.full = stiPre;
+                        obj.fce.pass = obj.fce.val;
+                        obj = NewmarkBetaReducedMethodOOP(obj, 'full');
+                    elseif AbaqusSwitch == 1
+                        % use Abaqus to obtain exact solutions.
                     end
-                    
-                    obj.sti.full = stiPre;
-                    obj.fce.pass = obj.fce.val;
-                    obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                             obj.resp.store.fce.hhat{iPre} = obj.dis.full(:);
@@ -990,18 +996,21 @@ classdef beam < handle
                 % if refine, no enrichment, only compute force related
                 % responses regarding the new interpolation samples.
                 for iPre = 1:obj.no.itplAdd
-                    pmValI = [obj.pmVal.add(iPre, 2:obj.no.inc + 1) ...
+                    pmValCell = [obj.pmVal.add(iPre, 2:obj.no.inc + 1) ...
                         obj.pmVal.s.fix];
-                    pmValI = num2cell(pmValI');
-                    stiCell = cellfun(@(u, v) u * v, ...
-                        pmValI, obj.sti.mtxCell, 'un', 0);
-                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                    for i = 1:length(stiCell)
-                        stiPre = stiPre + stiCell{i};
+                    if AbaqusSwitch == 0
+                        % use MATLAB Newmark code to obtain exact solutions.
+                        stiPre = sparse(obj.no.dof, obj.no.dof);
+                        for iSti = 1:obj.no.inc + 1
+                            stiPre = stiPre + obj.sti.mtxCell{iSti} * ...
+                                pmValCell(iSti);
+                        end
+                        obj.sti.full = stiPre;
+                        obj.fce.pass = obj.fce.val;
+                        obj = NewmarkBetaReducedMethodOOP(obj, 'full');
+                    elseif AbaqusSwitch == 1
+                        % use Abaqus to obtain exact solutions.
                     end
-                    obj.sti.full = stiPre;
-                    obj.fce.pass = obj.fce.val;
-                    obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                             obj.resp.store.fce.hhat...
@@ -1093,7 +1102,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = respTdiffComputation(obj, svdSwitch)
+        function obj = respTdiffComputation(obj, svdSwitch, AbaqusSwitch)
             % this method compute 2 responses for each interpolation
             % sample, each affine term, each basis vector.
             % only compute responses regarding newly added basis vectors,
@@ -1103,29 +1112,33 @@ classdef beam < handle
                 % if no refinement, enrich basis: compute the new exact
                 % solutions regarding the newly added basis vectors.
                 for iPre = 1:obj.no.pre.hhat
-                    pmPre = obj.pmVal.hhat(iPre, 2:obj.no.inc + 1);
-                    pmPre = [pmPre obj.pmVal.s.fix];
-                    pmPre  = num2cell(pmPre');
-                    stiPreCell = cellfun(@(u, v) u * v, ...
-                        pmPre, obj.sti.mtxCell, 'un', 0);
-                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                    for i = 1:length(stiPreCell)
-                        stiPre = stiPre + stiPreCell{i};
-                    end
                     for iPhy = 1:obj.no.phy
                         for iTdiff = 1:2
                             % only compute exact solutions regarding the
                             % newly added basis vectors.
                             for iRb = obj.no.rb - obj.no.phiAdd + 1:obj.no.rb
                                 impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
-                                obj.sti.full = stiPre;
-                                obj.fce.pass = impPass;
-                                obj = NewmarkBetaReducedMethodOOP(obj, 'full');
+                                pmValCell = ...
+                                    [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1)...
+                                    obj.pmVal.s.fix];
+                                if AbaqusSwitch == 0
+                                    stiPre = sparse(obj.no.dof, obj.no.dof);
+                                    for iSti = 1:obj.no.inc + 1
+                                        stiPre = stiPre + ...
+                                            obj.sti.mtxCell{iSti} * ...
+                                            pmValCell(iSti);
+                                    end
+                                    obj.sti.full = stiPre;
+                                    obj.fce.pass = impPass;
+                                    obj = NewmarkBetaReducedMethodOOP...
+                                        (obj, 'full');
+                                elseif AbaqusSwitch == 1
+                                    
+                                end
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
                                         (iPre, iPhy, iTdiff, iRb) = ...
                                         {obj.dis.full};
-                                    
                                 elseif svdSwitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full);
                                     ul = ul(:, 1:obj.no.respSVD);
@@ -1147,25 +1160,29 @@ classdef beam < handle
                 % regarding all basis vectors but only for the newly added
                 % interpolation samples.
                 for iPre = 1:obj.no.itplAdd
-                    pmPre = obj.pmVal.add(iPre, 2:obj.no.inc + 1);
-                    pmPre = [pmPre obj.pmVal.s.fix];
-                    pmPre = num2cell(pmPre');
-                    stiPreCell = cellfun(@(u, v) u * v, ...
-                        pmPre, obj.sti.mtxCell, 'un', 0);
-                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                    for i = 1:length(stiPreCell)
-                        stiPre = stiPre + stiPreCell{i};
-                    end
-                    obj.sti.pre = stiPre;
                     for iPhy = 1:obj.no.phy
                         for iTdiff = 1:2
                             % compute exact solutions reagrding all reduced
                             % basis vectors.
                             for iRb = 1:obj.no.rb
                                 impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
-                                obj.sti.full = obj.sti.pre;
-                                obj.fce.pass = impPass;
-                                obj = NewmarkBetaReducedMethodOOP(obj, 'full');
+                                pmValCell = ...
+                                    [obj.pmVal.add(iPre, 2:obj.no.inc + 1)...
+                                    obj.pmVal.s.fix];
+                                if AbaqusSwitch == 0
+                                    stiPre = sparse(obj.no.dof, obj.no.dof);
+                                    for iSti = 1:obj.no.inc + 1
+                                        stiPre = stiPre + ...
+                                            obj.sti.mtxCell{iSti} * ...
+                                            pmValCell(iSti);
+                                    end
+                                    obj.sti.full = stiPre;
+                                    obj.fce.pass = impPass;
+                                    obj = NewmarkBetaReducedMethodOOP...
+                                        (obj, 'full');
+                                elseif AbaqusSwitch == 1
+                                    
+                                end
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
                                         (obj.no.itplEx + iPre, ...
@@ -1372,6 +1389,7 @@ classdef beam < handle
                         if rvSvdSwitch == 1
                             respTrans_ = respAllCol * obj.resp.rv.L;
                             respTrans = respTrans_' * respTrans_;
+                            
                         elseif rvSvdSwitch == 0
                             % find the nonzero elements and interpolate
                             % these only.
@@ -1387,8 +1405,9 @@ classdef beam < handle
                                     find(obj.indicator.nonzeroi);
                             end
                             obj.no.nonZ = length(obj.indicator.nonzeroi);
-                            respTrans = respTrans(obj.indicator.nonzeroi, ...
-                                obj.indicator.nonzeroi);
+                            % respTrans = respTrans(obj.indicator.nonzeroi, ...
+                            %     obj.indicator.nonzeroi);
+                            
                         end
                         obj.err.pre.hhat(iPre, 5) = {respTrans};
                     elseif svdSwitch == 1
@@ -1478,8 +1497,8 @@ classdef beam < handle
                                 obj.indicator.nonzeroi = ...
                                     find(obj.indicator.nonzeroi);
                             end
-                            respTrans = respTrans(obj.indicator.nonzeroi, ...
-                                obj.indicator.nonzeroi);
+                            % respTrans = respTrans(obj.indicator.nonzeroi, ...
+                            %     obj.indicator.nonzeroi);
                         end
                         obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
                             {respTrans};
@@ -1551,8 +1570,9 @@ classdef beam < handle
                     respTransSort = respStoreSort{iPre, 3}' * ...
                         respStoreSort{iPre + 1, 3};
                     if rvSvdSwitch == 0
-                        respTransSorttoStore = respTransSort...
-                            (obj.indicator.nonzeroi, obj.indicator.nonzeroi);
+                        % respTransSorttoStore = respTransSort...
+                        %     (obj.indicator.nonzeroi, obj.indicator.nonzeroi);
+                        respTransSorttoStore = respTransSort;
                     elseif rvSvdSwitch == 1
                         respTransSorttoStore = ...
                             obj.resp.rv.L' * respStoreSort{iPre, 3}' * ...
@@ -1858,7 +1878,8 @@ classdef beam < handle
             pmSlct = repmat([1; 1; pmPass], obj.no.t_step * obj.no.rb, 1);
             pmSlct = [1; pmSlct];
             if rvSvdSwitch == 0
-                pmNonZeroCol = pmSlct(obj.indicator.nonzeroi, :);
+                % pmNonZeroCol = pmSlct(obj.indicator.nonzeroi, :);
+                pmNonZeroCol = pmSlct;
                 obj.pmVal.pmCol = pmNonZeroCol;
             elseif rvSvdSwitch == 1
                 obj.pmVal.pmCol = pmSlct;
@@ -1898,7 +1919,8 @@ classdef beam < handle
             rvAllCol = [1; rvAllCol(:)];
             
             if rvSvdSwitch == 0
-                rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
+                % rvNonZeroCol = rvAllCol(obj.indicator.nonzeroi, :);
+                rvNonZeroCol = rvAllCol;
                 obj.pmVal.rvCol = rvNonZeroCol;
             elseif rvSvdSwitch == 1
                 obj.pmVal.rvCol = rvAllCol;
@@ -2114,6 +2136,7 @@ classdef beam < handle
                     e = obj.err.itpl.add;
             end
             if rvSvdSwitch == 0
+                
                 ePreSqrt = (obj.pmVal.rvCol .* obj.pmVal.pmCol)' * e * ...
                     (obj.pmVal.rvCol .* obj.pmVal.pmCol);
                 switch type
@@ -2140,6 +2163,7 @@ classdef beam < handle
                     case 'hat'
                         obj.err.norm(2) = ePreDiag(iIter);
                 end
+                
             end
         end
         %%
@@ -2407,7 +2431,7 @@ classdef beam < handle
         end
         %%
         function obj = residualfromForce...
-                (obj, normType, qoiSwitchSpace, qoiSwitchTime)
+                (obj, normType, qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch)
             switch normType
                 case 'l1'
                     relativeErrSq = @(xNum, xInit) ...
@@ -2416,20 +2440,21 @@ classdef beam < handle
                     relativeErrSq = @(xNum, xInit) ...
                         (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
             end
-            
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{i} * obj.pmVal.iter{i};
+            pmValCell = obj.pmVal.iter;
+            if AbaqusSwitch == 0
+                stiPre = sparse(obj.no.dof, obj.no.dof);
+                for iSti = 1:obj.no.inc + 1
+                    stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
+                end
+                obj.sti.full = stiPre;
+                obj.fce.pass = obj.fce.val - ...
+                    obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
+                    obj.dam.mtx * obj.phi.val * obj.vel.re.reVar - ...
+                    obj.sti.full * obj.phi.val * obj.dis.re.reVar;
+                obj = NewmarkBetaReducedMethodOOP(obj, 'full');
+            elseif AbaqusSwitch == 1
+                
             end
-            
-            obj.sti.full = stiPre;
-            
-            obj.fce.pass = obj.fce.val - ...
-                obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
-                obj.dam.mtx * obj.phi.val * obj.vel.re.reVar - ...
-                obj.sti.full * obj.phi.val * obj.dis.re.reVar;
-            
-            obj = NewmarkBetaReducedMethodOOP(obj, 'full');
             obj.dis.resi = obj.dis.full;
             
             if qoiSwitchTime == 0 && qoiSwitchSpace == 0
