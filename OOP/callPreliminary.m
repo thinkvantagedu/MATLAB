@@ -29,13 +29,13 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.19;
-tStep = 0.01;
+tMax = 2.9;
+tStep = 0.1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
-ftime = 0.02;
+ftime = 0.2;
 fRange = 5;
 
 %% parameter data for trial iteration.
@@ -76,7 +76,7 @@ rbCtrlThres = 0.1;
 % number of vectors taking when applying SVD to pre-computed resps.
 nRespSVD = 4;
 % ratio of SVD erro reduction for POD on rv. ==========
-rvSVDreRatio = 0.99;
+rvSVDreRatio = 1;
 
 %% set types
 timeType = 'allTime';
@@ -95,3 +95,15 @@ ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 AbaqusSwitch = 0;
+
+%% Abaqus route and preliminaries.
+abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
+    trialName, '.inp'];
+
+
+
+
+
+
+
+

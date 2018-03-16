@@ -33,6 +33,7 @@ classdef beam < handle
         vel
         dis
         no
+        aba
     end
     
     properties (Dependent, Hidden)
@@ -46,12 +47,13 @@ classdef beam < handle
     
     methods
         
-        function obj = beam(masFile, damFile, stiFile, ...
+        function obj = beam(abaInpFile, masFile, damFile, stiFile, ...
                 locStart, locEnd, INPname, domLengi, domBondi, ...
                 domMid, trial, noIncl, noStruct, noMas, noDam, tMax, tStep, ...
                 errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
                 drawRow, drawCol)
+            obj.aba.file = abaInpFile;
             
             obj.mas.file = masFile;
             obj.dam.file = damFile;
@@ -544,7 +546,7 @@ classdef beam < handle
         end
         %%
         function obj = exactSolution(obj, type, ...
-                qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch)
+                qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch, trialName)
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
@@ -564,7 +566,11 @@ classdef beam < handle
                 obj.NewmarkBetaReducedMethodOOP('full');
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
+                obj.abaqusStrInfo(trialName);
+                obj.abaqusJob(trialName);
+                obj.abaqusOtpt;
             end
+            keyboard
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
@@ -3029,6 +3035,163 @@ classdef beam < handle
                     obj.vel.reduce = obj.vel.val;
                     obj.dis.reduce = obj.dis.val;
             end
+        end
+        %%
+        function obj = abaqusStrInfo(obj, trialName)
+            % this method defines the string infos, prepare to modify the
+            % .inp file.
+            abaPath = '/home/xiaohan/Desktop/Temp/AbaqusModels';
+            obj.aba.inp.path.unmo = [abaPath '/fixBeam/'];
+            obj.aba.inp.path.mo = [abaPath '/iterModels/'];
+            obj.aba.dat.name = [trialName '_iter'];
+            obj.aba.str.pm.I = '*Material, name=Material-I1';
+            obj.aba.str.pm.S = '*Material, name=Material-S';
+            obj.aba.str.fce.start = '*Amplitude, name=Amp-af';
+            obj.aba.str.fce.end = '** MATERIALS';
+            obj.aba.str.step = '*Dynamic';
+        end
+        %%
+        function obj = abaqusJob(obj, trialName)
+            % this method:
+            % 1. reads the raw .inp file;
+            % 2. locates the string to be modified;
+            % 3. outputs the modified, run Abaqus job by calling it.
+            
+            % 1. read the original unmodified .inp file.
+            inpTextUnmo = fopen(obj.aba.file);
+            rawInpStr = textscan(inpTextUnmo, ...
+                '%s', 'delimiter', '\n', 'whitespace', '');
+            fclose(inpTextUnmo);
+            
+            % 2. locate the strings to be modified.
+            for iStr = 1:length(rawInpStr{1})
+                if strcmp(rawInpStr{1}{iStr}, obj.aba.str.pm.I) == 1
+                    lineIstr = iStr;
+                elseif strcmp(rawInpStr{1}{iStr}, obj.aba.str.pm.S) == 1
+                    lineSstr = iStr;
+                elseif strcmp(rawInpStr{1}{iStr}, obj.aba.str.fce.start) == 1
+                    lineFceStart = iStr;
+                elseif strcmp(rawInpStr{1}{iStr}, obj.aba.str.fce.end) == 1
+                    lineFceEnd = iStr;
+                elseif length(rawInpStr{1}{iStr}) > 8
+                    if strcmp(rawInpStr{1}{iStr}(1:8), obj.aba.str.step) == 1
+                        lineStep = iStr;
+                    end
+                end
+            end
+            
+            lineImod = lineIstr + 4;
+            lineSmod = lineSstr + 4;
+            lineFceStart = lineFceStart + 1;
+            lineFceEnd = lineFceEnd - 2;
+            lineStepMod = lineStep + 1;
+            
+            % 3. output the modified .inp file, run Abaqus job by calling it.
+            % split the strings, find the num str to be modified.
+            splitStr = strsplit(rawInpStr{:}{lineImod});
+            posRatio = splitStr{end};
+            
+            % define the logarithm input for inclusion and matrix.
+            pmI = obj.pmVal.i.trial';
+            pmS = obj.pmVal.s.fix;
+            
+            % set the text file to be written.
+            otptInpStr = rawInpStr;
+            
+            % execute the Abaqus job.
+            % modified inp file name.
+            inpNameMo = [trialName, '_iter'];
+            inpPathMo = obj.aba.inp.path.mo;
+            % print the modified inp file to the output path.
+            fid = fopen([inpPathMo inpNameMo, '.inp'], 'wt');
+            % modify inclusion and matrix values individually.
+            strI = [' ', num2str(pmI), ', ', posRatio];
+            strS = [' ', num2str(pmS), ', ', posRatio];
+            strStep = [num2str(obj.time.step), ', ', num2str(obj.time.max)];
+            otptInpStr{:}(lineImod) = {strI};
+            otptInpStr{:}(lineSmod) = {strS};
+            otptInpStr{:}(lineStepMod) = {strStep};
+            fprintf(fid, '%s\n', string(otptInpStr{:}));
+            fclose(fid);
+            % run Abaqus for pm value.
+            cd(inpPathMo)
+            jobDef = ...
+                '/home/xiaohan/abaqus/6.14-1/code/bin/abq6141 noGUI job=';
+            runStr = strcat(jobDef, inpNameMo, ' inp=', inpPathMo, ...
+                inpNameMo, '.inp interactive ask_delete=OFF');
+            system(runStr);
+            
+            obj.aba.I.lineStart = lineImod;
+            obj.aba.S.lineStart = lineSmod;
+            obj.aba.fce.lineStart = lineFceStart;
+            obj.aba.fce.lineEnd = lineFceEnd;
+            obj.aba.inp.pathMo = inpPathMo;
+            
+        end
+        %%
+        function obj = abaqusOtpt(obj)
+            % this method reads the data in abaqus .dat file and transform
+            % into the output matrix.
+            
+            % read the .dat file.
+            datText = fopen([obj.aba.inp.path.mo, obj.aba.dat.name, '.dat']);
+            rawDatStr = textscan(datText, ...
+                '%s', 'delimiter', '\n', 'whitespace', '');
+            fclose(datText);
+            
+            % locate the strings to be modified.
+            datStrStart = 'THE FOLLOWING TABLE IS PRINTED FOR';
+            datStrEnd = 'AT NODE';
+            lineIstrStart = [];
+            lineStrEnd = [];
+            
+            for iStr = 1:length(rawDatStr{1})
+                % define string to compare.
+                datStrComp = strtrim(rawDatStr{1}{iStr});
+                % compare the start string for nodal output.
+                if length(datStrComp) > 33
+                    datStrCompStart = datStrComp(1:34);
+                    if strcmp(datStrCompStart, datStrStart) == 1
+                        lineIstrStart = [lineIstrStart; iStr];
+                    end
+                end
+                % compare the end string for nodal output.
+                if length(datStrComp) > 6
+                    datStrCompEnd = datStrComp(1:7);
+                    if strcmp(datStrCompEnd, datStrEnd) == 1
+                        lineStrEnd = [lineStrEnd; iStr];
+                    end
+                end
+            end
+            
+            % find the locations of displacement outputs.
+            lineModStart = lineIstrStart + 5;
+            lineModEnd = lineStrEnd(1:2:end) - 3;
+            
+            % transform and store the displacement outputs.
+            disAllStore = cell(length(lineModStart), 1);
+            for iDis = 1:length(lineModStart)
+                
+                dis_ = rawDatStr{1}(lineModStart(iDis) : lineModEnd(iDis));
+                dis_ = str2num(cell2mat(dis_));
+                % fill non-exist spots with 0s.
+                if size(dis_, 1) ~= obj.no.node.all
+                    
+                    disAllDof = zeros(obj.no.node.all, 3);
+                    disAllDof(dis_(:, 1), :) = dis_;
+                    disAllDof(:, 1) = (1:obj.no.node.all);
+                end
+                disAllStore(iDis) = {disAllDof};
+                
+            end
+            % reshape these u1 u2 displacements to standard space-time vectors,
+            % extract displacements without indices.
+            disValStore = cellfun(@(v) v(:, 2:3), disAllStore, 'un', 0);
+            disVecStore = cellfun(@(v) v', disValStore, 'un', 0);
+            disVecStore = cellfun(@(v) v(:), disVecStore, 'un', 0);
+            
+            obj.dis.full = cell2mat(disVecStore');
+            
         end
         %%
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);

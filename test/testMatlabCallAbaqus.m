@@ -107,7 +107,7 @@ for iStr = 1:length(rawDatStr{1})
     end
 end
 
-% find the real locations of displacement outputs.
+% find the locations of displacement outputs.
 lineModStart = lineIstrStart + 5;
 lineModEnd = lineStrEnd(1:2:end) - 3;
 
@@ -210,11 +210,11 @@ maxT = 9.9;
 x = 0.1:0.1:9.9;
 y = 0:0.1:9.9;
 figure
-for iPlot = 1020:1025
-    subplot(2, 3, iPlot - 1019)
-    plot(x, dis(iPlot, :), '->')
+for iPlot = 1020:1028
+    subplot(3, 3, iPlot - 1019)
+    plot(x, dis(iPlot, :), '->', 'LineWidth', 2)
     hold on
-    plot(y, u(iPlot, :), '-*')
+    plot(y, u(iPlot, :), '-*', 'LineWidth', 2)
     grid minor
 end
 
