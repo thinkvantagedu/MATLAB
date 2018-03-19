@@ -1,4 +1,5 @@
 clear; clc;
+% this script compares the non-intrusive technique with pure MATLAB result.
 %% part I: solve the parametric problem using Abaqus, read the output.
 % set up the model informations.
 nnode = 517;
@@ -31,11 +32,14 @@ fceStrEnd = '** MATERIALS';
 for iStr = 1:length(rawInpStr{1})
     if strcmp(rawInpStr{1}{iStr}, pmIstr) == 1
         lineIstrStart = iStr;
-    elseif strcmp(rawInpStr{1}{iStr}, pmSstr) == 1
+    end
+    if strcmp(rawInpStr{1}{iStr}, pmSstr) == 1
         lineSstrStart = iStr;
-    elseif strcmp(rawInpStr{1}{iStr}, fceStrStart) == 1
+    end
+    if strcmp(rawInpStr{1}{iStr}, fceStrStart) == 1
         lineFceStart = iStr;
-    elseif strcmp(rawInpStr{1}{iStr}, fceStrEnd) == 1
+    end
+    if strcmp(rawInpStr{1}{iStr}, fceStrEnd) == 1
         lineFceEnd = iStr;
     end
     
@@ -193,7 +197,7 @@ end
 
 fce = fce(2:2:end);
 fceVal = sparse(nnode * 2, length(lineModStart) + 1);
-fceVal(18, 1:length(fce)) = fceVal(18, 1:length(fce)) - fce';
+fceVal(30, 1:length(fce)) = fceVal(30, 1:length(fce)) - fce';
 
 u0 = zeros(nnode * 2, 1);
 v0 = zeros(nnode * 2, 1);
@@ -209,40 +213,12 @@ maxT = 9.9;
 %% plot the first N displacements with subplot.
 x = 0.1:0.1:9.9;
 y = 0:0.1:9.9;
-figure
-for iPlot = 1020:1028
-    subplot(3, 3, iPlot - 1019)
+
+figure(1)
+for iPlot = 550:569
+    subplot(5, 4, iPlot - 549)
     plot(x, dis(iPlot, :), '->', 'LineWidth', 2)
     hold on
     plot(y, u(iPlot, :), '-*', 'LineWidth', 2)
     grid minor
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -35,8 +35,8 @@ tStep = 0.1;
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
-ftime = 0.2;
-fRange = 5;
+ftime = 0.9;
+fRange = 15;
 
 %% parameter data for trial iteration.
 trial = 1;

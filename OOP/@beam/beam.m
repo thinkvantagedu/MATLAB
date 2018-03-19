@@ -570,7 +570,7 @@ classdef beam < handle
                 obj.abaqusJob(trialName);
                 obj.abaqusOtpt;
             end
-            keyboard
+            
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
@@ -969,6 +969,7 @@ classdef beam < handle
                         obj = NewmarkBetaReducedMethodOOP(obj, 'full');
                     elseif AbaqusSwitch == 1
                         % use Abaqus to obtain exact solutions.
+                        
                     end
                     if svdSwitch == 0
                         if qoiSwitchTime == 0 && qoiSwitchSpace == 0
@@ -2459,10 +2460,12 @@ classdef beam < handle
                     obj.sti.full * obj.phi.val * obj.dis.re.reVar;
                 obj = NewmarkBetaReducedMethodOOP(obj, 'full');
             elseif AbaqusSwitch == 1
-                
+                % use Abaqus to obtain exact solutions.
+                obj.abaqusJob(trialName);
+                obj.abaqusOtpt;
             end
             obj.dis.resi = obj.dis.full;
-            
+            keyboard
             if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                 obj.dis.qoi.resi = obj.dis.resi;
                 
