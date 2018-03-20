@@ -66,7 +66,7 @@ classdef beam < handle
             obj.domBond.i = domBondi;
             obj.domLeng.i = domLengi;
             
-            obj.pmVal.s.fix = 10;
+            obj.pmVal.s.fix = 1;
             obj.pmVal.comb.trial = trial;
             
             obj.no.inc = noIncl;
@@ -2465,7 +2465,7 @@ classdef beam < handle
                 obj.abaqusOtpt;
             end
             obj.dis.resi = obj.dis.full;
-            keyboard
+            
             if qoiSwitchTime == 0 && qoiSwitchSpace == 0
                 obj.dis.qoi.resi = obj.dis.resi;
                 
@@ -2481,7 +2481,7 @@ classdef beam < handle
             end
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
-            
+            keyboard
         end
         %%
         function obj = reducedMatrices(obj)

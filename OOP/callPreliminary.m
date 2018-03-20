@@ -29,14 +29,14 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 2.9;
+tMax = 9.9;
 tStep = 0.1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
-ftime = 0.9;
-fRange = 15;
+ftime = 0.2;
+fRange = 5;
 
 %% parameter data for trial iteration.
 trial = 1;
