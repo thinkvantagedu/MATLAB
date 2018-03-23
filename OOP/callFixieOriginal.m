@@ -67,7 +67,7 @@ while fixie.err.max.val > fixie.err.lowBond
         fixie.reducedVar;
         
         fixie.residualfromForce...
-            (normType, qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch);
+            (normType, qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch, trialName);
         
         fixie.errStoreSurfs(typeSwitch);
         

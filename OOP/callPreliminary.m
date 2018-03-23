@@ -56,7 +56,7 @@ refiThres = 0.015;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 1;
 nPhiInitial = 3;
 nPhiEnrich = 2;
 
@@ -94,7 +94,7 @@ svdSwitch = 0;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
-AbaqusSwitch = 0;
+AbaqusSwitch = 1;
 
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...

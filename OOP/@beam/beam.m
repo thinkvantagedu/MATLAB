@@ -567,7 +567,11 @@ classdef beam < handle
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
                 obj.abaqusStrInfo(trialName);
-                obj.abaqusJob(trialName);
+                % define the logarithm input for inclusion and matrix.
+                pmI = obj.pmVal.i.trial';
+                pmS = obj.pmVal.s.fix;
+                % input parameter 0 indicates the force is not modified. 
+                obj.abaqusJob(trialName, pmI, pmS, 0);
                 obj.abaqusOtpt;
             end
             
@@ -2438,7 +2442,8 @@ classdef beam < handle
         end
         %%
         function obj = residualfromForce...
-                (obj, normType, qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch)
+                (obj, normType, qoiSwitchSpace, qoiSwitchTime, ...
+                AbaqusSwitch, trialName)
             switch normType
                 case 'l1'
                     relativeErrSq = @(xNum, xInit) ...
@@ -2448,20 +2453,24 @@ classdef beam < handle
                         (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
             end
             pmValCell = obj.pmVal.iter;
+            stiPre = sparse(obj.no.dof, obj.no.dof);
+            for iSti = 1:obj.no.inc + 1
+                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
+            end
+            obj.sti.full = stiPre;
+            obj.fce.pass = obj.fce.val - ...
+                obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
+                obj.dam.mtx * obj.phi.val * obj.vel.re.reVar - ...
+                obj.sti.full * obj.phi.val * obj.dis.re.reVar;
             if AbaqusSwitch == 0
-                stiPre = sparse(obj.no.dof, obj.no.dof);
-                for iSti = 1:obj.no.inc + 1
-                    stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
-                end
-                obj.sti.full = stiPre;
-                obj.fce.pass = obj.fce.val - ...
-                    obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
-                    obj.dam.mtx * obj.phi.val * obj.vel.re.reVar - ...
-                    obj.sti.full * obj.phi.val * obj.dis.re.reVar;
                 obj = NewmarkBetaReducedMethodOOP(obj, 'full');
             elseif AbaqusSwitch == 1
-                % use Abaqus to obtain exact solutions.
-                obj.abaqusJob(trialName);
+                % use Abaqus to obtain exact solutions. 
+                pmI = obj.pmVal.iter{1};
+                pmS = obj.pmVal.iter{2};
+                % input parameter 1 indicates the force is completely
+                % modified. 
+                obj.abaqusJob(trialName, pmI, pmS, 1);
                 obj.abaqusOtpt;
             end
             obj.dis.resi = obj.dis.full;
@@ -2481,7 +2490,7 @@ classdef beam < handle
             end
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
-            keyboard
+            
         end
         %%
         function obj = reducedMatrices(obj)
@@ -3033,6 +3042,9 @@ classdef beam < handle
                     obj.acc.full = obj.acc.val;
                     obj.vel.full = obj.vel.val;
                     obj.dis.full = obj.dis.val;
+                    obj.acc.full(obj.cons.dof{:}, :) = 0;
+                    obj.vel.full(obj.cons.dof{:}, :) = 0;
+                    obj.dis.full(obj.cons.dof{:}, :) = 0;
                 case 'reduced'
                     obj.acc.reduce = obj.acc.val;
                     obj.vel.reduce = obj.vel.val;
@@ -3049,74 +3061,125 @@ classdef beam < handle
             obj.aba.dat.name = [trialName '_iter'];
             obj.aba.str.pm.I = '*Material, name=Material-I1';
             obj.aba.str.pm.S = '*Material, name=Material-S';
-            obj.aba.str.fce.start = '*Amplitude, name=Amp-af';
-            obj.aba.str.fce.end = '** MATERIALS';
+            
             obj.aba.str.step = '*Dynamic';
         end
         %%
-        function obj = abaqusJob(obj, trialName)
+        function obj = abaqusJob(obj, trialName, pmI, pmS, fceModSwitch)
             % this method:
             % 1. reads the raw .inp file;
             % 2. locates the string to be modified;
             % 3. outputs the modified, run Abaqus job by calling it.
             
-            % 1. read the original unmodified .inp file.
+            % read the original unmodified .inp file.
             inpTextUnmo = fopen(obj.aba.file);
             rawInpStr = textscan(inpTextUnmo, ...
                 '%s', 'delimiter', '\n', 'whitespace', '');
             fclose(inpTextUnmo);
             
-            % 2. locate the strings to be modified.
-            for iStr = 1:length(rawInpStr{1})
-                if strcmp(rawInpStr{1}{iStr}, obj.aba.str.pm.I) == 1
-                    lineIstr = iStr;
-                elseif strcmp(rawInpStr{1}{iStr}, obj.aba.str.pm.S) == 1
-                    lineSstr = iStr;
-                elseif strcmp(rawInpStr{1}{iStr}, obj.aba.str.fce.start) == 1
-                    lineFceStart = iStr;
-                elseif strcmp(rawInpStr{1}{iStr}, obj.aba.str.fce.end) == 1
-                    lineFceEnd = iStr;
-                elseif length(rawInpStr{1}{iStr}) > 8
-                    if strcmp(rawInpStr{1}{iStr}(1:8), obj.aba.str.step) == 1
-                        lineStep = iStr;
-                    end
+            % generate the force part to be written in .inp file.
+            if fceModSwitch == 1
+                % force strings.
+                fceStr = {'*Nset, nset=Set-af'; ...% nsetStart
+                    '*Nset, nset=Set-lc'; ...% nsetEnd
+                    '*Amplitude'; ...% ampStart
+                    '** MATERIALS'; ...% ampEnd
+                    '*Cload, amplitude'; ...% cloadStart
+                    '** OUTPUT REQUESTS'};% cloadEnd
+                fceStrLoc = zeros(length(fceStr), 1);
+                for iFce = 1:length(fceStr)
+                    fceStrLoc(iFce) = ...
+                        find(strncmp(rawInpStr{1}, fceStr{iFce}, ...
+                        length(fceStr{iFce})));
                 end
+                fceAmp = zeros(obj.no.dof, 2 * obj.no.t_step);
+                fceAmp(:, 1:2:end) = fceAmp(:, 1:2:end) + ...
+                    repmat((0:obj.time.step:obj.time.max), [obj.no.dof, 1]);
+                fceAmp(:, 2:2:end) = fceAmp(:, 2:2:end) + obj.fce.pass;
+                
+                setCell = [];
+                cloadCell = [];
+                ampCell = [];
+                for iNode = 1:obj.no.node.all
+                    setStr = ['*Nset, nset=Set-af' ...
+                        num2str(iNode) ', instance=beam-1'];
+                    setCell_ = {setStr; num2str(iNode)};
+                    setCell = [setCell; setCell_];
+                    cload1 = ['*Cload, amplitude=Amp-af' ...
+                        num2str(iNode * 2 - 1)];
+                    cload2 = ['Set-af' num2str(iNode) ', 1, 1'];
+                    cload3 = ['*Cload, amplitude=Amp-af' num2str(iNode * 2)];
+                    cload4 = ['Set-af' num2str(iNode) ', 2, 1'];
+                    cloadCell = [cloadCell; {cload1; cload2; cload3; cload4}];
+                    
+                end
+                nline = floor(obj.no.t_step * 2 / 8);
+                for iDof = 1:obj.no.dof
+                    ampStr = {['*Amplitude, name=Amp-af' num2str(iDof)]};
+                    ampVal = fceAmp(iDof, :);
+                    ampInsLine1 = ampVal(1:nline * 8);
+                    ampInsLine1 = reshape(ampInsLine1, [8, nline]);
+                    ampInsCell1 = mat2cell(ampInsLine1', ones(1, nline), 8);
+                    ampInsCell1 = ...
+                        cellfun(@(v) num2str(v), ampInsCell1, 'un', 0);
+                    ampInsCell2 = ...
+                        {num2str(ampVal(length(ampVal(1:nline * 8)) + 1:end))};
+                    ampInsCell = [ampInsCell1; ampInsCell2];
+                    ampInsCell = regexprep(ampInsCell,'(\d)(?=( |$))','$1,');
+                    ampCell = [ampCell; ampStr; ampInsCell];
+                end
+                
+                rawInpStr{1} = [rawInpStr{1}(1:fceStrLoc(1) - 1);...
+                    setCell; ...
+                    rawInpStr{1}(fceStrLoc(2):fceStrLoc(3) - 1); ...
+                    ampCell; ...
+                    rawInpStr{1}(fceStrLoc(4):fceStrLoc(5) - 1);...
+                    cloadCell; ...
+                    rawInpStr{1}(fceStrLoc(6):end)];
             end
             
-            lineImod = lineIstr + 4;
-            lineSmod = lineSstr + 4;
-            lineFceStart = lineFceStart + 1;
-            lineFceEnd = lineFceEnd - 2;
-            lineStepMod = lineStep + 1;
+            % 2. locate the strings to be modified.
+            % 2.1 pm strings.
+            pmStr = {'*Material, name=Material-I1'; ...
+                '*Material, name=Material-S'};
+            pmStrLoc = zeros(length(pmStr), 1);
+            for iPm = 1:length(pmStr)
+                pmStrLoc(iPm) = ...
+                    find(strncmp(rawInpStr{1}, pmStr{iPm}, length(pmStr{iPm})));
+            end
+            % 2.2 step strings.
+            stepStr = {'*Dynamic'};
+            stepStrLoc = find(strncmp(rawInpStr{1}, ...
+                stepStr{1}, length(stepStr{1})));
+            
+            lineImod = pmStrLoc(1) + 4;
+            lineSmod = pmStrLoc(2) + 4;
+            lineStepMod = stepStrLoc + 1;
             
             % 3. output the modified .inp file, run Abaqus job by calling it.
             % split the strings, find the num str to be modified.
-            splitStr = strsplit(rawInpStr{:}{lineImod});
-            posRatio = splitStr{end};
-            
-            % define the logarithm input for inclusion and matrix.
-            pmI = obj.pmVal.i.trial';
-            pmS = obj.pmVal.s.fix;
             
             % set the text file to be written.
             otptInpStr = rawInpStr;
+            % modify pm part in .inp file.
+            splitStr = strsplit(rawInpStr{:}{pmStrLoc(1) + 4});
+            posRatio = splitStr{end};
+            strI = [' ', num2str(pmI), ', ', posRatio];
+            strS = [' ', num2str(pmS), ', ', posRatio];
+            strStep = [num2str(obj.time.step), ', ', num2str(obj.time.max)];
+            otptInpStr{:}(pmStrLoc(1) + 4) = {strI};
+            otptInpStr{:}(pmStrLoc(2) + 4) = {strS};
+            otptInpStr{:}(lineStepMod) = {strStep};
             
-            % execute the Abaqus job.
             % modified inp file name.
             inpNameMo = [trialName, '_iter'];
             inpPathMo = obj.aba.inp.path.mo;
             % print the modified inp file to the output path.
             fid = fopen([inpPathMo inpNameMo, '.inp'], 'wt');
-            % modify inclusion and matrix values individually.
-            strI = [' ', num2str(pmI), ', ', posRatio];
-            strS = [' ', num2str(pmS), ', ', posRatio];
-            strStep = [num2str(obj.time.step), ', ', num2str(obj.time.max)];
-            otptInpStr{:}(lineImod) = {strI};
-            otptInpStr{:}(lineSmod) = {strS};
-            otptInpStr{:}(lineStepMod) = {strStep};
             fprintf(fid, '%s\n', string(otptInpStr{:}));
             fclose(fid);
-            % run Abaqus for pm value.
+            
+            % run Abaqus value.
             cd(inpPathMo)
             jobDef = ...
                 '/home/xiaohan/abaqus/6.14-1/code/bin/abq6141 noGUI job=';
@@ -3126,8 +3189,6 @@ classdef beam < handle
             
             obj.aba.I.lineStart = lineImod;
             obj.aba.S.lineStart = lineSmod;
-            obj.aba.fce.lineStart = lineFceStart;
-            obj.aba.fce.lineEnd = lineFceEnd;
             obj.aba.inp.pathMo = inpPathMo;
             
         end
@@ -3194,6 +3255,7 @@ classdef beam < handle
             disVecStore = cellfun(@(v) v(:), disVecStore, 'un', 0);
             
             obj.dis.full = cell2mat(disVecStore');
+            obj.dis.full = [zeros(obj.no.dof, 1) obj.dis.full];
             
         end
         %%
