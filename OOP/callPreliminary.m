@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 9.9;
+tMax = 4.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -94,7 +94,7 @@ svdSwitch = 0;
 ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
-AbaqusSwitch = 1;
+AbaqusSwitch = 0;
 
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...

@@ -74,7 +74,7 @@ while fixie.err.max.val > fixie.err.lowBond
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
     end
-    
+       
     fixie.extractMaxErrorInfo(typeSwitch, randomSwitch);
     fixie.extractMaxPmInfo(typeSwitch);
     fixie.storeErrorInfoOriginal;

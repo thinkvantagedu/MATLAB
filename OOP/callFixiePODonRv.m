@@ -42,7 +42,8 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, ...
+    AbaqusSwitch, trialName);
 
 % compute initial reduced basis from trial solution.
 fixie.rbInitial(nPhiInitial);
@@ -60,7 +61,8 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+fixie.respfromFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace, ...
+    AbaqusSwitch, trialName);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
