@@ -179,7 +179,7 @@ stiMtx(diagindx) = 1;
 
 fce1 = [0 -7.4234e-05 1 1 1 2];
 fce2 = [0 0.24644 1 0.24644 0 0 8.756e-05];
-fce3 = [0 0.5 1 0.5 0 0];
+fce3 = [0 0.5 0 0];
 fceNode = [1; 2; 3];
 fceVal = sparse(nnode * 2, length(lineModStart) + 1);
 
@@ -202,14 +202,14 @@ maxT = 9.9;
 [~, ~, ~, u, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
     (phi, masMtx, zeros(nnode * 2), stiMtx, fceVal, ...
     'average', dT, maxT, u0, v0);
-
+u(dofFix, :) = 0;
 %% plot the first N displacements with subplot.
 x = 0.1:0.1:9.9;
 y = 0:0.1:9.9;
 clf;
 figure(1)
-for iPlot = 23:26
-    subplot(2, 2, iPlot - 22)
+for iPlot = 1:8
+    subplot(2, 4, iPlot)
     plot(x, dis(iPlot, :), '->', 'LineWidth', 1);
     hold on
     plot(y, u(iPlot, :), '-*', 'LineWidth', 1)

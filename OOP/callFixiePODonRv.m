@@ -93,7 +93,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.impGenerate;
     
-    fixie.respTdiffComputation(svdSwitch, AbaqusSwitch);
+    fixie.respTdiffComputation(svdSwitch, AbaqusSwitch, trialName);
     
     switch timeType
         

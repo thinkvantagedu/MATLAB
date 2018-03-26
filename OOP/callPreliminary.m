@@ -52,7 +52,7 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.015;
+refiThres = 0.05;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;

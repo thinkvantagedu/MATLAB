@@ -554,6 +554,7 @@ classdef beam < handle
                 case 'Greedy'
                     pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
             end
+            AbaqusSwitch = 1;
             if AbaqusSwitch == 0
                 % use MATLAB Newmark code to obtain exact solutions.
                 stiPre = sparse(obj.no.dof, obj.no.dof);
@@ -1119,7 +1120,8 @@ classdef beam < handle
             
         end
         %%
-        function obj = respTdiffComputation(obj, svdSwitch, AbaqusSwitch)
+        function obj = respTdiffComputation(obj, svdSwitch, ...
+                AbaqusSwitch, trialName)
             % this method compute 2 responses for each interpolation
             % sample, each affine term, each basis vector.
             % only compute responses regarding newly added basis vectors,
@@ -1140,7 +1142,6 @@ classdef beam < handle
                                     [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1)...
                                     obj.pmVal.s.fix];
                                 obj.fce.pass = impPass;
-                                keyboard
                                 if AbaqusSwitch == 0
                                     stiPre = sparse(obj.no.dof, obj.no.dof);
                                     for iSti = 1:obj.no.inc + 1
@@ -1151,6 +1152,7 @@ classdef beam < handle
                                     obj.sti.full = stiPre;
                                     obj = NewmarkBetaReducedMethodOOP...
                                         (obj, 'full');
+                                    
                                 elseif AbaqusSwitch == 1
                                     % use Abaqus to obtain exact solutions.
                                     pmI = obj.pmVal.hhat...
@@ -1162,6 +1164,7 @@ classdef beam < handle
                                         1, 'impulse');
                                     obj.abaqusOtpt;
                                 end
+                                disp(norm(obj.dis.full, 'fro'))
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
                                         (iPre, iPhy, iTdiff, iRb) = ...
@@ -1196,6 +1199,8 @@ classdef beam < handle
                                 pmValCell = ...
                                     [obj.pmVal.add(iPre, 2:obj.no.inc + 1)...
                                     obj.pmVal.s.fix];
+                                obj.fce.pass = impPass;
+                                AbaqusSwitch = 1;
                                 if AbaqusSwitch == 0
                                     stiPre = sparse(obj.no.dof, obj.no.dof);
                                     for iSti = 1:obj.no.inc + 1
@@ -1204,12 +1209,21 @@ classdef beam < handle
                                             pmValCell(iSti);
                                     end
                                     obj.sti.full = stiPre;
-                                    obj.fce.pass = impPass;
                                     obj = NewmarkBetaReducedMethodOOP...
                                         (obj, 'full');
                                 elseif AbaqusSwitch == 1
-                                    
+                                    % use Abaqus to obtain exact solutions.
+                                    pmI = obj.pmVal.add...
+                                        (iPre, 2:obj.no.inc + 1);
+                                    pmS = obj.pmVal.s.fix;
+                                    % input parameter 1 indicates the force is 
+                                    % modified to the impulse.
+                                    obj.abaqusJob(trialName, pmI, pmS, ...
+                                        1, 'impulse');
+                                    obj.abaqusOtpt;
+                                    keyboard
                                 end
+                                disp(norm(obj.dis.full, 'fro'))
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
                                         (obj.no.itplEx + iPre, ...
@@ -1229,9 +1243,7 @@ classdef beam < handle
                         end
                     end
                 end
-                
             end
-            
         end
         
         %%
@@ -3096,87 +3108,91 @@ classdef beam < handle
             
             % generate the force part to be written in .inp file.
             if fceMod == 1
-                
+                % force string locations.
+                fceStr = {'*Nset, nset=Set-af'; ...% nsetStart
+                    '*Nset, nset=Set-lc'; ...% nsetEnd
+                    '*Amplitude'; ...% ampStart
+                    '** MATERIALS'; ...% ampEnd
+                    '*Cload, amplitude'; ...% cloadStart
+                    '** OUTPUT REQUESTS'};% cloadEnd
+                fceStrLoc = zeros(length(fceStr), 1);
+                for iFce = 1:length(fceStr)
+                    fceStrLoc(iFce) = ...
+                        find(strncmp(rawInpStr{1}, fceStr{iFce}, ...
+                        length(fceStr{iFce})));
+                end
                 switch fceType
                     case 'residual'
                         % set up the force values, residual case has value
-                        % for each time step. 
+                        % for each time step.
                         fceAmp = zeros(obj.no.dof, 2 * obj.no.t_step);
                         fceAmp(:, 1:2:end) = fceAmp(:, 1:2:end) + ...
                             repmat((0:obj.time.step:obj.time.max), ...
                             [obj.no.dof, 1]);
                         fceAmp(:, 2:2:end) = fceAmp(:, 2:2:end) + obj.fce.pass;
-                        % force strings.
-                        fceStr = {'*Nset, nset=Set-af'; ...% nsetStart
-                            '*Nset, nset=Set-lc'; ...% nsetEnd
-                            '*Amplitude'; ...% ampStart
-                            '** MATERIALS'; ...% ampEnd
-                            '*Cload, amplitude'; ...% cloadStart
-                            '** OUTPUT REQUESTS'};% cloadEnd
-                        fceStrLoc = zeros(length(fceStr), 1);
-                        for iFce = 1:length(fceStr)
-                            fceStrLoc(iFce) = ...
-                                find(strncmp(rawInpStr{1}, fceStr{iFce}, ...
-                                length(fceStr{iFce})));
-                        end
                         
-                        setCell = [];
-                        cloadCell = [];
-                        ampCell = [];
-                        for iNode = 1:obj.no.node.all
-                            setStr = ['*Nset, nset=Set-af' ...
-                                num2str(iNode) ', instance=beam-1'];
-                            setCell_ = {setStr; num2str(iNode)};
-                            setCell = [setCell; setCell_];
-                            cload1 = ['*Cload, amplitude=Amp-af' ...
-                                num2str(iNode * 2 - 1)];
-                            cload2 = ['Set-af' num2str(iNode) ', 1, 1'];
-                            cload3 = ['*Cload, amplitude=Amp-af' ...
-                                num2str(iNode * 2)];
-                            cload4 = ['Set-af' num2str(iNode) ', 2, 1'];
-                            cloadCell = [cloadCell; ...
-                                {cload1; cload2; cload3; cload4}];
-                            
-                        end
-                        nline = floor(obj.no.t_step * 2 / 8);
-                        for iDof = 1:obj.no.dof
-                            ampStr = ...
-                                {['*Amplitude, name=Amp-af' num2str(iDof)]};
-                            ampVal = fceAmp(iDof, :);
-                            ampInsLine1 = ampVal(1:nline * 8);
-                            ampInsLine1 = reshape(ampInsLine1, [8, nline]);
-                            ampInsCell1 = mat2cell...
-                                (ampInsLine1', ones(1, nline), 8);
-                            ampInsCell1 = ...
-                                cellfun(@(v) num2str(v), ampInsCell1, 'un', 0);
-                            ampInsCell2 = ...
-                                {num2str(...
-                                ampVal(length(ampVal(1:nline * 8)) + 1:end))};
-                            ampInsCell = [ampInsCell1; ampInsCell2];
-                            % add semi-colon after each num element.
-                            ampInsCell = ...
-                                regexprep(ampInsCell,'(\d)(?=( |$))','$1,');
-                            ampCell = [ampCell; ampStr; ampInsCell];
-                        end
-                        
-                        rawInpStr{1} = [rawInpStr{1}(1:fceStrLoc(1) - 1);...
-                            setCell; ...
-                            rawInpStr{1}(fceStrLoc(2):fceStrLoc(3) - 1); ...
-                            ampCell; ...
-                            rawInpStr{1}(fceStrLoc(4):fceStrLoc(5) - 1);...
-                            cloadCell; ...
-                            rawInpStr{1}(fceStrLoc(6):end)];
                     case 'impulse'
                         % set up the force values, impulse case has value
-                        % for only time step 1 or 2. 
-                        fceAmp = zeros(obj.no.dof, 2);
-                        if obj.indicator.tDiff == 1
-                        fceAmp(:, 1) = fceAmp(:, 1) + ...
-                            repmat((0:obj.time.step:obj.time.max), ...
-                            [obj.no.dof, 1]);
-                        end
-                        fceAmp(:, 2:2:end) = fceAmp(:, 2:2:end) + obj.fce.pass;
+                        % for only time step 1 or 2.
+                        fceAmp = zeros(obj.no.dof, 8);
+                        tInd = obj.indicator.tDiff;
+                        fceAmp(:, 1:2:end) = fceAmp(:, 1:2:end) + ...
+                            (0:obj.time.step:0.3);
+                        fceAmp(:, 2 * tInd) = ...
+                            fceAmp(:, 2 * tInd) + obj.fce.pass(:, tInd);
+                        
                 end
+                setCell = [];
+                cloadCell = [];
+                ampCell = [];
+                for iNode = 1:obj.no.node.all
+                    setStr = ['*Nset, nset=Set-af' ...
+                        num2str(iNode) ', instance=beam-1'];
+                    setCell_ = {setStr; num2str(iNode)};
+                    setCell = [setCell; setCell_];
+                    cload1 = ['*Cload, amplitude=Amp-af' ...
+                        num2str(iNode * 2 - 1)];
+                    cload2 = ['Set-af' num2str(iNode) ', 1, 1'];
+                    cload3 = ['*Cload, amplitude=Amp-af' ...
+                        num2str(iNode * 2)];
+                    cload4 = ['Set-af' num2str(iNode) ', 2, 1'];
+                    cloadCell = [cloadCell; ...
+                        {cload1; cload2; cload3; cload4}];
+                    
+                end
+                nline = floor(obj.no.t_step * 2 / 8);
+                
+                for iDof = 1:obj.no.dof
+                    ampStr = ...
+                        {['*Amplitude, name=Amp-af' num2str(iDof)]};
+                    ampVal = fceAmp(iDof, :);
+                    if length(ampVal) > 8
+                        ampInsLine1 = ampVal(1:nline * 8);
+                        ampInsLine1 = reshape(ampInsLine1, [8, nline]);
+                        ampInsCell1 = mat2cell...
+                            (ampInsLine1', ones(1, nline), 8);
+                        ampInsCell1 = ...
+                            cellfun(@(v) num2str(v), ampInsCell1, 'un', 0);
+                        ampInsCell2 = ...
+                            {num2str(...
+                            ampVal(length(ampVal(1:nline * 8)) + 1:end))};
+                        ampInsCell = [ampInsCell1; ampInsCell2];
+                    else
+                        ampInsCell = {num2str(ampVal)};
+                    end
+                    
+                    % add semi-colon after each num element.
+                    ampInsCell = ...
+                        regexprep(ampInsCell,'(\d)(?=( |$))','$1,');
+                    ampCell = [ampCell; ampStr; ampInsCell];
+                end
+                rawInpStr{1} = [rawInpStr{1}(1:fceStrLoc(1) - 1);...
+                    setCell; ...
+                    rawInpStr{1}(fceStrLoc(2):fceStrLoc(3) - 1); ...
+                    ampCell; ...
+                    rawInpStr{1}(fceStrLoc(4):fceStrLoc(5) - 1);...
+                    cloadCell; ...
+                    rawInpStr{1}(fceStrLoc(6):end)];
             end
             
             % 2. locate the strings to be modified.
@@ -3188,6 +3204,7 @@ classdef beam < handle
                 pmStrLoc(iPm) = ...
                     find(strncmp(rawInpStr{1}, pmStr{iPm}, length(pmStr{iPm})));
             end
+            
             % 2.2 step strings.
             stepStr = {'*Dynamic'};
             stepStrLoc = find(strncmp(rawInpStr{1}, ...
@@ -3228,10 +3245,6 @@ classdef beam < handle
                 inpNameMo, '.inp interactive ask_delete=OFF');
             system(runStr);
             
-            obj.aba.I.lineStart = lineImod;
-            obj.aba.S.lineStart = lineSmod;
-            obj.aba.inp.pathMo = inpPathMo;
-            
         end
         %%
         function obj = abaqusOtpt(obj)
@@ -3245,58 +3258,45 @@ classdef beam < handle
             fclose(datText);
             
             % locate the strings to be modified.
-            datStrStart = 'THE FOLLOWING TABLE IS PRINTED FOR';
-            datStrEnd = 'AT NODE';
-            lineIstrStart = [];
-            lineStrEnd = [];
-            
-            for iStr = 1:length(rawDatStr{1})
-                % define string to compare.
-                datStrComp = strtrim(rawDatStr{1}{iStr});
-                % compare the start string for nodal output.
-                if length(datStrComp) > 33
-                    datStrCompStart = datStrComp(1:34);
-                    if strcmp(datStrCompStart, datStrStart) == 1
-                        lineIstrStart = [lineIstrStart; iStr];
-                    end
-                end
-                % compare the end string for nodal output.
-                if length(datStrComp) > 6
-                    datStrCompEnd = datStrComp(1:7);
-                    if strcmp(datStrCompEnd, datStrEnd) == 1
-                        lineStrEnd = [lineStrEnd; iStr];
-                    end
-                end
+            datStr = {'THE FOLLOWING TABLE IS PRINTED FOR'; 'AT NODE'};
+            datStrLoc = cell(1);
+            for iDat = 1:length(datStr)
+                datStrLoc{iDat} = ...
+                    find(strncmp(strtrim(rawDatStr{1}), datStr{iDat}, ...
+                    length(datStr{iDat})));
             end
             
             % find the locations of displacement outputs.
-            lineModStart = lineIstrStart + 5;
-            lineModEnd = lineStrEnd(1:2:end) - 3;
-            
-            % transform and store the displacement outputs.
-            disAllStore = cell(length(lineModStart), 1);
-            for iDis = 1:length(lineModStart)
-                
-                dis_ = rawDatStr{1}(lineModStart(iDis) : lineModEnd(iDis));
-                dis_ = str2num(cell2mat(dis_));
-                % fill non-exist spots with 0s.
-                if size(dis_, 1) ~= obj.no.node.all
+            if any(datStrLoc{2}) == 0
+                obj.dis.full = sparse(obj.no.dof, obj.no.t_step);
+            else
+                lineModStart = datStrLoc{1} + 5;
+                lineModEnd = datStrLoc{2}(1:2:end) - 3;
+                % transform and store the displacement outputs.
+                disAllStore = cell(length(lineModStart), 1);
+                for iDis = 1:length(lineModStart)
                     
-                    disAllDof = zeros(obj.no.node.all, 3);
-                    disAllDof(dis_(:, 1), :) = dis_;
-                    disAllDof(:, 1) = (1:obj.no.node.all);
+                    dis_ = rawDatStr{1}(lineModStart(iDis) : lineModEnd(iDis));
+                    dis_ = str2num(cell2mat(dis_));
+                    % fill non-exist spots with 0s.
+                    if size(dis_, 1) ~= obj.no.node.all
+                        
+                        disAllDof = zeros(obj.no.node.all, 3);
+                        disAllDof(dis_(:, 1), :) = dis_;
+                        disAllDof(:, 1) = (1:obj.no.node.all);
+                    end
+                    disAllStore(iDis) = {disAllDof};
+                    
                 end
-                disAllStore(iDis) = {disAllDof};
+                % reshape these u1 u2 displacements to standard space-time vectors,
+                % extract displacements without indices.
+                disValStore = cellfun(@(v) v(:, 2:3), disAllStore, 'un', 0);
+                disVecStore = cellfun(@(v) v', disValStore, 'un', 0);
+                disVecStore = cellfun(@(v) v(:), disVecStore, 'un', 0);
                 
+                obj.dis.full = cell2mat(disVecStore');
+                obj.dis.full = [zeros(obj.no.dof, 1) obj.dis.full];
             end
-            % reshape these u1 u2 displacements to standard space-time vectors,
-            % extract displacements without indices.
-            disValStore = cellfun(@(v) v(:, 2:3), disAllStore, 'un', 0);
-            disVecStore = cellfun(@(v) v', disValStore, 'un', 0);
-            disVecStore = cellfun(@(v) v(:), disVecStore, 'un', 0);
-            
-            obj.dis.full = cell2mat(disVecStore');
-            obj.dis.full = [zeros(obj.no.dof, 1) obj.dis.full];
             
         end
         %%

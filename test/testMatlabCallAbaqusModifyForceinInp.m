@@ -12,7 +12,7 @@ dof = (1:2 * nnode)';
 dof(dofFix) = [];
 ndofFree = length(dof);
 dT = 0.1;
-maxT = 9.9;
+maxT = 4.9;
 nd = 1034;
 nt = length(0:dT:maxT);
 
