@@ -30,7 +30,7 @@ triplot(enode, defNode(:, 1), defNode(:, 2), 'color', [0.5 0.5 0.5]);
 if labelSwitch == 1
     for i3 = 1:nnode
         node_str = num2str(node(i3, 1));
-        text(node(i3, 2), node(i3, 3), node_str);
+        text(node(i3, 2), node(i3, 3), node_str, 'FontSize', 12);
     end
 end
 

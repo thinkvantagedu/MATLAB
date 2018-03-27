@@ -554,7 +554,6 @@ classdef beam < handle
                 case 'Greedy'
                     pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
             end
-            AbaqusSwitch = 1;
             if AbaqusSwitch == 0
                 % use MATLAB Newmark code to obtain exact solutions.
                 stiPre = sparse(obj.no.dof, obj.no.dof);
@@ -1164,7 +1163,6 @@ classdef beam < handle
                                         1, 'impulse');
                                     obj.abaqusOtpt;
                                 end
-                                disp(norm(obj.dis.full, 'fro'))
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
                                         (iPre, iPhy, iTdiff, iRb) = ...
@@ -1192,6 +1190,7 @@ classdef beam < handle
                 for iPre = 1:obj.no.itplAdd
                     for iPhy = 1:obj.no.phy
                         for iTdiff = 1:2
+                            obj.indicator.tDiff = iTdiff;
                             % compute exact solutions reagrding all reduced
                             % basis vectors.
                             for iRb = 1:obj.no.rb
@@ -1200,7 +1199,6 @@ classdef beam < handle
                                     [obj.pmVal.add(iPre, 2:obj.no.inc + 1)...
                                     obj.pmVal.s.fix];
                                 obj.fce.pass = impPass;
-                                AbaqusSwitch = 1;
                                 if AbaqusSwitch == 0
                                     stiPre = sparse(obj.no.dof, obj.no.dof);
                                     for iSti = 1:obj.no.inc + 1
@@ -1221,9 +1219,7 @@ classdef beam < handle
                                     obj.abaqusJob(trialName, pmI, pmS, ...
                                         1, 'impulse');
                                     obj.abaqusOtpt;
-                                    keyboard
                                 end
-                                disp(norm(obj.dis.full, 'fro'))
                                 if svdSwitch == 0
                                     obj.resp.store.tDiff...
                                         (obj.no.itplEx + iPre, ...

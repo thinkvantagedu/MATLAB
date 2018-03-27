@@ -55,7 +55,7 @@ cntInit = 1;
 refiThres = 0.05;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
-drawRow = 1;
+drawRow = 3;
 drawCol = 1;
 nPhiInitial = 3;
 nPhiEnrich = 2;
@@ -85,11 +85,11 @@ normType = 'fro';
 
 %% all switches
 gridSwitch = 0;
-qoiSwitchSpace = 0;
+qoiSwitchSpace = 1;
 qoiSwitchTime = 0;
 qoiSwitchManual = 0;
 % SVD on responses.
-svdSwitch = 0;
+svdSwitch = 1;
 % SVD on reduced variables.
 ratioSwitch = 0;
 singularSwitch = 0;

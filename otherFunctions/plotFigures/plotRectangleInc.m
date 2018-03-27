@@ -10,3 +10,6 @@ rectangle('Position', [35.8 0 18.4 20], 'FaceColor', [0.41176 0.8 0.67059])
 axis([0 90 -15 35])
 
 axis off
+
+% add the following to plot the beam with node labels.
+% plotDeformedStruct(node, elem, dis, 1, 1)
