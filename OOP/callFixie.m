@@ -1,16 +1,16 @@
 clear; clc;
 trialName = 'l9h2SingleInc';
 typeSwitch = 'hhat';
-rvSvdSwitch = 0;
+rvSVDswitch = 0;
 callPreliminary;
 
 %% trial solution
 % use subclass: fixbeam to create beam.
-fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, INPname, domLengi, ...
-    domBondi, domMid, trial, noIncl, noStruct, noMas, noDam, ...
-    tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, errRbCtrlThres, ...
-    errRbCtrlTNo, cntInit, refiThres, drawRow, drawCol, fNode, ftime, fRange, ...
-    nConsEnd);
+fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
+    INPname, domLengi, domBondi, domMid, trial, noIncl, noStruct, ...
+    noMas, noDam, tMax, tStep, errLowBond, errMaxValInit, ...
+    errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
+    drawRow, drawCol, fNode, ftime, fRange, nConsEnd);
 
 % read mass matrix.
 fixie.readMasMTX2DOF(nDofPerNode);
@@ -60,7 +60,7 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(svdSwitch, qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
@@ -70,20 +70,21 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.impGenerate;
     
-    fixie.respTdiffComputation(svdSwitch, AbaqusSwitch);
+    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch);
     
     switch timeType
         
         case 'allTime'
             
-            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, svdSwitch);
+            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
             
             switch svdType
                 
                 case 'noSVD'
                     
                     % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix(svdSwitch, rvSvdSwitch);
+                    fixie.resptoErrPreCompAllTimeMatrix...
+                        (respSVDswitch, rvSVDswitch);
                     
             end
     end
@@ -98,11 +99,11 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.reducedVar;
         
-        fixie.pmPrepare(rvSvdSwitch);
+        fixie.pmPrepare(rvSVDswitch);
         
-        fixie.rvPrepare(rvSvdSwitch);
+        fixie.rvPrepare(rvSVDswitch);
         
-        fixie.conditionalItplProdRvPm(iIter, rvSvdSwitch);
+        fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
         
@@ -154,7 +155,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.extractPmAdd;
         
-        fixie.respfromFce(svdSwitch, ...
+        fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
     end

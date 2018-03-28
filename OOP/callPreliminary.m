@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 4.9;
+tMax = 0.4;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -57,8 +57,8 @@ refiThres = 0.05;
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 3;
 drawCol = 1;
-nPhiInitial = 3;
-nPhiEnrich = 2;
+nPhiInitial = 1;
+nPhiEnrich = 1;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -74,7 +74,7 @@ rbCtrlThres = 0.1;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 4;
+nRespSVD = 5;
 % ratio of SVD erro reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -85,11 +85,11 @@ normType = 'fro';
 
 %% all switches
 gridSwitch = 0;
-qoiSwitchSpace = 1;
+qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 qoiSwitchManual = 0;
 % SVD on responses.
-svdSwitch = 1;
+respSVDswitch = 1;
 % SVD on reduced variables.
 ratioSwitch = 0;
 singularSwitch = 0;
