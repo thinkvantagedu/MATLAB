@@ -1119,12 +1119,21 @@ classdef beam < handle
             
         end
         %% 
-        function obj = respTdiffComputation1(obj, respSVDswitch, ...
+        function obj = respTdiffComputation(obj, respSVDswitch, ...
                 AbaqusSwitch, trialName)
+            % this method compute 2 responses for each interpolation
+            % sample, each affine term, each basis vector.
+            % only compute responses regarding newly added basis vectors,
+            % but store all responses regarding all basis vectors.
             if obj.indicator.enrich == 1 && obj.indicator.refine == 0
+                % if no refinement, enrich basis: compute the new exact
+                % solutions regarding the newly added basis vectors.
                 nPre = obj.no.pre.hhat;
                 nRbInit = obj.no.rb - obj.no.phiAdd + 1;
             elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
+                % if refine, no enrichment, compute exact solutions
+                % regarding all basis vectors but only for the newly added
+                % interpolation samples.
                 nPre = obj.no.itplAdd;
                 nRbInit = 1;
             end
@@ -1200,130 +1209,6 @@ classdef beam < handle
                 end
             end
         end
-        %%
-        function obj = respTdiffComputation(obj, respSVDswitch, ...
-                AbaqusSwitch, trialName)
-            % this method compute 2 responses for each interpolation
-            % sample, each affine term, each basis vector.
-            % only compute responses regarding newly added basis vectors,
-            % but store all responses regarding all basis vectors.
-            
-            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                % if no refinement, enrich basis: compute the new exact
-                % solutions regarding the newly added basis vectors.
-                for iPre = 1:obj.no.pre.hhat
-                    for iPhy = 1:obj.no.phy
-                        for iTdiff = 1:2
-                            obj.indicator.tDiff = iTdiff;
-                            % only compute exact solutions regarding the
-                            % newly added basis vectors.
-                            for iRb = obj.no.rb - obj.no.phiAdd + 1:obj.no.rb
-                                impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
-                                pmValCell = ...
-                                    [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1)...
-                                    obj.pmVal.s.fix];
-                                obj.fce.pass = impPass;
-                                if AbaqusSwitch == 0
-                                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                                    for iSti = 1:obj.no.inc + 1
-                                        stiPre = stiPre + ...
-                                            obj.sti.mtxCell{iSti} * ...
-                                            pmValCell(iSti);
-                                    end
-                                    obj.sti.full = stiPre;
-                                    obj = NewmarkBetaReducedMethodOOP...
-                                        (obj, 'full');
-                                    
-                                elseif AbaqusSwitch == 1
-                                    % use Abaqus to obtain exact solutions.
-                                    pmI = obj.pmVal.hhat...
-                                        (iPre, 2:obj.no.inc + 1);
-                                    pmS = obj.pmVal.s.fix;
-                                    % input parameter 1 indicates the force is 
-                                    % modified to the impulse.
-                                    obj.abaqusJob(trialName, pmI, pmS, ...
-                                        1, 'impulse');
-                                    obj.abaqusOtpt;
-                                end
-                                if respSVDswitch == 0
-                                    obj.resp.store.tDiff...
-                                        (iPre, iPhy, iTdiff, iRb) = ...
-                                        {obj.dis.full};
-                                elseif respSVDswitch == 1
-                                    [ul, usig, ur] = svd(obj.dis.full, 0);
-                                    ul = ul(:, 1:obj.no.respSVD);
-                                    usig = usig(1:obj.no.respSVD, ...
-                                        1:obj.no.respSVD);
-                                    ur = ur(:, 1:obj.no.respSVD);
-                                    obj.resp.store.tDiff...
-                                        {iPre, iPhy, iTdiff, iRb} = ...
-                                        {ul; usig; ur};
-                                end
-                            end
-                        end
-                    end
-                end
-                
-            elseif obj.indicator.refine == 1 && ...
-                    obj.indicator.enrich == 0
-                % if refine, no enrichment, compute exact solutions
-                % regarding all basis vectors but only for the newly added
-                % interpolation samples.
-                for iPre = 1:obj.no.itplAdd
-                    for iPhy = 1:obj.no.phy
-                        for iTdiff = 1:2
-                            obj.indicator.tDiff = iTdiff;
-                            % compute exact solutions reagrding all reduced
-                            % basis vectors.
-                            for iRb = 1:obj.no.rb
-                                impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
-                                pmValCell = ...
-                                    [obj.pmVal.add(iPre, 2:obj.no.inc + 1)...
-                                    obj.pmVal.s.fix];
-                                obj.fce.pass = impPass;
-                                if AbaqusSwitch == 0
-                                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                                    for iSti = 1:obj.no.inc + 1
-                                        stiPre = stiPre + ...
-                                            obj.sti.mtxCell{iSti} * ...
-                                            pmValCell(iSti);
-                                    end
-                                    obj.sti.full = stiPre;
-                                    obj = NewmarkBetaReducedMethodOOP...
-                                        (obj, 'full');
-                                elseif AbaqusSwitch == 1
-                                    % use Abaqus to obtain exact solutions.
-                                    pmI = obj.pmVal.add...
-                                        (iPre, 2:obj.no.inc + 1);
-                                    pmS = obj.pmVal.s.fix;
-                                    % input parameter 1 indicates the force is 
-                                    % modified to the impulse.
-                                    obj.abaqusJob(trialName, pmI, pmS, ...
-                                        1, 'impulse');
-                                    obj.abaqusOtpt;
-                                end
-                                if respSVDswitch == 0
-                                    obj.resp.store.tDiff...
-                                        (obj.no.itplEx + iPre, ...
-                                        iPhy, iTdiff, iRb) = {obj.dis.full};
-                                elseif respSVDswitch == 1
-                                    [ul, usig, ur] = svd(obj.dis.full);
-                                    ul = ul(:, 1:obj.no.respSVD);
-                                    usig = usig(1:obj.no.respSVD, ...
-                                        1:obj.no.respSVD);
-                                    ur = ur(:, 1:obj.no.respSVD);
-                                    obj.resp.store.tDiff...
-                                        {obj.no.itplEx + iPre, ...
-                                        iPhy, iTdiff, iRb} = ...
-                                        {ul; usig; ur};
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        
         %%
         function obj = respTimeShift...
                 (obj, qoiSwitchTime, qoiSwitchSpace, respSVDswitch)
