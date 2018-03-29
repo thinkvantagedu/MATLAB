@@ -1169,10 +1169,10 @@ classdef beam < handle
                                         {obj.dis.full};
                                 elseif respSVDswitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full, 0);
-%                                     ul = ul(:, 1:obj.no.respSVD);
-%                                     usig = usig(1:obj.no.respSVD, ...
-%                                         1:obj.no.respSVD);
-%                                     ur = ur(:, 1:obj.no.respSVD);
+                                    ul = ul(:, 1:obj.no.respSVD);
+                                    usig = usig(1:obj.no.respSVD, ...
+                                        1:obj.no.respSVD);
+                                    ur = ur(:, 1:obj.no.respSVD);
                                     obj.resp.store.tDiff...
                                         {iPre, iPhy, iTdiff, iRb} = ...
                                         {ul; usig; ur};
@@ -1424,7 +1424,6 @@ classdef beam < handle
                         if rvSvdSwitch == 1
                             respTrans_ = respAllCol * obj.resp.rv.L;
                             respTrans = respTrans_' * respTrans_;
-                            
                         elseif rvSvdSwitch == 0
                             respTrans = respAllCol' * respAllCol;
                         end
@@ -1469,33 +1468,68 @@ classdef beam < handle
                 % compute uiTui+1 and store in the last column of
                 % obj.err.pre.hhat.
                 respStoretoTrans = obj.resp.store.all;
-                
                 obj.uiTujSort(respStoretoTrans, rvSvdSwitch, respSVDswitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
-            elseif obj.indicator.enrich == 0 && ...
-                    obj.indicator.refine == 1
-                
+            elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                 % if refine = 1, enrich = 0, compute the newly added
                 % interpolation samples for all basis vectors.
                 obj.resp.store.all(obj.no.itplEx + 1:obj.no.pre.hhat, :) = ...
                     cell(obj.no.itplAdd, 3);
-                obj.indicator.nonzeroi = [];
+                
+                
+                
+                
+                
+                
+                
+                
                 for iPre = 1:obj.no.itplAdd
                     
                     obj.err.pre.hhat(obj.no.itplEx + iPre, 1) = ...
                         {obj.no.itplEx + iPre};
                     obj.err.pre.hhat(obj.no.itplEx + iPre, 2) = ...
                         {obj.pmExpo.hhat(obj.no.itplEx + iPre, 2)};
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     respPmPass = obj.resp.store.pm.hhat...
                         (obj.no.itplEx + iPre, :, :, :);
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     
                     % if refined, force responses are also refined,
                     % therefore add the newly added force response to pm
                     % responses.
                     if respSVDswitch == 0
                         respCol = sparse(cat(2, respPmPass{:}));
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         respCol = [obj.resp.store.fce.hhat{obj.no.itplEx + ...
                             iPre}(:) -respCol];
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         obj.resp.store.all(obj.no.itplEx + iPre, 1) = ...
                             {obj.no.itplEx + iPre};
                         obj.resp.store.all(obj.no.itplEx + iPre, 2) = ...
@@ -1510,28 +1544,25 @@ classdef beam < handle
                             respTrans = respTrans_' * respTrans_;
                         elseif rvSvdSwitch == 0
                             respTrans = respAllCol' * respAllCol;
-                            if iPre == 1
-                                for i = 1:size(respTrans, 2)
-                                    obj.indicator.nonzeroi = ...
-                                        [obj.indicator.nonzeroi; ...
-                                        any(respTrans(:, i))];
-                                end
-                                obj.indicator.nonzeroi = ...
-                                    find(obj.indicator.nonzeroi);
-                            end
-                            % respTrans = respTrans(obj.indicator.nonzeroi, ...
-                            %     obj.indicator.nonzeroi);
                         end
-                        obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = ...
-                            {respTrans};
+                        obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = {respTrans};
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                     elseif respSVDswitch == 1
+                        % reshape multi dim cell to 2d cell array.
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
                         if obj.countGreedy == 1
-                            uFce = obj.resp.store.fce.hhat...
-                                (obj.no.itplEx + iPre);
-                            respCol = ...
-                                [uFce cellfun(@(x) cellfun...
-                                (@uminus, x, 'un', 0), respCol, 'un', 0)]';
+                            respCol = [obj.resp.store.fce.hhat...
+                                (obj.no.itplEx + iPre) cellfun(@(x)...
+                                cellfun(@uminus, x, 'un', 0), ...
+                                respCol, 'un', 0)]';
                         else
                             respCol = cellfun(@(x) ...
                                 cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
@@ -1557,6 +1588,9 @@ classdef beam < handle
                                     u2{1} * u2{2} * u2{3}');
                             end
                         end
+                        % reconstruct the upper triangular matrix back to full.
+                        respTrans = reConstruct(respTrans);
+                        obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = {respTrans};
                     end
                 end
                 % compute uiTui+1 and store in the last column of
@@ -1564,6 +1598,15 @@ classdef beam < handle
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans, rvSvdSwitch, respSVDswitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
+                
+                
+                
+                
+                
+                
+                
+                
+                
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
             % nhat rows of obj.err.pre.hhat. the 6th column is a recalculation
@@ -1626,7 +1669,6 @@ classdef beam < handle
                 respStoreCell_(iPre, 2) = {respStoreSort{iPre, 2}};
                 respStoreCell_(iPre, 3) = {respTransSorttoStore};
             end
-            keyboard
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
         %%
