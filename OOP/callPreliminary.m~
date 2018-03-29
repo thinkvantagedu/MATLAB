@@ -18,8 +18,8 @@ nDofPerNode = 2;
 domLengi = 9;
 domLengs = 9;
 nIter = prod(domLengi);
-bondL1 = -1;
-bondR1 = 1;
+bondL1 = 1;
+bondR1 = 2;
 bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
@@ -55,7 +55,7 @@ cntInit = 1;
 refiThres = 0.05;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
-drawRow = 4;
+drawRow = 5;
 drawCol = 1;
 nPhiInitial = 1;
 nPhiEnrich = 1;
@@ -74,7 +74,7 @@ rbCtrlThres = 0.1;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 5;
+nRespSVD = 4;
 % ratio of SVD erro reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 

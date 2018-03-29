@@ -1118,6 +1118,84 @@ classdef beam < handle
             end
             
         end
+        %% 
+        function obj = respTdiffComputation1(obj, respSVDswitch, ...
+                AbaqusSwitch, trialName)
+            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
+                nPre = obj.no.pre.hhat;
+                nRbInit = obj.no.rb - obj.no.phiAdd + 1;
+            elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
+                nPre = obj.no.itplAdd;
+                nRbInit = 1;
+            end
+            nPhy = obj.no.phy;
+            nRb = obj.no.rb;
+            for iPre = 1:nPre
+                for iPhy = 1:nPhy
+                    for iTdiff = 1:2
+                        % obj.indicator.tDiff works in abaqusJob.
+                        obj.indicator.tDiff = iTdiff;
+                        for iRb = nRbInit:nRb
+                            impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
+                            pmValCell = ...
+                                [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1)...
+                                obj.pmVal.s.fix];
+                            obj.fce.pass = impPass;
+                            if AbaqusSwitch == 0
+                                stiPre = sparse(obj.no.dof, obj.no.dof);
+                                for iSti = 1:obj.no.inc + 1
+                                    stiPre = stiPre + ...
+                                        obj.sti.mtxCell{iSti} * ...
+                                        pmValCell(iSti);
+                                end
+                                obj.sti.full = stiPre;
+                                obj = NewmarkBetaReducedMethodOOP...
+                                    (obj, 'full');
+                                
+                            elseif AbaqusSwitch == 1
+                                % use Abaqus to obtain exact solutions.
+                                pmI = obj.pmVal.hhat...
+                                    (iPre, 2:obj.no.inc + 1);
+                                pmS = obj.pmVal.s.fix;
+                                % input parameter 1 indicates the force is
+                                % modified to the impulse.
+                                obj.abaqusJob(trialName, pmI, pmS, ...
+                                    1, 'impulse');
+                                obj.abaqusOtpt;
+                            end
+                            if respSVDswitch == 0
+                                if obj.indicator.enrich == 1 && ...
+                                        obj.indicator.refine == 0
+                                    iPreRef = iPre;
+                                elseif obj.indicator.enrich == 0 && ...
+                                        obj.indicator.refine == 1
+                                    iPreRef = obj.no.itplEx + iPre;
+                                end
+                                obj.resp.store.tDiff...
+                                    (iPreRef, iPhy, iTdiff, iRb) = ...
+                                    {obj.dis.full};
+                            elseif respSVDswitch == 1
+                                [ul, usig, ur] = svd(obj.dis.full, 0);
+                                ul = ul(:, 1:obj.no.respSVD);
+                                usig = usig(1:obj.no.respSVD, ...
+                                    1:obj.no.respSVD);
+                                ur = ur(:, 1:obj.no.respSVD);
+                                if obj.indicator.enrich == 1 && ...
+                                        obj.indicator.refine == 0
+                                    iPreRef = iPre;
+                                elseif obj.indicator.enrich == 0 && ...
+                                        obj.indicator.refine == 1
+                                    iPreRef = obj.no.itplEx + iPre;
+                                end
+                                obj.resp.store.tDiff...
+                                    {iPreRef, iPhy, iTdiff, iRb} = ...
+                                    {ul; usig; ur};
+                            end
+                        end
+                    end
+                end
+            end
+        end
         %%
         function obj = respTdiffComputation(obj, respSVDswitch, ...
                 AbaqusSwitch, trialName)
@@ -1169,10 +1247,10 @@ classdef beam < handle
                                         {obj.dis.full};
                                 elseif respSVDswitch == 1
                                     [ul, usig, ur] = svd(obj.dis.full, 0);
-%                                     ul = ul(:, 1:obj.no.respSVD);
-%                                     usig = usig(1:obj.no.respSVD, ...
-%                                         1:obj.no.respSVD);
-%                                     ur = ur(:, 1:obj.no.respSVD);
+                                    ul = ul(:, 1:obj.no.respSVD);
+                                    usig = usig(1:obj.no.respSVD, ...
+                                        1:obj.no.respSVD);
+                                    ur = ur(:, 1:obj.no.respSVD);
                                     obj.resp.store.tDiff...
                                         {iPre, iPhy, iTdiff, iRb} = ...
                                         {ul; usig; ur};
@@ -1246,7 +1324,6 @@ classdef beam < handle
         function obj = respTimeShift...
                 (obj, qoiSwitchTime, qoiSwitchSpace, respSVDswitch)
             % this method shifts the responses in time.
-            
             for iPre = 1:obj.no.pre.hhat
                 for iPhy = 1:obj.no.phy
                     for iT = 1:obj.no.t_step
@@ -1514,8 +1591,22 @@ classdef beam < handle
                     % responses.
                     if respSVDswitch == 0
                         respCol = sparse(cat(2, respPmPass{:}));
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         respCol = [obj.resp.store.fce.hhat{obj.no.itplEx + ...
                             iPre}(:) -respCol];
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         obj.resp.store.all(obj.no.itplEx + iPre, 1) = ...
                             {obj.no.itplEx + iPre};
                         obj.resp.store.all(obj.no.itplEx + iPre, 2) = ...
@@ -1532,10 +1623,20 @@ classdef beam < handle
                             respTrans = respAllCol' * respAllCol;
                         end
                         obj.err.pre.hhat(obj.no.itplEx + iPre, 5) = {respTrans};
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                     elseif respSVDswitch == 1
                         % reshape multi dim cell to 2d cell array.
                         respCol = reshape(respPmPass, [1, numel(respPmPass)]);
                         if obj.countGreedy == 1
+                            
                             respCol = [obj.resp.store.fce.hhat...
                                 (obj.no.itplEx + iPre) cellfun(@(x)...
                                 cellfun(@uminus, x, 'un', 0), ...
@@ -1575,6 +1676,15 @@ classdef beam < handle
                 respStoretoTrans = obj.resp.store.all;
                 obj.uiTujSort(respStoretoTrans, rvSvdSwitch, respSVDswitch);
                 obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
+                
+                
+                
+                
+                
+                
+                
+                
+                
             end
             % the 5th column of obj.err.pre.hat is inherited from the first
             % nhat rows of obj.err.pre.hhat. the 6th column is a recalculation
