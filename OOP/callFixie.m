@@ -57,7 +57,7 @@ fixie.refineGridLocalwithIdx('initial');
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainHats;
 fixie.impPrepareRemain;
-fixie.respStorePrepareRemain(svdType, timeType);
+fixie.respStorePrepareRemain(timeType);
 
 % initial computation of force responses.
 fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
@@ -78,17 +78,12 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             
             fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
             
-            switch svdType
-                
-                case 'noSVD'
-                    
-                    % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix...
-                        (respSVDswitch, rvSVDswitch);
-                    
-            end
     end
+    
+    % CHANGE SIGN in this method!
+    fixie.resptoErrPreCompAllTimeMatrix1(respSVDswitch, rvSVDswitch);
     % disp('offline end')
+    
     %% ONLINE
     
     % disp('online start')

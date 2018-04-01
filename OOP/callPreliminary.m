@@ -18,8 +18,8 @@ nDofPerNode = 2;
 domLengi = 9;
 domLengs = 9;
 nIter = prod(domLengi);
-bondL1 = -1;
-bondR1 = 1;
+bondL1 = 1;
+bondR1 = 1.5;
 bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
+tMax = 1.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -52,7 +52,7 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.05;
+refiThres = 0.01;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 4;
@@ -74,13 +74,12 @@ rbCtrlThres = 0.1;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 5;
+nRespSVD = 15;
 % ratio of SVD erro reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
 %% set types
 timeType = 'allTime';
-svdType = 'noSVD';
 normType = 'fro';
 
 %% all switches

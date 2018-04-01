@@ -1,10 +1,10 @@
 clear; clc;
 trialName = 'l9h2SingleInc';
 typeSwitch = 'hhat';
-rvSVDswitch = 0;
+rvSVDswitch = 1;
 callPreliminary;
 
-%% trial solution
+%% trial solution.
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
     INPname, domLengi, domBondi, domMid, trial, noIncl, noStruct, ...
@@ -42,7 +42,8 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, ...
+    AbaqusSwitch, trialName);
 
 % compute initial reduced basis from trial solution.
 fixie.rbInitial(nPhiInitial);
@@ -60,39 +61,17 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(svdType, timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, ...
+    AbaqusSwitch, trialName);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
-    %% OFFLINE
+    %% OFFLINE.
     % disp('offline start')
     fixie.errPrepareSetZero;
     
-    fixie.impGenerate;
-    
-    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch);
-    
-    switch timeType
-        
-        case 'allTime'
-            
-            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
-            
-            switch svdType
-                
-                case 'noSVD'
-                    
-                    % CHANGE SIGN in this method!
-                    fixie.resptoErrPreCompAllTimeMatrix...
-                        (respSVDswitch, rvSVDswitch);
-                    
-            end
-    end
-    % disp('offline end')
-    %% ONLINE
-    
-    % disp('online start')
-    
+    % OFFLINE POD.
+    % collect all reduced variables to perform POD.
     for iIter = 1:nIter
         
         fixie.pmIter(iIter);
@@ -103,6 +82,39 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.rvPrepare(rvSVDswitch);
         
+        fixie.pmMultiRv;
+        
+        fixie.rvpmColStore(iIter);
+        
+    end
+    
+    % SVD on the collected reduced variables.
+    fixie.rvSVD(rvSVDreRatio);
+    
+    fixie.impGenerate;
+    
+    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName);
+    
+    switch timeType
+        
+        case 'allTime'
+            
+            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
+    end
+    
+    % CHANGE SIGN in this method!
+    fixie.resptoErrPreCompAllTimeMatrix(respSVDswitch, rvSVDswitch);
+
+    %     fixie.rvLTePrervL;
+    % disp('offline end')
+    
+    %% ONLINE.
+    % disp('online start')
+    % multiply the output with pm and interpolate.
+    for iIter = 1:nIter
+        
+        fixie.pmIter(iIter);
+        
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
         CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
@@ -110,11 +122,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     end
     % disp('online end')
     
-    %% extract error information
+    %% extract error information.
     fixie.errStoreSurfs('diff');
     fixie.extractMaxErrorInfo('hhat');
     fixie.extractMaxErrorInfo('hat');
-    
     fixie.refiCond('maxSurf');
     % this line extracts parameter values of maximum error and
     % corresponding location. Change input accordingly.
@@ -131,7 +142,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.errStoreAllSurfs(typeSwitch);
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
-            typeSwitch, 'b-^');
+            typeSwitch, 'g-*');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')
@@ -148,7 +159,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         disp(fixie.countGreedy)
         
     elseif fixie.refinement.condition > fixie.refinement.thres
-        %% local h-refinement
+        %% local h-refinement.
         fixie.refiCondDisplay('refi');
         % localHrefinement set the indicators.
         fixie.localHrefinement;
