@@ -81,7 +81,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     end
     
     % CHANGE SIGN in this method!
-    fixie.resptoErrPreCompAllTimeMatrix1(respSVDswitch, rvSVDswitch);
+    fixie.resptoErrPreCompAllTimeMatrix(respSVDswitch, rvSVDswitch);
     % disp('offline end')
     
     %% ONLINE
