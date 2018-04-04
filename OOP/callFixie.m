@@ -79,9 +79,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
             
     end
-    
     % CHANGE SIGN in this method!
-    fixie.resptoErrPreCompAllTimeMatrix(respSVDswitch, rvSVDswitch);
+    fixie.resptoErrPreCompAllTimeMatrix1(respSVDswitch, rvSVDswitch);
     % disp('offline end')
     
     %% ONLINE
@@ -119,10 +118,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
-        fixie.refiCondDisplay('noRefi');
-        fixie.maxErrorDisplay('hhat');
-        fixie.storeErrorInfo('hhat');
-        fixie.storeErrorInfo('hat');
+        fixie.maxErrorDisplay(typeSwitch);
+        fixie.storeErrorInfo;
         fixie.errStoreAllSurfs(typeSwitch);
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
@@ -144,12 +141,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement
-        fixie.refiCondDisplay('refi');
-        % localHrefinement set the indicators.
         fixie.localHrefinement;
-        
-        fixie.extractPmAdd;
-        
+                
         fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         

@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 17;
-domLengs = 17;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 4.9;
+tMax = 0.4;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -52,11 +52,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.035;
+refiThres = 0.01;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 1;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -70,13 +70,13 @@ nQoiT = 2;
 % reduction ratio for method: rbSingularInitial and rbReVarInitial.
 reductionRatio = 0.9;
 % error tolerance for method: rbCtrlInitial.
-rbCtrlThres = 0.1;
+% rbCtrlThres = 0.01;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 50;
-% ratio of SVD erro reduction for POD on rv. ==========
-rvSVDreRatio = 0.99;
+nRespSVD = 5; 
+% ratio of SVD error reduction for POD on rv. ==========
+rvSVDreRatio = 1;
 
 %% set types
 timeType = 'allTime';
@@ -88,7 +88,7 @@ qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 qoiSwitchManual = 0;
 % SVD on responses.
-respSVDswitch = 1;
+respSVDswitch = 0;
 % SVD on reduced variables.
 ratioSwitch = 0;
 singularSwitch = 0;

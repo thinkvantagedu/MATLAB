@@ -983,18 +983,18 @@ classdef beam < handle
                 end
                 if respSVDswitch == 0
                     if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                        obj.resp.store.fce.hhat{iPre} = obj.dis.full(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = obj.dis.full(:);
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
                         dis_ = obj.dis.full(:, obj.qoi.t);
-                        obj.resp.store.fce.hhat{iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
                         
                     elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
                         dis_ = obj.dis.full(obj.qoi.dof, :);
-                        obj.resp.store.fce.hhat{iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
                         
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
                         dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
-                        obj.resp.store.fce.hhat{iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
                     end
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
@@ -1292,8 +1292,9 @@ classdef beam < handle
                 end
             end
         end
-        function obj = resptoErrPreCompAllTimeMatrix...
-                (obj, respSVDswitch, rvSVDswitch)
+        %%
+        function obj = ...
+                resptoErrPreCompAllTimeMatrix(obj, respSVDswitch, rvSVDswitch)
             % CHANGE SIGN in this method!
             % here the index follows the refind grid sequence, not a
             % sequencial sequence.
@@ -1308,11 +1309,15 @@ classdef beam < handle
                 % added basis vectors for each interpolation sample.
                 nPre = obj.no.pre.hhat;
                 nEx = 0;
+                nRb = obj.no.rb;
+                nAdd = obj.no.phiAdd;
             elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                 % if refine, compute the newly added interpolation samples for
                 % all basis vectors.
                 nPre = obj.no.itplAdd;
                 nEx = obj.no.itplEx;
+                nRb = 0;
+                nAdd = 0;
             end
             
             for iPre = 1:nPre
@@ -1322,16 +1327,13 @@ classdef beam < handle
                 obj.resp.store.all(nEx + iPre, 1) = {nEx + iPre};
                 obj.resp.store.all(nEx + iPre, 2) = ...
                     {obj.pmExpo.hhat(nEx + iPre, 2)};
-                if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                    % respPmPass has DIM(ni, nf, nt, nr).
-                    respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, ...
-                        obj.no.rb - obj.no.phiAdd + 1:end);
-                elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
-                    respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, :);
-                end
+                % respPmPass has DIM(ni, nf, nt, nr).
+                respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, ...
+                    nRb - nAdd + 1:end);
+                
                 if respSVDswitch == 0
                     % respCol changes respPmPass from nD to 2D. respCol aligns
-                    % in the order of (nf, nt, nr), 
+                    % in the order of (nf, nt, nr),
                     % i.e. loop nf first, then nt, nr.
                     respCol = sparse(cat(2, respPmPass{:}));
                     % change sign here.
@@ -1343,8 +1345,8 @@ classdef beam < handle
                         end
                     elseif obj.indicator.enrich == 0 && ...
                             obj.indicator.refine == 1
-                        % if refine, force responses are also refined, therefore
-                        %  add the newly added force response to pm responses.
+                        % if refine, force responses are also refined, thus
+                        % add the newly added force response to pm responses.
                         respCol = [obj.resp.store.fce.hhat{nEx + iPre}(:) ...
                             -respCol];
                     end
@@ -1368,12 +1370,13 @@ classdef beam < handle
                             cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
                             respCol, 'un', 0)]';
                     end
-                        
+                    
                 end
-                obj.resp.store.all{nEx + iPre, 3} = ...
-                    [obj.resp.store.all{nEx + iPre, 3}; respCol];
-                respAllCol = obj.resp.store.all{nEx + iPre, 3};
+                
                 if respSVDswitch == 0
+                    obj.resp.store.all{nEx + iPre, 3} = ...
+                        [obj.resp.store.all{nEx + iPre, 3} respCol];
+                    respAllCol = obj.resp.store.all{nEx + iPre, 3};
                     if rvSVDswitch == 0
                         respTrans = respAllCol' * respAllCol;
                     elseif rvSVDswitch == 1
@@ -1381,15 +1384,18 @@ classdef beam < handle
                         respTrans = respTrans_' * respTrans_;
                     end
                 elseif respSVDswitch == 1
+                    obj.resp.store.all{nEx + iPre, 3} = ...
+                        [obj.resp.store.all{nEx + iPre, 3}; respCol];
+                    respAllCol = obj.resp.store.all{nEx + iPre, 3};
                     respTrans_ = zeros(numel(respAllCol));
-                    % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
+                    % tr(uiTuj) = tr(vri*sigi*vliT*vlj*sigj*vrjT).
                     for i = 1:numel(respAllCol)
                         u1 = respAllCol{i};
                         for j = i:numel(respAllCol)
                             u2 = respAllCol{j};
                             respTrans_(i, j) = ...
-                                trace(u1{3} * u1{2}' * u1{1}' * ...
-                                u2{1} * u2{2} * u2{3}');
+                                trace((u2{3}' * u1{3}) * u1{2}' * ...
+                                (u1{1}' * u2{1}) * u2{2});
                         end
                     end
                     % reconstruct the upper triangular matrix back to full.
@@ -1402,6 +1408,7 @@ classdef beam < handle
                 end
                 obj.err.pre.hhat(nEx + iPre, 5) = {respTrans};
             end
+            
             % compute uiTui+1 and store in the last column of obj.err.pre.hhat.
             respStoretoTrans = obj.resp.store.all;
             obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
@@ -1441,24 +1448,27 @@ classdef beam < handle
                                 respStoreSort{iPre + 1, 3} * obj.resp.rv.L;
                         end
                     elseif respSVDswitch == 1
-                        
                         respSVD = respStoreSort{iPre, 3};
                         respSVDp = respStoreSort{iPre + 1, 3};
                         respTrans = zeros(numel(respSVD));
-                        % trace(uiTuj) = trace(vri*sigi*vliT*vlj*sigj*vrjT).
+                        % tr(uiTuj) = tr(vri*sigi*vliT*vlj*sigj*vrjT).
                         % here j cannot start from i, because respTrans is
                         % not symmetric.
-                        
-                        for i = 1:numel(respSVD)
-                            u1 = respSVD{i};
-                            for j = 1:numel(respSVD)
-                                u2 = respSVDp{j};
-                                respTrans(i, j) = ...
-                                    trace(u1{3} * u1{2}' * u1{1}' * ...
-                                    u2{1} * u2{2} * u2{3}');
+                        for iTr = 1:numel(respSVD)
+                            u1 = respSVD{iTr};
+                            for jTr = 1:numel(respSVD)
+                                u2 = respSVDp{jTr};
+                                respTrans(iTr, jTr) = ...
+                                    trace((u2{3}' * u1{3}) * u1{2}' * ...
+                                    (u1{1}' * u2{1}) * u2{2});
                             end
                         end
-                        respTransSorttoStore = respTrans;
+                        if rvSVDswitch == 0
+                            respTransSorttoStore = respTrans;
+                        elseif rvSVDswitch == 1
+                            respTransSorttoStore = obj.resp.rv.L' * ...
+                                respTrans * obj.resp.rv.L;
+                        end
                     end
                 elseif iPre == size(respStoreSort, 1)
                     respTransSorttoStore = [];
@@ -2016,7 +2026,6 @@ classdef beam < handle
                 end
                 
             elseif rvSVDswitch == 1
-                keyboard
                 ePreSqrtMtx = obj.resp.rv.R * e * obj.resp.rv.R';
                 ePreMtx = sqrt(abs(ePreSqrtMtx)) / ...
                     norm(obj.dis.qoi.trial, 'fro');
@@ -2201,25 +2210,16 @@ classdef beam < handle
             end
         end
         %%
-        function obj = storeErrorInfo(obj, type)
+        function obj = storeErrorInfo(obj)
             % store error information for each Greedy iterations.
-            switch type
-                case 'hhat'
-                    obj.err.store.max.hhat = ...
-                        [obj.err.store.max.hhat; obj.err.max.val.hhat];
-                    obj.err.store.loc.hhat = ...
-                        [obj.err.store.loc.hhat; obj.err.max.loc.hhat];
-                case 'hat'
-                    obj.err.store.max.hat = ...
-                        [obj.err.store.max.hat; obj.err.max.val.hat];
-                    obj.err.store.loc.hat = ...
-                        [obj.err.store.loc.hat; obj.err.max.loc.hat];
-                case 'diff'
-                    obj.err.store.max.diff = ...
-                        [obj.err.store.max.diff; obj.err.max.val.diff];
-                    obj.err.store.loc.diff = ...
-                        [obj.err.store.loc.diff; obj.err.max.loc.diff];
-            end
+            obj.err.store.max.hhat = ...
+                [obj.err.store.max.hhat; obj.err.max.val.hhat];
+            obj.err.store.loc.hhat = ...
+                [obj.err.store.loc.hhat; obj.err.max.loc.hhat];
+            obj.err.store.max.hat = ...
+                [obj.err.store.max.hat; obj.err.max.val.hat];
+            obj.err.store.loc.hat = ...
+                [obj.err.store.loc.hat; obj.err.max.loc.hat];
         end
         %%
         function obj = storeErrorInfoOriginal(obj)
@@ -2257,6 +2257,8 @@ classdef beam < handle
         end
         %%
         function obj = localHrefinement(obj)
+            disp(strcat('condition', {' = '}, ...
+                num2str(obj.refinement.condition), ', Refine'));
             % local h-refinement
             obj.indicator.refine = 1;
             obj.indicator.enrich = 0;
@@ -2275,12 +2277,8 @@ classdef beam < handle
             end
             obj = refineGridLocalwithIdx(obj, 'iteration');
             obj.no.block.add = 2 ^ obj.no.inc - 1;
-        end
-        %%
-        function obj = extractPmAdd(obj)
-            % when a h-refinement occurs, this method finds the information
-            % relates to newly added samples.
             
+            % finds the information relates to newly added samples.
             % the newly added blocks.
             obj.pmExpo.block.add = obj.pmExpo.block.hhat...
                 (end - obj.no.block.add : end);
@@ -2293,7 +2291,6 @@ classdef beam < handle
             % pm values of newly added samples.
             obj.pmVal.add = obj.pmVal.hhat(pmIdxAdd, :);
             obj.no.itplAdd = size(obj.pmVal.add, 1);
-            
         end
         %%
         function obj = residualfromForce...
@@ -2359,10 +2356,8 @@ classdef beam < handle
                     obj.phi.val' * obj.sti.mtxCell{i} * obj.phi.val;
                 
             end
-            
             obj.mas.re.mtx = obj.phi.val' * obj.mas.mtx * obj.phi.val;
             obj.dam.re.mtx = obj.phi.val' * obj.dam.mtx * obj.phi.val;
-            
         end
         %%
         function obj = refiCond(obj, type)
@@ -2387,25 +2382,8 @@ classdef beam < handle
                     % obj.refinement.condition = ...
                     %     max(obj.err.store.surf.diff ./ ...
                     %     obj.err.store.surf.hat);
-                    obj.refinement.condition = ...
-                        max(obj.err.store.surf.diff);
-                    
+                    obj.refinement.condition = max(obj.err.store.surf.diff);
             end
-        end
-        %%
-        function obj = refiCondDisplay(obj, type)
-            % this method displays refinement condition and refinement.
-            switch type
-                case 'noRefi'
-                    disp(strcat('condition', {' = '}, ...
-                        num2str(obj.refinement.condition), ...
-                        ', Greedy'));
-                case 'refi'
-                    disp(strcat('condition', {' = '}, ...
-                        num2str(obj.refinement.condition), ...
-                        ', Refine'));
-            end
-            
         end
         %%
         function obj = maxErrorDisplay(obj, type)
@@ -2422,11 +2400,15 @@ classdef beam < handle
                         num2str(obj.err.max.loc.hhat)));
                     disp(strcat('maximum error ', {' = '}, ...
                         num2str(obj.err.max.val.hhat)));
+                    disp(strcat('condition', {' = '}, ...
+                        num2str(obj.refinement.condition), ', Greedy'));
                 case 'hat'
                     disp(strcat('location ', {' = '}, ...
                         num2str(obj.err.max.loc.hat)));
                     disp(strcat('maximum error ', {' = '}, ...
                         num2str(obj.err.max.val.hat)));
+                    disp(strcat('condition', {' = '}, ...
+                        num2str(obj.refinement.condition), ', Greedy'));
             end
         end
         %%
@@ -3127,6 +3109,7 @@ classdef beam < handle
             
         end
         %%
+        obj = resptoErrPreCompAllTimeMatrix1(obj, respSVDswitch, rvSVDswitch);
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);
         obj = gridtoBlockwithIndx(obj, type);
