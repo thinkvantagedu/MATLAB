@@ -10,7 +10,7 @@ elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     nRb = 0;
     nAdd = 0;
 end
-obj.no.newVec = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
+nNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 for iPre = 1:nPre
     obj.err.pre.hhat(nEx + iPre, 1) = {nEx + iPre};
     obj.err.pre.hhat(nEx + iPre, 2) = ...
@@ -60,15 +60,15 @@ for iPre = 1:nPre
             [obj.resp.store.all{nEx + iPre, 3} respCol];
         respAllCol = obj.resp.store.all{nEx + iPre, 3};
         % updated every Greedy iteration. 
-        obj.no.oldVec = size(respAllCol, 2) - obj.no.newVec;
+        nOld = size(respAllCol, 2) - nNew;
         if rvSVDswitch == 0
             % respTrans is made of 4 parts.
             if obj.countGreedy == 1
                 respTrans = respAllCol' * respAllCol;
             else
-                respOld = respAllCol(:, 1:obj.no.oldVec);
-                respNew = respAllCol(:, end - obj.no.newVec + 1:end);
-                lu11 = triu(obj.err.pre.hhat{nEx + iPre, 3});
+                respOld = respAllCol(:, 1:nOld);
+                respNew = respAllCol(:, end - nNew + 1:end);
+                lu11 = triu(obj.err.pre.hhat{nEx + iPre, 5});
                 ru12 = respOld' * respNew;
                 rd22 = triu(respNew' * respNew);
                 ld21 = zeros(size(ru12, 2), size(ru12, 1));
@@ -83,7 +83,7 @@ for iPre = 1:nPre
         obj.resp.store.all{nEx + iPre, 3} = ...
             [obj.resp.store.all{nEx + iPre, 3}; respCol];
         respAllCol = obj.resp.store.all{nEx + iPre, 3};
-        obj.no.oldVec = size(respAllCol, 1) - obj.no.newVec;
+        nOld = size(respAllCol, 1) - nNew;
         respTrans_ = zeros(numel(respAllCol));
         % symmetric when it's not uiTuj, so j starts from i.
         if obj.countGreedy == 1
@@ -98,25 +98,25 @@ for iPre = 1:nPre
                 end
             end
         else
-            respOld = respAllCol(1:obj.no.oldVec);
-            respNew = respAllCol(end - obj.no.newVec + 1:end);
+            respOld = respAllCol(1:nOld);
+            respNew = respAllCol(end - nNew + 1:end);
             % part 1: left upper block, triangle, symmetric, direct use.
-            lu11 = triu(obj.err.pre.hhat{nEx + iPre, 3});
+            lu11 = triu(obj.err.pre.hhat{nEx + iPre, 5});
             % part 2: right upper block, rectangular, unsymmetric (j from 1).
-            ru12 = zeros(obj.no.oldVec, obj.no.newVec);
-            for i = 1:obj.no.oldVec
+            ru12 = zeros(nOld, nNew);
+            for i = 1:nOld
                 u1 = respOld{i};
-                for j = 1:obj.no.newVec
+                for j = 1:nNew
                     u2 = respNew{j};
                     ru12(i, j) = trace((u2{3}' * u1{3}) * u1{2}' * ...
                         (u1{1}' * u2{1}) * u2{2});
                 end
             end
             % part 3: right lower block, triangle, symmetric.
-            rd22 = zeros(obj.no.newVec, obj.no.newVec);
-            for i = 1:obj.no.newVec
+            rd22 = zeros(nNew, nNew);
+            for i = 1:nNew
                 u1 = respNew{i};
-                for j = 1:obj.no.newVec
+                for j = 1:nNew
                     u2 = respNew{j};
                     rd22(i, j) = trace((u2{3}' * u1{3}) * u1{2}' * ...
                         (u1{1}' * u2{1}) * u2{2});
@@ -133,21 +133,15 @@ for iPre = 1:nPre
                 reConstruct(respTrans_) * obj.resp.rv.L;
         end
     end
-    obj.err.pre.hhat(nEx + iPre, 3) = {respTrans};
+    obj.err.pre.hhat(nEx + iPre, 5) = {respTrans};
 end
 
 respStoretoTrans = obj.resp.store.all;
-obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
+obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
-if rvSVDswitch == 1
-    obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
-end
 obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
     obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
 respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
-obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
+obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);
-if rvSVDswitch == 1
-    obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);
-end
 end

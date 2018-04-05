@@ -420,7 +420,7 @@ classdef beam < handle
             end
             
             obj.no.rb = size(obj.phi.val, 2);
-            obj.no.phiAdd = nEnrich;
+            obj.no.rbAdd = nEnrich;
             
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
@@ -542,7 +542,7 @@ classdef beam < handle
             obj.vel.re.inpt = sparse(nInit, 1);
             
             obj.no.rb = size(obj.phi.val, 2);
-            obj.no.phiAdd = nInit;
+            obj.no.rbAdd = nInit;
         end
         %%
         function obj = exactSolution(obj, type, ...
@@ -930,7 +930,7 @@ classdef beam < handle
                     for iTdiff = 1:2
                         % only generate responses regarding the newly added
                         % basis vectors.
-                        for iRb = obj.no.rb - obj.no.phiAdd + 1:obj.no.rb
+                        for iRb = obj.no.rb - obj.no.rbAdd + 1:obj.no.rb
                             impMtx = sparse(obj.no.dof, obj.no.t_step);
                             impMtx(:, iTdiff) = impMtx(:, iTdiff) + ...
                                 mtxAsemb{iPhy} * obj.phi.val(:, iRb);
@@ -1079,7 +1079,7 @@ classdef beam < handle
                 % if no refinement, enrich basis: compute the new exact
                 % solutions regarding the newly added basis vectors.
                 nPre = obj.no.pre.hhat;
-                nRbInit = obj.no.rb - obj.no.phiAdd + 1;
+                nRbInit = obj.no.rb - obj.no.rbAdd + 1;
             elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                 % if refine, no enrichment, compute exact solutions
                 % regarding all basis vectors but only for the newly added
@@ -1310,7 +1310,7 @@ classdef beam < handle
                 nPre = obj.no.pre.hhat;
                 nEx = 0;
                 nRb = obj.no.rb;
-                nAdd = obj.no.phiAdd;
+                nAdd = obj.no.rbAdd;
             elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                 % if refine, compute the newly added interpolation samples for
                 % all basis vectors.
@@ -1350,6 +1350,15 @@ classdef beam < handle
                         respCol = [obj.resp.store.fce.hhat{nEx + iPre}(:) ...
                             -respCol];
                     end
+                    obj.resp.store.all{nEx + iPre, 3} = ...
+                        [obj.resp.store.all{nEx + iPre, 3} respCol];
+                    respAllCol = obj.resp.store.all{nEx + iPre, 3};
+                    if rvSVDswitch == 0
+                        respTrans = respAllCol' * respAllCol;
+                    elseif rvSVDswitch == 1
+                        respTrans_ = respAllCol * obj.resp.rv.L;
+                        respTrans = respTrans_' * respTrans_;
+                    end
                 elseif respSVDswitch == 1
                     % reshape multi dim cell to 2d cell array.
                     respCol = reshape(respPmPass, [1, numel(respPmPass)]);
@@ -1370,20 +1379,6 @@ classdef beam < handle
                             cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
                             respCol, 'un', 0)]';
                     end
-                    
-                end
-                
-                if respSVDswitch == 0
-                    obj.resp.store.all{nEx + iPre, 3} = ...
-                        [obj.resp.store.all{nEx + iPre, 3} respCol];
-                    respAllCol = obj.resp.store.all{nEx + iPre, 3};
-                    if rvSVDswitch == 0
-                        respTrans = respAllCol' * respAllCol;
-                    elseif rvSVDswitch == 1
-                        respTrans_ = respAllCol * obj.resp.rv.L;
-                        respTrans = respTrans_' * respTrans_;
-                    end
-                elseif respSVDswitch == 1
                     obj.resp.store.all{nEx + iPre, 3} = ...
                         [obj.resp.store.all{nEx + iPre, 3}; respCol];
                     respAllCol = obj.resp.store.all{nEx + iPre, 3};
@@ -1404,23 +1399,32 @@ classdef beam < handle
                     elseif rvSVDswitch == 1
                         respTrans_ = reConstruct(respTrans_);
                         respTrans = obj.resp.rv.L' * respTrans_ * obj.resp.rv.L;
+                        % full scale eTe also needs to be stored 
+                        % when apply POD on RV. 
+                        obj.err.pre.hhat(nEx + iPre, 5) = {respTrans_};
                     end
                 end
-                obj.err.pre.hhat(nEx + iPre, 5) = {respTrans};
+                obj.err.pre.hhat(nEx + iPre, 3) = {respTrans};
             end
             
             % compute uiTui+1 and store in the last column of obj.err.pre.hhat.
             respStoretoTrans = obj.resp.store.all;
             obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
-            obj.err.pre.hhat(:, end) = obj.err.pre.trans(:, 3);
+            obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
+            if rvSVDswitch == 1
+                obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
+            end
             % the 5th column of obj.err.pre.hat is inherited from the first
             % nhat rows of obj.err.pre.hhat. the 6th column is a recalculation
             % using uiTui+1.
-            obj.err.pre.hat(1:obj.no.pre.hat, 1:5) = ...
-                obj.err.pre.hhat(1:obj.no.pre.hat, 1:5);
+            obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
+                obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
             respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
             obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
-            obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 3);
+            obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);
+            if rvSVDswitch == 1
+                obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);
+            end
         end
         %%
         function obj = uiTujSort(obj, respStoreInpt, rvSVDswitch, respSVDswitch)
@@ -1432,12 +1436,13 @@ classdef beam < handle
             respStoreSort = sortrows(respStoreInpt, 2);
             % a temp cell to store uiTui+1, should contain a void
             % after filling.
-            respStoreCell_ = cell(size(respStoreSort, 1), 3);
+            respStoreCell_ = cell(size(respStoreSort, 1), 4);
             for iPre = 1:size(respStoreSort, 1)
                 % respStoreSort_ should contain n-1 uiTui+1 matrix element
                 %  and 1 void element.
                 if iPre < size(respStoreSort, 1)
                     if respSVDswitch == 0
+                        
                         respTrans = respStoreSort{iPre, 3}' * ...
                             respStoreSort{iPre + 1, 3};
                         if rvSVDswitch == 0
@@ -1447,6 +1452,7 @@ classdef beam < handle
                                 obj.resp.rv.L' * respStoreSort{iPre, 3}' * ...
                                 respStoreSort{iPre + 1, 3} * obj.resp.rv.L;
                         end
+                        keyboard
                     elseif respSVDswitch == 1
                         respSVD = respStoreSort{iPre, 3};
                         respSVDp = respStoreSort{iPre + 1, 3};
@@ -1471,11 +1477,16 @@ classdef beam < handle
                         end
                     end
                 elseif iPre == size(respStoreSort, 1)
+                    respTrans = [];
                     respTransSorttoStore = [];
                 end
                 respStoreCell_(iPre, 1) = {respStoreSort{iPre, 1}};
                 respStoreCell_(iPre, 2) = {respStoreSort{iPre, 2}};
                 respStoreCell_(iPre, 3) = {respTransSorttoStore};
+                if rvSVDswitch == 1
+                    % full scale eTe needs to be stored if POD on RV.
+                    respStoreCell_(iPre, 4) = {respTrans};
+                end
             end
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
@@ -1626,7 +1637,7 @@ classdef beam < handle
                 blkExp_(idx) = c(idx);
                 
                 eTe = triu(cell2mat(blkExp_));
-                obj.err.pre.hhat(iPre, 5) = {eTe};
+                obj.err.pre.hhat(iPre, 3) = {eTe};
             end
             obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
         end
@@ -1707,42 +1718,6 @@ classdef beam < handle
             
         end
         %%
-        function obj = rvLTePrervL(obj)
-            % this method multiplies left singular vectors from collected
-            % reduced variables with pre-computed eTe.
-            
-            for i = 1:obj.no.pre.hhat
-                if size(obj.err.pre.hhat{i, 5}, 1) == ...
-                        size(obj.resp.rv.L, 1)
-                    eTe5 = obj.err.pre.hhat{i, 5};
-                    obj.err.pre.hhat{i, 5} = ...
-                        obj.resp.rv.L' * eTe5 * obj.resp.rv.L;
-                end
-                if size(obj.err.pre.hhat{i, 6}, 1) == ...
-                        size(obj.resp.rv.L, 1)
-                    eTe6 = obj.err.pre.hhat{i, 6};
-                    obj.err.pre.hhat{i, 6} = ...
-                        obj.resp.rv.L' * eTe6 * obj.resp.rv.L;
-                end
-            end
-            
-            for i = 1:obj.no.pre.hat
-                if size(obj.err.pre.hat{i, 5}, 1) == ...
-                        size(obj.resp.rv.L, 1)
-                    eTe5 = obj.err.pre.hat{i, 5};
-                    obj.err.pre.hat{i, 5} = ...
-                        obj.resp.rv.L' * eTe5 * obj.resp.rv.L;
-                end
-                if size(obj.err.pre.hat{i, 6}, 1) == ...
-                        size(obj.resp.rv.L, 1)
-                    eTe6 = obj.err.pre.hat{i, 6};
-                    obj.err.pre.hat{i, 6} = ...
-                        obj.resp.rv.L' * eTe6 * obj.resp.rv.L;
-                end
-            end
-            
-        end
-        %%
         function obj = pmPrepare(obj, rvSVDswitch)
             % This method prepares parameter values to fit and multiply
             % related reduced variables.
@@ -1764,7 +1739,6 @@ classdef beam < handle
             end
             
         end
-        
         %%
         function obj = rvPrepare(obj, rvSVDswitch)
             % This method prepares reduced variables
@@ -1853,17 +1827,17 @@ classdef beam < handle
                     if inBetweenTwoPoints(pmIter, pmBlkCell{:}) == 1
                         switch type
                             case 'hhat'
-                                uiTui = ehats(pmBlk{i}(:, 1), 5);
-                                uiTuj = ehats(pmBlk{i}(1, 1), 6);
+                                uiTui = ehats(pmBlk{i}(:, 1), 3);
+                                uiTuj = ehats(pmBlk{i}(1, 1), 4);
                             case 'hat'
-                                uiTui = ehats(pmBlk{i}(:, 1), 5);
-                                uiTuj = ehats(pmBlk{i}(1, 1), 6);
+                                uiTui = ehats(pmBlk{i}(:, 1), 3);
+                                uiTuj = ehats(pmBlk{i}(1, 1), 4);
                             case 'add'
                                 % pmBlk is the added block now, there are 2
                                 % blocks in 1D case.
                                 pmAdd = pmBlk{i};
-                                uiTui = ehats(pmAdd(:, 1), 5);
-                                uiTuj = ehats(pmAdd(1, 1), 6);
+                                uiTui = ehats(pmAdd(:, 1), 3);
+                                uiTuj = ehats(pmAdd(1, 1), 4);
                         end
                         pmCell = num2cell(cell2mat(pmBlkCell));
                         % this is the Lagrange coefficient matrix, 2 by 2
@@ -1900,13 +1874,13 @@ classdef beam < handle
                         uiTui = 10 .^ gridyVal;
                         switch type
                             case 'hhat'
-                                gridzVal = ehats(pmBlk{i}(:, 1), 5);
+                                gridzVal = ehats(pmBlk{i}(:, 1), 3);
                             case 'hat'
-                                gridzVal = ehats(pmBlk{i}(:, 1), 5);
+                                gridzVal = ehats(pmBlk{i}(:, 1), 3);
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{i};
-                                gridzVal = ehats(pmAdd(:, 1), 5);
+                                gridzVal = ehats(pmAdd(:, 1), 3);
                         end
                         gridz = [gridzVal(1) gridzVal(2); ...
                             gridzVal(4) gridzVal(3)];
@@ -3108,6 +3082,7 @@ classdef beam < handle
             
         end
         %%
+        obj = uiTujSort1(obj, respStoreInpt, rvSVDswitch, respSVDswitch);
         obj = resptoErrPreCompAllTimeMatrix1(obj, respSVDswitch, rvSVDswitch);
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);

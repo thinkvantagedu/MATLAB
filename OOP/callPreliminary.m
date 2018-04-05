@@ -56,7 +56,7 @@ refiThres = 0.01;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -76,7 +76,7 @@ reductionRatio = 0.9;
 % number of vectors taking when applying SVD to pre-computed resps.
 nRespSVD = 5; 
 % ratio of SVD error reduction for POD on rv. ==========
-rvSVDreRatio = 1;
+rvSVDreRatio = 0.9999;
 
 %% set types
 timeType = 'allTime';
