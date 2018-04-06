@@ -983,18 +983,18 @@ classdef beam < handle
                 end
                 if respSVDswitch == 0
                     if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                        obj.resp.store.fce.hhat{nEx + iPre} = obj.dis.full(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {obj.dis.full(:)};
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
                         dis_ = obj.dis.full(:, obj.qoi.t);
-                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                         
                     elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
                         dis_ = obj.dis.full(obj.qoi.dof, :);
-                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                         
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
                         dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
-                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                     end
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
@@ -1191,9 +1191,13 @@ classdef beam < handle
                                     
                                 end
                                 respQoi = respQoi(:);
-                                obj.resp.store.pm.hhat(iPre, iPhy, 1, iRb) ...
-                                    = {respQoi};
-                                
+                                if respSVDswitch == 0
+                                    obj.resp.store.pm.hhat...
+                                        (iPre, iPhy, 1, iRb) = {{respQoi}};
+                                elseif respSVDswitch == 1
+                                    obj.resp.store.pm.hhat...
+                                        (iPre, iPhy, 1, iRb) = {respQoi};
+                                end
                             else
                                 
                                 if respSVDswitch == 0
@@ -1221,12 +1225,11 @@ classdef beam < handle
                                             qoiSwitchSpace == 1
                                         storePmQoi = storePmAsemb...
                                             (obj.qoi.dof, obj.qoi.t);
-                                        
                                     end
                                     
                                     obj.resp.store.pm.hhat...
                                         (iPre, iPhy, iT, iRb)...
-                                        = {storePmQoi(:)};
+                                        = {{storePmQoi(:)}};
                                 elseif respSVDswitch == 1
                                     % only shift the right singular
                                     % vectors, if recast the displacements,
@@ -1442,9 +1445,11 @@ classdef beam < handle
                 %  and 1 void element.
                 if iPre < size(respStoreSort, 1)
                     if respSVDswitch == 0
-                        
-                        respTrans = respStoreSort{iPre, 3}' * ...
-                            respStoreSort{iPre + 1, 3};
+                        respExt = cell2mat(cellfun(@(v) cell2mat(v), ...
+                            respStoreSort{iPre, 3}, 'un', 0));
+                        respExtp = cell2mat(cellfun(@(v) cell2mat(v), ...
+                            respStoreSort{iPre + 1, 3}, 'un', 0));
+                        respTrans = respExt' * respExtp;
                         if rvSVDswitch == 0
                             respTransSorttoStore = respTrans;
                         elseif rvSVDswitch == 1
@@ -1452,18 +1457,17 @@ classdef beam < handle
                                 obj.resp.rv.L' * respStoreSort{iPre, 3}' * ...
                                 respStoreSort{iPre + 1, 3} * obj.resp.rv.L;
                         end
-                        keyboard
                     elseif respSVDswitch == 1
-                        respSVD = respStoreSort{iPre, 3};
-                        respSVDp = respStoreSort{iPre + 1, 3};
-                        respTrans = zeros(numel(respSVD));
+                        respExt = respStoreSort{iPre, 3};
+                        respExtp = respStoreSort{iPre + 1, 3};
+                        respTrans = zeros(numel(respExt));
                         % tr(uiTuj) = tr(vri*sigi*vliT*vlj*sigj*vrjT).
                         % here j cannot start from i, because respTrans is
                         % not symmetric.
-                        for iTr = 1:numel(respSVD)
-                            u1 = respSVD{iTr};
-                            for jTr = 1:numel(respSVD)
-                                u2 = respSVDp{jTr};
+                        for iTr = 1:numel(respExt)
+                            u1 = respExt{iTr};
+                            for jTr = 1:numel(respExt)
+                                u2 = respExtp{jTr};
                                 respTrans(iTr, jTr) = ...
                                     trace((u2{3}' * u1{3}) * u1{2}' * ...
                                     (u1{1}' * u2{1}) * u2{2});

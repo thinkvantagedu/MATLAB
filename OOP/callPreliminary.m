@@ -74,7 +74,7 @@ reductionRatio = 0.9;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 5; 
+nRespSVD = 4; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 0.9999;
 

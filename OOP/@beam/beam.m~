@@ -983,18 +983,18 @@ classdef beam < handle
                 end
                 if respSVDswitch == 0
                     if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                        obj.resp.store.fce.hhat{nEx + iPre} = obj.dis.full(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {obj.dis.full(:)};
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
                         dis_ = obj.dis.full(:, obj.qoi.t);
-                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                         
                     elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
                         dis_ = obj.dis.full(obj.qoi.dof, :);
-                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                         
                     elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
                         dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
-                        obj.resp.store.fce.hhat{nEx + iPre} = dis_(:);
+                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                     end
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
@@ -1191,7 +1191,11 @@ classdef beam < handle
                                     
                                 end
                                 respQoi = respQoi(:);
+                                if respSVDswitch == 0
                                 obj.resp.store.pm.hhat(iPre, iPhy, 1, iRb) ...
+                                    = {{respQoi}};
+                                elseif respSVDswitch == 1
+                                    obj.resp.store.pm.hhat(iPre, iPhy, 1, iRb) ...
                                     = {respQoi};
                                 
                             else
@@ -1221,12 +1225,11 @@ classdef beam < handle
                                             qoiSwitchSpace == 1
                                         storePmQoi = storePmAsemb...
                                             (obj.qoi.dof, obj.qoi.t);
-                                        
                                     end
                                     
                                     obj.resp.store.pm.hhat...
                                         (iPre, iPhy, iT, iRb)...
-                                        = {storePmQoi(:)};
+                                        = {{storePmQoi(:)}};
                                 elseif respSVDswitch == 1
                                     % only shift the right singular
                                     % vectors, if recast the displacements,
@@ -1442,6 +1445,7 @@ classdef beam < handle
                 %  and 1 void element.
                 if iPre < size(respStoreSort, 1)
                     if respSVDswitch == 0
+                        
                         respTrans = respStoreSort{iPre, 3}' * ...
                             respStoreSort{iPre + 1, 3};
                         if rvSVDswitch == 0
@@ -1482,7 +1486,7 @@ classdef beam < handle
                 respStoreCell_(iPre, 2) = {respStoreSort{iPre, 2}};
                 respStoreCell_(iPre, 3) = {respTransSorttoStore};
                 if rvSVDswitch == 1
-                    % 
+                    % full scale eTe needs to be stored if POD on RV.
                     respStoreCell_(iPre, 4) = {respTrans};
                 end
             end
@@ -3080,6 +3084,7 @@ classdef beam < handle
             
         end
         %%
+        obj = uiTujSort1(obj, respStoreInpt, rvSVDswitch, respSVDswitch);
         obj = resptoErrPreCompAllTimeMatrix1(obj, respSVDswitch, rvSVDswitch);
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);

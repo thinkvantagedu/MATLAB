@@ -80,7 +80,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             
     end
     % CHANGE SIGN in this method!
-    fixie.resptoErrPreCompAllTimeMatrix2(respSVDswitch, rvSVDswitch);
+    fixie.resptoErrPreCompAllTimeMatrix1(respSVDswitch, rvSVDswitch);
     % disp('offline end')
     
     %% ONLINE
@@ -142,11 +142,12 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement
         fixie.localHrefinement;
-        
+                
         fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
     end
+    
 end
 
 % figure(4)

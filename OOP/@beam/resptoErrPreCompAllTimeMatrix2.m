@@ -1,4 +1,4 @@
-function obj = resptoErrPreCompAllTimeMatrix1(obj, respSVDswitch, rvSVDswitch)
+function obj = resptoErrPreCompAllTimeMatrix2(obj, respSVDswitch, rvSVDswitch)
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
     nPre = obj.no.pre.hhat;
     nEx = 0;
@@ -17,23 +17,27 @@ for iPre = 1:nPre
     obj.resp.store.all(nEx + iPre, 1) = {nEx + iPre};
     obj.resp.store.all(nEx + iPre, 2) = {obj.pmExpo.hhat(nEx + iPre, 2)};
     respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, nRb - nAdd + 1:end);
+    respCol = reshape(respPmPass, [1, numel(respPmPass)]);
+    if obj.indicator.enrich == 1 && obj.indicator.refine == 0
+        if obj.countGreedy == 1
+            respCol = [obj.resp.store.fce.hhat(iPre) ...
+                cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
+                respCol, 'un', 0)];
+        else
+            respCol = cellfun(@(x) ...
+                cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
+        end
+    elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
+        respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
+            cellfun(@(x) cellfun(@uminus, x, 'un', 0), respCol, 'un', 0)];
+    end
+    obj.resp.store.all{nEx + iPre, 3} = ...
+        [obj.resp.store.all{nEx + iPre, 3} respCol];
+    respAllCol = obj.resp.store.all{nEx + iPre, 3};
+    obj.no.oldVec = size(respAllCol, 2) - obj.no.newVec;
     
     if respSVDswitch == 0
-        respCol = cat(2, respPmPass{:});
-        if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-            if obj.countGreedy == 1
-                respCol = [obj.resp.store.fce.hhat{iPre} -respCol];
-            else
-                respCol = -respCol;
-            end
-        elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
-            respCol = [obj.resp.store.fce.hhat{nEx + iPre}(:) -respCol];
-        end
-        obj.resp.store.all{nEx + iPre, 3} = ...
-            [obj.resp.store.all{nEx + iPre, 3} respCol];
-        respAllCol = obj.resp.store.all{nEx + iPre, 3};
-        % updated every Greedy iteration.
-        obj.no.oldVec = size(respAllCol, 2) - obj.no.newVec;
+        respAllCol = cell2mat(cellfun(@(v) cell2mat(v), respAllCol, 'un', 0));
         if rvSVDswitch == 0
             if obj.countGreedy == 1
                 respTrans = respAllCol' * respAllCol;
@@ -63,25 +67,6 @@ for iPre = 1:nPre
             respTrans = respTrans_' * respTrans_;
         end
     elseif respSVDswitch == 1
-        respCol = reshape(respPmPass, [1, numel(respPmPass)]);
-        if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-            if obj.countGreedy == 1
-                respCol = [obj.resp.store.fce.hhat(iPre) ...
-                    cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
-                    respCol, 'un', 0)]';
-            else
-                respCol = cellfun(@(x) ...
-                    cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
-                respCol = respCol';
-            end
-        elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
-            respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
-                cellfun(@(x) cellfun(@uminus, x, 'un', 0), respCol, 'un', 0)]';
-        end
-        obj.resp.store.all{nEx + iPre, 3} = ...
-            [obj.resp.store.all{nEx + iPre, 3}; respCol];
-        respAllCol = obj.resp.store.all{nEx + iPre, 3};
-        obj.no.oldVec = size(respAllCol, 1) - obj.no.newVec;
         respTrans_ = zeros(numel(respAllCol));
         % symmetric when it's not uiTuj, so j starts from i.
         if obj.countGreedy == 1
@@ -151,7 +136,7 @@ for iPre = 1:nPre
 end
 
 respStoretoTrans = obj.resp.store.all;
-obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
+obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
@@ -159,7 +144,7 @@ end
 obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
     obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
 respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
-obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
+obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);
