@@ -1,4 +1,6 @@
 function obj = resptoErrPreCompAllTimeMatrix2(obj, respSVDswitch, rvSVDswitch)
+% all lu11, rd22 blocks are symmetric, thus triangulated. Use triu when
+% case 1: respSVDswitch == 0, case 2: respSVDswitch == 1 and enrich (inherit).
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
     nPre = obj.no.pre.hhat;
     nEx = 0;
@@ -12,17 +14,21 @@ elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
 end
 obj.no.newVec = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 for iPre = 1:nPre
+    % define index and pm values for pre-computed eTe and stored responses.
     obj.err.pre.hhat(nEx + iPre, 1) = {nEx + iPre};
     obj.err.pre.hhat(nEx + iPre, 2) = {obj.pmExpo.hhat(nEx + iPre, 2)};
     obj.resp.store.all(nEx + iPre, 1) = {nEx + iPre};
     obj.resp.store.all(nEx + iPre, 2) = {obj.pmExpo.hhat(nEx + iPre, 2)};
+    % pass needed responses in to be processed.
     respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, nRb - nAdd + 1:end);
     respCol = reshape(respPmPass, [1, numel(respPmPass)]);
+    % if enrich + initial iteration, force resp combines ordinary resp;
+    % elseif enrich, ordinary resp only; elseif refine, force resp combines
+    % ordinary resp. 
     if obj.indicator.enrich == 1 && obj.indicator.refine == 0
         if obj.countGreedy == 1
             respCol = [obj.resp.store.fce.hhat(iPre) ...
-                cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
-                respCol, 'un', 0)];
+                cellfun(@(x) cellfun(@uminus, x, 'un', 0), respCol, 'un', 0)];
         else
             respCol = cellfun(@(x) ...
                 cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
@@ -31,10 +37,12 @@ for iPre = 1:nPre
         respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
             cellfun(@(x) cellfun(@uminus, x, 'un', 0), respCol, 'un', 0)];
     end
+    
     obj.resp.store.all{nEx + iPre, 3} = ...
         [obj.resp.store.all{nEx + iPre, 3} respCol];
     respAllCol = obj.resp.store.all{nEx + iPre, 3};
-    obj.no.oldVec = size(respAllCol, 2) - obj.no.newVec;
+    obj.no.totalVec = numel(respAllCol);
+    obj.no.oldVec = obj.no.totalVec - obj.no.newVec;
     
     if respSVDswitch == 0
         respAllCol = cell2mat(cellfun(@(v) cell2mat(v), respAllCol, 'un', 0));
@@ -45,17 +53,17 @@ for iPre = 1:nPre
                 respOld = respAllCol(:, 1:obj.no.oldVec);
                 respNew = respAllCol(:, end - obj.no.newVec + 1:end);
                 % respTrans is made of 4 parts.
-                % part 1: left upper block, triangle, symmetric, direct use.
+                % part 1: left upper block, triangular, symmetric, direct use.
                 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                     % if enrich, inherit eTe part 1.
                     lu11 = triu(obj.err.pre.hhat{nEx + iPre, 3});
                 elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                     % if refine, re-compute eTe part 1.
-                    lu11 = respOld' * respOld;
+                    lu11 = triu(respOld' * respOld);
                 end
-                % part 2: right upper block, rectangular, unsymmetric (j from 1).
+                % part 2: right upper block, rectangular, unsymmetric.
                 ru12 = respOld' * respNew;
-                % part 3: right lower block, triangle, symmetric.
+                % part 3: right lower block, triangular, symmetric.
                 rd22 = triu(respNew' * respNew);
                 % part 4: left lower block, rectangular all-zeros.
                 ld21 = zeros(size(ru12, 2), size(ru12, 1));
@@ -67,60 +75,58 @@ for iPre = 1:nPre
             respTrans = respTrans_' * respTrans_;
         end
     elseif respSVDswitch == 1
-        respTrans_ = zeros(numel(respAllCol));
+        respTrans_ = zeros(obj.no.totalVec);
         % symmetric when it's not uiTuj, so j starts from i.
         if obj.countGreedy == 1
             % initial iteration needs to be treated individually, since all
             % informations are new.
-            for i = 1:numel(respAllCol)
-                u1 = respAllCol{i};
-                for j = i:numel(respAllCol)
-                    u2 = respAllCol{j};
-                    respTrans_(i, j) = trace((u2{3}' * u1{3}) * u1{2}' * ...
+            for iTr = 1:obj.no.totalVec
+                u1 = respAllCol{iTr};
+                for jTr = iTr:obj.no.totalVec
+                    u2 = respAllCol{jTr};
+                    respTrans_(iTr, jTr) = trace((u2{3}' * u1{3}) * u1{2}' * ...
                         (u1{1}' * u2{1}) * u2{2});
                 end
             end
         else
             respOld = respAllCol(1:obj.no.oldVec);
             respNew = respAllCol(end - obj.no.newVec + 1:end);
-            % part 1: left upper block, triangle, symmetric, direct use.
+            % part 1: left upper block, triangle, symmetric.
             if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                 % if enrich, inherit eTe part 1.
                 lu11 = triu(obj.err.pre.hhat{nEx + iPre, 3});
             elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                 % if refine, re-compute eTe part 1.
                 lu11 = zeros(obj.no.oldVec);
-                for i = 1:obj.no.oldVec
-                    u1 = respOld{i};
-                    for j = 1:obj.no.oldVec
-                        u2 = respOld{j};
-                        lu11(i, j) = trace((u2{3}' * u1{3}) * u1{2}' * ...
+                for iTr = 1:obj.no.oldVec
+                    u1 = respOld{iTr};
+                    for jTr = iTr:obj.no.oldVec
+                        u2 = respOld{jTr};
+                        lu11(iTr, jTr) = trace((u2{3}' * u1{3}) * u1{2}' * ...
                             (u1{1}' * u2{1}) * u2{2});
                     end
                 end
-                lu11 = triu(lu11);
             end
             % part 2: right upper block, rectangular, unsymmetric (j from 1).
             ru12 = zeros(obj.no.oldVec, obj.no.newVec);
-            for i = 1:obj.no.oldVec
-                u1 = respOld{i};
-                for j = 1:obj.no.newVec
-                    u2 = respNew{j};
-                    ru12(i, j) = trace((u2{3}' * u1{3}) * u1{2}' * ...
+            for iTr = 1:obj.no.oldVec
+                u1 = respOld{iTr};
+                for jTr = 1:obj.no.newVec
+                    u2 = respNew{jTr};
+                    ru12(iTr, jTr) = trace((u2{3}' * u1{3}) * u1{2}' * ...
                         (u1{1}' * u2{1}) * u2{2});
                 end
             end
             % part 3: right lower block, triangle, symmetric.
             rd22 = zeros(obj.no.newVec, obj.no.newVec);
-            for i = 1:obj.no.newVec
-                u1 = respNew{i};
-                for j = 1:obj.no.newVec
-                    u2 = respNew{j};
-                    rd22(i, j) = trace((u2{3}' * u1{3}) * u1{2}' * ...
+            for iTr = 1:obj.no.newVec
+                u1 = respNew{iTr};
+                for jTr = iTr:obj.no.newVec
+                    u2 = respNew{jTr};
+                    rd22(iTr, jTr) = trace((u2{3}' * u1{3}) * u1{2}' * ...
                         (u1{1}' * u2{1}) * u2{2});
                 end
             end
-            rd22 = triu(rd22);
             % part 4: left lower block, rectangular all-zeros.
             ld21 = zeros(size(ru12, 2), size(ru12, 1));
             respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
@@ -136,7 +142,7 @@ for iPre = 1:nPre
 end
 
 respStoretoTrans = obj.resp.store.all;
-obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
+obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
@@ -144,7 +150,7 @@ end
 obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
     obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
 respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
-obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
+obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);

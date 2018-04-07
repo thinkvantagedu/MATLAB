@@ -88,7 +88,7 @@ qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 qoiSwitchManual = 0;
 % SVD on responses.
-respSVDswitch = 0;
+respSVDswitch = 1;
 % SVD on reduced variables.
 ratioSwitch = 0;
 singularSwitch = 0;

@@ -1454,8 +1454,7 @@ classdef beam < handle
                             respTransSorttoStore = respTrans;
                         elseif rvSVDswitch == 1
                             respTransSorttoStore = ...
-                                obj.resp.rv.L' * respStoreSort{iPre, 3}' * ...
-                                respStoreSort{iPre + 1, 3} * obj.resp.rv.L;
+                                obj.resp.rv.L' * respTrans * obj.resp.rv.L;
                         end
                     elseif respSVDswitch == 1
                         respExt = respStoreSort{iPre, 3};

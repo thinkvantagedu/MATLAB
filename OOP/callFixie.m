@@ -142,11 +142,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement
         fixie.localHrefinement;
-        
         fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
-        
     end
+    keyboard
 end
 
 % figure(4)
