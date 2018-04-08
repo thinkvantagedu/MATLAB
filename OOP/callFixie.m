@@ -145,7 +145,6 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
     end
-    keyboard
 end
 
 % figure(4)

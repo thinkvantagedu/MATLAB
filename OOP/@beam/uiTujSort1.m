@@ -9,7 +9,11 @@ if obj.countGreedy ~= 1
     elseif size(respStoreInpt, 1) == obj.no.pre.hat
         eTeImport = sortrows(obj.err.pre.hat, 2);
     end
-    eTeImport = eTeImport(:, 4);
+    if rvSVDswitch == 0
+        eTeImport = eTeImport(:, 4);
+    elseif rvSVDswitch == 1
+        eTeImport = eTeImport(:, 6);
+    end
 end
 
 respCell_ = cell(size(respSort, 1), 4);
@@ -133,9 +137,9 @@ for iPre = 1:size(respSort, 1)
     respCell_(iPre, 1) = {respSort{iPre, 1}};
     respCell_(iPre, 2) = {respSort{iPre, 2}};
     respCell_(iPre, 3) = {respTrans};
-    %     if rvSVDswitch == 1
-    %         respCell_(iPre, 4) = {respTrans};
-    %     end
+    if rvSVDswitch == 1
+        respCell_(iPre, 4) = {respTrans_};
+    end
 end
 obj.err.pre.trans = sortrows(respCell_, 1);
 end

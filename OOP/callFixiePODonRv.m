@@ -163,6 +163,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
     end
+    
 end
 
 % figure(4)

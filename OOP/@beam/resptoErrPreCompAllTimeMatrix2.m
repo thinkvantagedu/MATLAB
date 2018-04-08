@@ -69,8 +69,9 @@ for iPre = 1:nPre
                 ld21 = zeros(size(ru12, 2), size(ru12, 1));
                 respTrans = reConstruct(cell2mat({lu11 ru12; ld21 rd22}));
             end
-            
         elseif rvSVDswitch == 1
+            % if SVD on pre-responses and POD on RV, there is no need to 
+            % obtain respTrans.
             respTrans_ = respAllCol * obj.resp.rv.L;
             respTrans = respTrans_' * respTrans_;
         end
@@ -94,7 +95,11 @@ for iPre = 1:nPre
             % part 1: left upper block, triangle, symmetric.
             if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                 % if enrich, inherit eTe part 1.
-                lu11 = triu(obj.err.pre.hhat{nEx + iPre, 3});
+                if rvSVDswitch == 0
+                    lu11 = triu(obj.err.pre.hhat{nEx + iPre, 3});
+                elseif rvSVDswitch == 1
+                    lu11 = triu(obj.err.pre.hhat{nEx + iPre, 5});
+                end
             elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                 % if refine, re-compute eTe part 1.
                 lu11 = zeros(obj.no.oldVec);
@@ -134,8 +139,11 @@ for iPre = 1:nPre
         if rvSVDswitch == 0
             respTrans = reConstruct(respTrans_);
         elseif rvSVDswitch == 1
+            % store full-scale respTrans_ for next iteration.
+            obj.err.pre.hhat(nEx + iPre, 5) = {reConstruct(respTrans_)};
             respTrans = obj.resp.rv.L' * ...
                 reConstruct(respTrans_) * obj.resp.rv.L;
+            
         end
     end
     obj.err.pre.hhat(nEx + iPre, 3) = {respTrans};

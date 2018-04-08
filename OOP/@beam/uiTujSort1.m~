@@ -9,7 +9,8 @@ if obj.countGreedy ~= 1
     elseif size(respStoreInpt, 1) == obj.no.pre.hat
         eTeImport = sortrows(obj.err.pre.hat, 2);
     end
-    eTeImport = eTeImport(:, 4);
+    if rvSVDsw
+    eTeImport = eTeImport(:, 5:6);
 end
 
 respCell_ = cell(size(respSort, 1), 4);
@@ -36,7 +37,7 @@ for iPre = 1:size(respSort, 1)
                     % needs to be treated individually.
                     % import the sorted old information,
                     if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                        lu11 = eTeImport{iPre};
+                        lu11 = eTeImport{iPre, 1};
                     elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                         lu11 = respExtOld' * respExtpOld;
                     end
@@ -73,10 +74,14 @@ for iPre = 1:size(respSort, 1)
                 respExtNew = respExt(end - obj.no.newVec + 1:end);
                 respExtpOld = respExtp(1:obj.no.oldVec);
                 respExtpNew = respExtp(end - obj.no.newVec + 1:end);
-                % part 1: left upper block, square, unsymmetric.
+                % part 1: left upper block, square.
                 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
                     % if enrich, inherit eTe part 1.
-                    lu11 = eTeImport{iPre};
+                    if rvSVDswitch == 0
+                        lu11 = eTeImport{iPre, 1};
+                    elseif rvSVDswitch == 1
+                        lu11 = eTeImport{iPre, 2};
+                    end
                 elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                     % if refine, re-compute eTe part 1.
                     lu11 = zeros(obj.no.oldVec);
@@ -99,7 +104,7 @@ for iPre = 1:size(respSort, 1)
                             (u1{1}' * u2{1}) * u2{2});
                     end
                 end
-                % part 3: right lower block, triangle.
+                % part 3: right lower block, square.
                 rd22 = zeros(obj.no.newVec, obj.no.newVec);
                 for iTr = 1:obj.no.newVec
                     u1 = respExtNew{iTr};
@@ -119,6 +124,7 @@ for iPre = 1:size(respSort, 1)
                             (u1{1}' * u2{1}) * u2{2});
                     end
                 end
+                keyboard
                 respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
             end
             if rvSVDswitch == 0
@@ -133,9 +139,9 @@ for iPre = 1:size(respSort, 1)
     respCell_(iPre, 1) = {respSort{iPre, 1}};
     respCell_(iPre, 2) = {respSort{iPre, 2}};
     respCell_(iPre, 3) = {respTrans};
-    %     if rvSVDswitch == 1
-    %         respCell_(iPre, 4) = {respTrans};
-    %     end
+    if rvSVDswitch == 1
+        respCell_(iPre, 4) = {respTrans_};
+    end
 end
 obj.err.pre.trans = sortrows(respCell_, 1);
 end
