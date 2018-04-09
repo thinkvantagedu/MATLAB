@@ -1,6 +1,5 @@
 clear; clc;
 trialName = 'l9h2SingleInc';
-typeSwitch = 'hhat';
 rvSVDswitch = 0;
 callPreliminary;
 
@@ -55,7 +54,7 @@ fixie.refineGridLocalwithIdx('initial');
 
 % prepare essential storage for error and responses.
 fixie.otherPrepare(nRespSVD);
-fixie.errPrepareRemainHats;
+fixie.errPrepareRemainProp;
 fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
 
@@ -72,13 +71,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch);
     
-    switch timeType
-        
-        case 'allTime'
-            
-            fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
-            
-    end
+    fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
+    
     % CHANGE SIGN in this method!
     fixie.resptoErrPreCompAllTimeMatrix2(respSVDswitch, rvSVDswitch);
     % disp('offline end')
@@ -114,16 +108,15 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    fixie.extractMaxPmInfo(typeSwitch);
+    fixie.extractMaxPmInfo('hhat');
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
-        fixie.maxErrorDisplay(typeSwitch);
+        fixie.maxErrorDisplay('hhat');
         fixie.storeErrorInfo;
-        fixie.errStoreAllSurfs(typeSwitch);
+        fixie.errStoreAllSurfs('hhat');
         figure(1)
-        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
-            typeSwitch, 'b-^');
+        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat', 'b-^');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')

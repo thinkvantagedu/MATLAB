@@ -9,6 +9,9 @@ switch originalSwitch
     case 'hhat'
         obj.err.max.pass = obj.err.max.val.hhat;
         obj.err.store.pass = obj.err.store.surf.hhat;
+    case 'hat'
+        obj.err.max.pass = obj.err.max.val.hat;
+        obj.err.store.pass = obj.err.store.surf.hat;
 end
 errMax = obj.err.max.pass;
 errStore = obj.err.store.pass;
@@ -69,6 +72,10 @@ elseif gridSwitch == 0
             % case for callCanti.
             eLoc = obj.err.store.loc.hhat;
             eSurf = obj.err.store.surf.hhat;
+        case 'hat'
+            % case for callCanti.
+            eLoc = obj.err.store.loc.hat;
+            eSurf = obj.err.store.surf.hat;
     end
     
     if obj.no.inc == 1
@@ -82,6 +89,8 @@ elseif gridSwitch == 0
                 eMaxVal = obj.err.max.val;
             case 'hhat'
                 eMaxVal = obj.err.max.val.hhat;
+            case 'hat'
+                eMaxVal = obj.err.max.val.hat;
         end
         txtPlotCurrentMax = sprintf('[%d %.2g %d]', obj.pmLoc.max, eMaxVal, ...
             obj.countGreedy);
@@ -141,12 +150,11 @@ elseif gridSwitch == 0
                 eLocPrevMax{1}, eLocPrevMax{2}, eValPrevMaxCurrent);
             text(pmExpoPrev(1), pmExpoPrev(2), eValPrevMaxCurrent, ...
                 txtPlotPrevMax, 'color', '[0 0 1]', 'Fontsize', 20);
-            axis(hAx,'square')
-            axis(hAx,'tight', 'manual')
-            
         else
             disp('number of inclusions exceeds 2')
         end
+        axis tight
+        
     end
     alpha(0.7)
     axi_lim = [0, axisLim];

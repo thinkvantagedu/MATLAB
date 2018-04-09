@@ -1192,12 +1192,12 @@ classdef beam < handle
                                 end
                                 respQoi = respQoi(:);
                                 if respSVDswitch == 0
-                                obj.resp.store.pm.hhat(iPre, iPhy, 1, iRb) ...
-                                    = {{respQoi}};
+                                    obj.resp.store.pm.hhat...
+                                        (iPre, iPhy, 1, iRb) = {{respQoi}};
                                 elseif respSVDswitch == 1
-                                    obj.resp.store.pm.hhat(iPre, iPhy, 1, iRb) ...
-                                    = {respQoi};
-                                
+                                    obj.resp.store.pm.hhat...
+                                        (iPre, iPhy, 1, iRb) = {respQoi};
+                                end
                             else
                                 
                                 if respSVDswitch == 0
@@ -1445,27 +1445,28 @@ classdef beam < handle
                 %  and 1 void element.
                 if iPre < size(respStoreSort, 1)
                     if respSVDswitch == 0
-                        
-                        respTrans = respStoreSort{iPre, 3}' * ...
-                            respStoreSort{iPre + 1, 3};
+                        respExt = cell2mat(cellfun(@(v) cell2mat(v), ...
+                            respStoreSort{iPre, 3}, 'un', 0));
+                        respExtp = cell2mat(cellfun(@(v) cell2mat(v), ...
+                            respStoreSort{iPre + 1, 3}, 'un', 0));
+                        respTrans = respExt' * respExtp;
                         if rvSVDswitch == 0
                             respTransSorttoStore = respTrans;
                         elseif rvSVDswitch == 1
                             respTransSorttoStore = ...
-                                obj.resp.rv.L' * respStoreSort{iPre, 3}' * ...
-                                respStoreSort{iPre + 1, 3} * obj.resp.rv.L;
+                                obj.resp.rv.L' * respTrans * obj.resp.rv.L;
                         end
                     elseif respSVDswitch == 1
-                        respSVD = respStoreSort{iPre, 3};
-                        respSVDp = respStoreSort{iPre + 1, 3};
-                        respTrans = zeros(numel(respSVD));
+                        respExt = respStoreSort{iPre, 3};
+                        respExtp = respStoreSort{iPre + 1, 3};
+                        respTrans = zeros(numel(respExt));
                         % tr(uiTuj) = tr(vri*sigi*vliT*vlj*sigj*vrjT).
                         % here j cannot start from i, because respTrans is
                         % not symmetric.
-                        for iTr = 1:numel(respSVD)
-                            u1 = respSVD{iTr};
-                            for jTr = 1:numel(respSVD)
-                                u2 = respSVDp{jTr};
+                        for iTr = 1:numel(respExt)
+                            u1 = respExt{iTr};
+                            for jTr = 1:numel(respExt)
+                                u2 = respExtp{jTr};
                                 respTrans(iTr, jTr) = ...
                                     trace((u2{3}' * u1{3}) * u1{2}' * ...
                                     (u1{1}' * u2{1}) * u2{2});
@@ -2118,8 +2119,13 @@ classdef beam < handle
                     obj.err.store.allSurf = [obj.err.store.allSurf; ...
                         obj.err.store.surf];
                 case 'hhat'
-                    obj.err.store.allSurf = [obj.err.store.allSurf; ...
+                    obj.err.store.allSurf.hhat = [obj.err.store.allSurf.hhat; ...
                         obj.err.store.surf.hhat];
+                case 'hat'
+                    obj.err.store.allSurf.hat = [obj.err.store.allSurf.hat; ...
+                        obj.err.store.surf.hat];
+                case 'diff'
+                    
             end
         end
         %%
