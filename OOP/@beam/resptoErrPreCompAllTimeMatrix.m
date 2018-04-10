@@ -87,11 +87,11 @@ end
 % compute uiTui+1 and store in the last column of obj.err.pre.hhat.
 respStoretoTrans = obj.resp.store.all;
 obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
-
 obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
 end
+
 
 % the 5th column of obj.err.pre.hat is inherited from the first
 % nhat rows of obj.err.pre.hhat. the 6th column is a recalculation
@@ -100,10 +100,10 @@ obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
     obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
 respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
 obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
-
 obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);
 end
-keyboard
+
+
 end

@@ -44,7 +44,7 @@ for iPre = 1:size(respSort, 1)
                     elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
                         lu11 = respExtOld' * respExtpOld;
                     end
-                    keyboard
+                    
                     % part 2: right upper block, rectangular.
                     ru12 = respExtOld' * respExtpNew;
                     % part 3: right lower block, triangular.
@@ -133,6 +133,7 @@ for iPre = 1:size(respSort, 1)
         end
     elseif iPre == size(respSort, 1)
         respTrans = [];
+        respTrans_ = [];
     end
     respCell_(iPre, 1) = {respSort{iPre, 1}};
     respCell_(iPre, 2) = {respSort{iPre, 2}};

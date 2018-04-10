@@ -666,9 +666,9 @@ classdef beam < handle
             obj.err.store.allSurf.hhat = {};
             obj.err.store.allSurf.hat = {};
             obj.err.store.allSurf.diff = {};
-            obj.err.pre.hhat = cell(obj.no.pre.hhat, 6); % 6 cols in total,
-            % 2 extra for the pyramid base shape cell elements, 1extra for
-            % pm exponential values.
+            obj.err.pre.hhat = cell(obj.no.pre.hhat, 4); % 4 cols in total,
+            % when POD on RV is applied, will add 2 columns to store full
+            % eTe informations.
             obj.err.norm = zeros(1, 2);
             if obj.no.inc == 1
                 obj.err.store.surf.hhat = zeros(obj.no.dom.discretisation, 1);
@@ -1359,6 +1359,8 @@ classdef beam < handle
                     respStoreCell_(iPre, 4) = {respTrans};
                 end
             end
+            % 3rd and 4th columns are associated with 4th and 6th columns of
+            % obj.err.pre.hhat
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
         %%
@@ -1987,14 +1989,14 @@ classdef beam < handle
                     obj.err.store.allSurf = [obj.err.store.allSurf; ...
                         obj.err.store.surf];
                 case 'hhat'
-                    obj.err.store.allSurf.hhat = [obj.err.store.allSurf.hhat; ...
-                        obj.err.store.surf.hhat];
+                    obj.err.store.allSurf.hhat = ...
+                        [obj.err.store.allSurf.hhat; obj.err.store.surf.hhat];
                 case 'hat'
                     obj.err.store.allSurf.hat = [obj.err.store.allSurf.hat; ...
                         obj.err.store.surf.hat];
                 case 'diff'
-                    obj.err.store.allSurf.diff = [obj.err.store.allSurf.diff; ...
-                        obj.err.store.surf.diff];
+                    obj.err.store.allSurf.diff = ...
+                    [obj.err.store.allSurf.diff; obj.err.store.surf.diff];
             end
         end
         %%

@@ -656,17 +656,19 @@ classdef beam < handle
             
         end
         %%
-        function obj = errPrepareRemainHats(obj)
+        function obj = errPrepareRemainProp(obj)
             obj.err.store.max.hhat = [];
             obj.err.store.max.hat = [];
             obj.err.store.max.diff = [];
             obj.err.store.loc.hhat = [];
             obj.err.store.loc.hat = [];
             obj.err.store.loc.diff = [];
-            obj.err.store.allSurf = {};
-            obj.err.pre.hhat = cell(obj.no.pre.hhat, 6); % 6 cols in total,
-            % 2 extra for the pyramid base shape cell elements, 1extra for
-            % pm exponential values.
+            obj.err.store.allSurf.hhat = {};
+            obj.err.store.allSurf.hat = {};
+            obj.err.store.allSurf.diff = {};
+            obj.err.pre.hhat = cell(obj.no.pre.hhat, 4); % 4 cols in total,
+            % when POD on RV is applied, will add 2 columns to store full
+            % eTe informations.
             obj.err.norm = zeros(1, 2);
             if obj.no.inc == 1
                 obj.err.store.surf.hhat = zeros(obj.no.dom.discretisation, 1);
@@ -1296,140 +1298,6 @@ classdef beam < handle
             end
         end
         %%
-        function obj = ...
-                resptoErrPreCompAllTimeMatrix(obj, respSVDswitch, rvSVDswitch)
-            % CHANGE SIGN in this method!
-            % here the index follows the refind grid sequence, not a
-            % sequencial sequence.
-            % this method compute eTe, results in a square full symmetric
-            % matrix, to be interpolated.
-            % reason of using eTe is size of eTe is decided by nt * nj *
-            % nr. At least this is not related to nd. Cannot use anyting
-            % relate to nd.
-            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                % if no refine, compute the newly added basis vectors for all
-                % interpolation samples, extract vectors regarding the newly
-                % added basis vectors for each interpolation sample.
-                nPre = obj.no.pre.hhat;
-                nEx = 0;
-                nRb = obj.no.rb;
-                nAdd = obj.no.rbAdd;
-            elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
-                % if refine, compute the newly added interpolation samples for
-                % all basis vectors.
-                nPre = obj.no.itplAdd;
-                nEx = obj.no.itplEx;
-                nRb = 0;
-                nAdd = 0;
-            end
-            
-            for iPre = 1:nPre
-                obj.err.pre.hhat(nEx + iPre, 1) = {nEx + iPre};
-                obj.err.pre.hhat(nEx + iPre, 2) = ...
-                    {obj.pmExpo.hhat(nEx + iPre, 2)};
-                obj.resp.store.all(nEx + iPre, 1) = {nEx + iPre};
-                obj.resp.store.all(nEx + iPre, 2) = ...
-                    {obj.pmExpo.hhat(nEx + iPre, 2)};
-                % respPmPass has DIM(ni, nf, nt, nr).
-                respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, ...
-                    nRb - nAdd + 1:end);
-                
-                if respSVDswitch == 0
-                    % respCol changes respPmPass from nD to 2D. respCol aligns
-                    % in the order of (nf, nt, nr),
-                    % i.e. loop nf first, then nt, nr.
-                    respCol = sparse(cat(2, respPmPass{:}));
-                    % change sign here.
-                    if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                        if obj.countGreedy == 1
-                            respCol = [obj.resp.store.fce.hhat{iPre} -respCol];
-                        else
-                            respCol = -respCol;
-                        end
-                    elseif obj.indicator.enrich == 0 && ...
-                            obj.indicator.refine == 1
-                        % if refine, force responses are also refined, thus
-                        % add the newly added force response to pm responses.
-                        respCol = [obj.resp.store.fce.hhat{nEx + iPre}(:) ...
-                            -respCol];
-                    end
-                    obj.resp.store.all{nEx + iPre, 3} = ...
-                        [obj.resp.store.all{nEx + iPre, 3} respCol];
-                    respAllCol = obj.resp.store.all{nEx + iPre, 3};
-                    if rvSVDswitch == 0
-                        respTrans = respAllCol' * respAllCol;
-                    elseif rvSVDswitch == 1
-                        respTrans_ = respAllCol * obj.resp.rv.L;
-                        respTrans = respTrans_' * respTrans_;
-                    end
-                elseif respSVDswitch == 1
-                    % reshape multi dim cell to 2d cell array.
-                    respCol = reshape(respPmPass, [1, numel(respPmPass)]);
-                    % change sign here.
-                    if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                        if obj.countGreedy == 1
-                            respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
-                                cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
-                                respCol, 'un', 0)]';
-                        else
-                            respCol = cellfun(@(x) ...
-                                cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
-                            respCol = respCol';
-                        end
-                    elseif obj.indicator.enrich == 0 && ...
-                            obj.indicator.refine == 1
-                        respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
-                            cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
-                            respCol, 'un', 0)]';
-                    end
-                    obj.resp.store.all{nEx + iPre, 3} = ...
-                        [obj.resp.store.all{nEx + iPre, 3}; respCol];
-                    respAllCol = obj.resp.store.all{nEx + iPre, 3};
-                    respTrans_ = zeros(numel(respAllCol));
-                    % tr(uiTuj) = tr(vri*sigi*vliT*vlj*sigj*vrjT).
-                    for i = 1:numel(respAllCol)
-                        u1 = respAllCol{i};
-                        for j = i:numel(respAllCol)
-                            u2 = respAllCol{j};
-                            respTrans_(i, j) = ...
-                                trace((u2{3}' * u1{3}) * u1{2}' * ...
-                                (u1{1}' * u2{1}) * u2{2});
-                        end
-                    end
-                    % reconstruct the upper triangular matrix back to full.
-                    if rvSVDswitch == 0
-                        respTrans = reConstruct(respTrans_);
-                    elseif rvSVDswitch == 1
-                        respTrans_ = reConstruct(respTrans_);
-                        respTrans = obj.resp.rv.L' * respTrans_ * obj.resp.rv.L;
-                        % full scale eTe also needs to be stored 
-                        % when apply POD on RV. 
-                        obj.err.pre.hhat(nEx + iPre, 5) = {respTrans_};
-                    end
-                end
-                obj.err.pre.hhat(nEx + iPre, 3) = {respTrans};
-            end
-            
-            % compute uiTui+1 and store in the last column of obj.err.pre.hhat.
-            respStoretoTrans = obj.resp.store.all;
-            obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
-            obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
-            if rvSVDswitch == 1
-                obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
-            end
-            % the 5th column of obj.err.pre.hat is inherited from the first
-            % nhat rows of obj.err.pre.hhat. the 6th column is a recalculation
-            % using uiTui+1.
-            obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
-                obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
-            respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
-            obj.uiTujSort(respStoretoTrans, rvSVDswitch, respSVDswitch);
-            obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);
-            if rvSVDswitch == 1
-                obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);
-            end
-        end
-        %%
         function obj = uiTujSort(obj, respStoreInpt, rvSVDswitch, respSVDswitch)
             % sort stored displacements, perform uiTui+1, then sort back to
             % previous order, put in the last column of obj.err.pre.hhat,
@@ -1491,6 +1359,8 @@ classdef beam < handle
                     respStoreCell_(iPre, 4) = {respTrans};
                 end
             end
+            % 3rd and 4th columns are associated with 4th and 6th columns of
+            % obj.err.pre.hhat
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
         %%
@@ -2125,7 +1995,8 @@ classdef beam < handle
                     obj.err.store.allSurf.hat = [obj.err.store.allSurf.hat; ...
                         obj.err.store.surf.hat];
                 case 'diff'
-                    
+                    obj.err.store.allSurf.diff = [obj.err.store.allSurf.diff; ...
+                        obj.err.store.surf.diff];
             end
         end
         %%
@@ -3091,7 +2962,8 @@ classdef beam < handle
         end
         %%
         obj = uiTujSort1(obj, respStoreInpt, rvSVDswitch, respSVDswitch);
-        obj = resptoErrPreCompAllTimeMatrix1(obj, respSVDswitch, rvSVDswitch);
+        obj = resptoErrPreCompAllTimeMatrix(obj, respSVDswitch, rvSVDswitch);
+        obj = resptoErrPreCompAllTimeMatrix2(obj, respSVDswitch, rvSVDswitch);
         obj = resptoErrPreCompSVDpartTimeImprovised(obj);
         obj = readINPgeo(obj);
         obj = gridtoBlockwithIndx(obj, type);
