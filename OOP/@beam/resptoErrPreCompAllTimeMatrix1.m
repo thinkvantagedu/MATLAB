@@ -65,6 +65,8 @@ for iPre = 1:nPre
                         (u1{1}' * u2{1}) * u2{2});
                 end
             end
+            
+            
         else
             respOld = respAllCol(1:obj.no.oldVec);
             respNew = respAllCol(end - obj.no.newVec + 1:end);
@@ -87,6 +89,7 @@ for iPre = 1:nPre
                             (u1{1}' * u2{1}) * u2{2});
                     end
                 end
+                
             end
             % part 2: right upper block, rectangular, unsymmetric (j from 1).
             ru12 = zeros(obj.no.oldVec, obj.no.newVec);
@@ -98,6 +101,7 @@ for iPre = 1:nPre
                         (u1{1}' * u2{1}) * u2{2});
                 end
             end
+            
             % part 3: right lower block, triangle, symmetric.
             rd22 = zeros(obj.no.newVec, obj.no.newVec);
             for iTr = 1:obj.no.newVec
@@ -125,14 +129,16 @@ for iPre = 1:nPre
     obj.err.pre.hhat(nEx + iPre, 3) = {respTrans};
 end
 
+obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
+    obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
+
 respStoretoTrans = obj.resp.store.all;
 obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hhat(:, 4) = obj.err.pre.trans(:, 3);
 if rvSVDswitch == 1
     obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
 end
-obj.err.pre.hat(1:obj.no.pre.hat, 1:3) = ...
-    obj.err.pre.hhat(1:obj.no.pre.hat, 1:3);
+
 respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
 obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
 obj.err.pre.hat(:, 4) = obj.err.pre.trans(:, 3);

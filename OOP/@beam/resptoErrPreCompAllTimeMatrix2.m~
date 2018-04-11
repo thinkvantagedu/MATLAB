@@ -7,7 +7,7 @@ function obj = resptoErrPreCompAllTimeMatrix2(obj, respSVDswitch, rvSVDswitch)
 % reason of using eTe is size of eTe is decided by nt * nj *
 % nr. At least this is not related to nd. Cannot use anyting
 % relate to nd.
-if obj.indicator.enrich == 1 && obj.indicator.refine == 0
+if obj.indicator.refine == 0 && obj.indicator.enrich == 1
     % if no refine, compute the newly added basis vectors for all
     % interpolation samples, extract vectors regarding the newly
     % added basis vectors for each interpolation sample.
@@ -91,8 +91,7 @@ end
 
 % calculate 4th and 6th columns (uiTui+1) of ehhat and ehat.
 % calculate ehat, if initial or enrich, reCalculate.
-if obj.countGreedy == 1 || ...
-        obj.indicator.refine == 0 && obj.indicator.enrich == 1
+if obj.indicator.refine == 0 && obj.indicator.enrich == 1 
     % if initial iteration or enrich, reCalculate
     respStoretoTrans = obj.resp.store.all(1:obj.no.pre.hat, :);
     obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
@@ -105,12 +104,12 @@ elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
     % if refine, inherit
     obj.err.pre.hat(1:obj.no.pre.hat, :) = ...
         obj.err.pre.hhat(1:obj.no.pre.hat, :);
-    
+    keyboard
 end
 
 % calculate ehhat, if initial or enrich, reCalculate.
-if obj.countGreedy == 1 || ...
-        obj.indicator.refine == 0 && obj.indicator.enrich == 1
+% if obj.countGreedy == 1 || ...
+%         obj.indicator.refine == 0 && obj.indicator.enrich == 1
     respStoretoTrans = obj.resp.store.all;
     obj.uiTujSort2(respStoretoTrans, rvSVDswitch, respSVDswitch);
     obj.uiTujSort1(respStoretoTrans, rvSVDswitch, respSVDswitch);
@@ -118,11 +117,12 @@ if obj.countGreedy == 1 || ...
     if rvSVDswitch == 1
         obj.err.pre.hhat(:, 6) = obj.err.pre.trans(:, 4);
     end
-elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
-    % if refine, only calculate the refined part of the domain, inherit the
-    % rest part of the domain.
+% elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
+%     % if refine, only calculate the refined part of the domain, inherit the
+%     % rest part of the domain.
+%     respStoretoTrans = obj.resp.store.all;
     
     
-end
+% end
 
 end

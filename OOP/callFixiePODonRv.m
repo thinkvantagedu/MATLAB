@@ -99,8 +99,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % CHANGE SIGN in this method!
     fixie.reshapeRespStore;
     
-    fixie.resptoErrPreCompAllTimeMatrix1(respSVDswitch, rvSVDswitch);
-
+    fixie.uiTui(rvSVDswitch, respSVDswitch);
+    
+    fixie.uiTuj;
+    
     % disp('offline end')
     
     %% ONLINE.
@@ -135,7 +137,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.errStoreAllSurfs('hhat');
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hhat', 'b-^');
-        fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hat', 'm-v');
+        % fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hat', 'm-v');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')
@@ -154,14 +156,14 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
         fixie.localHrefinement;
-                
+        
         fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
     end
-    if fixie.countGreedy == 2
-        fixie.refinement.thres = 0.007;
-    end
+    %     if fixie.countGreedy == 2
+    %         fixie.refinement.thres = 0.007;
+    %     end
     
 end
 

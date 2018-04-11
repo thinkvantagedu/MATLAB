@@ -99,12 +99,12 @@ if obj.indicator.refine == 0 && obj.indicator.enrich == 1
     if rvSVDswitch == 1
         obj.err.pre.hat(:, 6) = obj.err.pre.trans(:, 4);
     end
-    keyboard
+    
 elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
     % if refine, inherit
     obj.err.pre.hat(1:obj.no.pre.hat, :) = ...
         obj.err.pre.hhat(1:obj.no.pre.hat, :);
-    keyboard
+    
 end
 
 % calculate ehhat, if initial or enrich, reCalculate.
