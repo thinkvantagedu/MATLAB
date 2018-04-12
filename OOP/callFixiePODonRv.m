@@ -99,9 +99,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % CHANGE SIGN in this method!
     fixie.reshapeRespStore;
     
-    fixie.uiTui(rvSVDswitch, respSVDswitch);
+    fixie.uiTui;
     
     fixie.uiTuj;
+%     fixie.resptoErrPreCompAllTimeMatrix1(respSVDswitch, rvSVDswitch);
     
     % disp('offline end')
     
@@ -161,9 +162,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
         
     end
-    %     if fixie.countGreedy == 2
-    %         fixie.refinement.thres = 0.007;
-    %     end
+    if fixie.countGreedy == 2
+        fixie.refinement.thres = 0.05;
+    end
     
 end
 

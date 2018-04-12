@@ -72,6 +72,7 @@ for iPre = 1:size(respSort, 1)
                             (u1{1}' * u2{1}) * u2{2});
                     end
                 end
+                
             else
                 respExtOld = respExt(1:obj.no.oldVec);
                 respExtNew = respExt(end - obj.no.newVec + 1:end);
@@ -124,6 +125,7 @@ for iPre = 1:size(respSort, 1)
                     end
                 end
                 respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
+                
             end
             if rvSVDswitch == 0
                 respTrans = respTrans_;
