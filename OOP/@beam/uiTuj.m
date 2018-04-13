@@ -59,11 +59,11 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
         if obj.countGreedy == 1
             % if initial, re-compute eTe part 1.
             lu11 = eTePart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
-            keyboard
+            
         else
             % if enrich, inherit eTe part 1.
             lu11 = eTeImporthat{iPre};
-            keyboard
+            
         end
         % part 2: right upper block, full rectangle, unsymmetric (j from 1).
         ru12 = eTePart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
@@ -89,7 +89,7 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
 elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     % if refine (initial or not), inherit from previous ehhat.
     obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
-    keyboard
+    
 end
 
 %% 2. compute uiTuj for ehhat.
@@ -111,11 +111,11 @@ for iPre = 1:nBlkComp
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
         lu11 = eTePart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
-        keyboard
+        
     elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
         % if enrich, inherit eTe part 1.
         lu11 = eTeImporthhat{iPre};
-        keyboard
+        
     end
     % part 2: right upper block, full rectangle, unsymmetric (j from 1).
     ru12 = eTePart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
@@ -140,5 +140,5 @@ respCell_(nBlkComp + 1, 3:4) = {[]};
 % indices of modified rows of responses.
 respModIdx = [respCell_{:, 1}];
 obj.err.pre.hhat(respModIdx(1:end - 1), [4 6]) = respCell_((1:end - 1), 3:4);
-keyboard
+
 end

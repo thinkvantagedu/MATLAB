@@ -37,11 +37,13 @@ for iPre = 1:nPointPre
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
         lu11 = eTePart(nVecOld, nVecOld, respOld, respOld, 'triangle');
-        keyboard
+        
     elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
         % if enrich, inherit eTe part 1.
-        lu11 = triu(obj.err.pre.hhat{nPointEx + iPre, 5});
-        keyboard
+        nTri = sqrt(length(obj.indicator.bool));
+        lu11 = vectorIntoUpperTriangle(obj.err.pre.hhat{nPointEx + iPre, 5}, ...
+            obj.indicator.bool, nTri);
+        
     end
     % part 2: right upper block, full rectangle, unsymmetric (j from 1).
     ru12 = eTePart(nVecOld, nVecNew, respOld, respNew, 'rectangle');
@@ -52,13 +54,17 @@ for iPre = 1:nPointPre
     
     % put part 1 2 3 4 together to form a triangular matrix.
     respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
-    % store full-scale respTrans_ for next iteration.
-    obj.err.pre.hhat(nPointEx + iPre, 5) = {reConstruct(respTrans_)};
+    % store [upper triangle transforms into vector] vecTrans_ for 
+    % next iteration. bool is the boolean vector for reTriangularise. 
+    [bool, vecTrans_] = upperTriangleIntoVector(respTrans_);
+    obj.err.pre.hhat(nPointEx + iPre, 5) = {vecTrans_};
+    
     % project full eTe.
     respTrans = obj.resp.rv.L' * reConstruct(respTrans_) * obj.resp.rv.L;
     obj.err.pre.hhat(nPointEx + iPre, 3) = {respTrans};
 end
 
+obj.indicator.bool = bool;
 obj.no.newVec = nVecNew;
 obj.no.totalVec = nVecTot;
 obj.no.oldVec = nVecOld;
@@ -66,5 +72,5 @@ obj.no.oldVec = nVecOld;
 % uiTui of ehat is completely inherited from uiTui of ehhat.
 obj.err.pre.hat(1:obj.no.pre.hat, [1:3 5]) = obj.err.pre.hhat...
     (1:obj.no.pre.hat, [1:3 5]);
-keyboard
+
 end
