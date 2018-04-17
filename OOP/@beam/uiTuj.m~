@@ -1,7 +1,7 @@
 function obj = uiTuj(obj)
 % an IMPORTANT difference from uiTui: no of calculations relates to no of
 % blocks, not no of sample points.
-
+disp('')
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
     % responses of these indices are needed: all hhat indices.
     idxCompute = obj.pmExpo.hhat(:, 1);
@@ -106,7 +106,7 @@ for iPre = 1:nBlkComp
     respExtpOld = respSorthhat{iPre + 1, 3}(1:nVecOld);
     respExtpNew = respSorthhat{iPre + 1, 3}(end - nVecNew + 1:end);
     
-    % part 1: left upper block, right upper triangle, symmetric.
+    % part 1: left upper block, unsymmetric.
     if obj.countGreedy == 1 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
@@ -117,14 +117,14 @@ for iPre = 1:nBlkComp
         lu11 = eTeImporthhat{iPre};
         
     end
-    % part 2: right upper block, full rectangle, unsymmetric (j from 1).
+    % part 2: right upper block, unsymmetric.
     ru12 = eTePart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
-    % part 3: right lower block, right upper triangle, symmetric.
+    % part 3: right lower block, unsymmetric.
     rd22 = eTePart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
-    % part 4: left lower block, rectangle all-zeros.
+    % part 4: left lower block, unsymmetric.
     ld21 = eTePart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
     
-    % put part 1 2 3 4 together to form a triangular matrix.
+    % put part 1 2 3 4 together to form a full rectangular matrix.
     respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
     respTrans = obj.resp.rv.L' * respTrans_ * obj.resp.rv.L;
     
@@ -140,5 +140,5 @@ respCell_(nBlkComp + 1, 3:4) = {[]};
 % indices of modified rows of responses.
 respModIdx = [respCell_{:, 1}];
 obj.err.pre.hhat(respModIdx(1:end - 1), [4 6]) = respCell_((1:end - 1), 3:4);
-keyboard
+
 end

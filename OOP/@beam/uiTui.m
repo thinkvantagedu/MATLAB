@@ -1,4 +1,6 @@
 function obj = uiTui(obj)
+disp('uiTui starts')
+tic
 % an IMPORTANT difference from uiTuj: no of calculations relates to no of
 % sample points, not no of blocks.
 % all lu11, rd22 blocks are symmetric, thus triangulated. Use triu when
@@ -20,7 +22,7 @@ if obj.countGreedy == 1
     % initial Greedy there is no new response vectors.
     nVecNew = 0;
 else
-    % number of nre response vectors.
+    % number of newly added response vectors.
     nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 end
 
@@ -31,7 +33,6 @@ for iPre = 1:nPointPre
     nVecOld = nVecTot - nVecNew;
     respOld = respExt(1:nVecOld);
     respNew = respExt(end - nVecNew + 1:end);
-    
     % part 1: left upper block, right upper triangle, symmetric.
     if obj.countGreedy == 1 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
@@ -62,8 +63,8 @@ for iPre = 1:nPointPre
     % project full eTe.
     respTrans = obj.resp.rv.L' * reConstruct(respTrans_) * obj.resp.rv.L;
     obj.err.pre.hhat(nPointEx + iPre, 3) = {respTrans};
+    
 end
-
 obj.indicator.bool = bool;
 obj.no.newVec = nVecNew;
 obj.no.totalVec = nVecTot;
@@ -72,5 +73,6 @@ obj.no.oldVec = nVecOld;
 % uiTui of ehat is completely inherited from uiTui of ehhat.
 obj.err.pre.hat(1:obj.no.pre.hat, [1:3 5]) = obj.err.pre.hhat...
     (1:obj.no.pre.hat, [1:3 5]);
-
+toc
+disp('uiTui ends')
 end

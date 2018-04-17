@@ -20,7 +20,7 @@ if obj.countGreedy == 1
     % initial Greedy there is no new response vectors.
     nVecNew = 0;
 else
-    % number of nre response vectors.
+    % number of newly added response vectors.
     nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 end
 
@@ -40,11 +40,9 @@ for iPre = 1:nPointPre
         
     elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
         % if enrich, inherit eTe part 1.
-        keyboard
         nTri = sqrt(length(obj.indicator.bool));
         lu11 = vectorIntoUpperTriangle(obj.err.pre.hhat{nPointEx + iPre, 5}, ...
             obj.indicator.bool, nTri);
-        lu11 = triu(obj.err.pre.hhat{nPointEx + iPre, 5});
         
     end
     % part 2: right upper block, full rectangle, unsymmetric (j from 1).

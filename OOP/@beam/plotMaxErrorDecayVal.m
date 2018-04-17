@@ -1,8 +1,14 @@
-function obj = plotMaxErrorDecay(obj, err)
+function obj = plotMaxErrorDecayVal(obj, errType, color, width)
+switch errType
+    case 'original'
+        err = obj.err.store.max;
+    case 'hhat'
+        err = obj.err.store.max.hhat;
+end
 no_plot = length(err);
-
+figure
 % semilogy((1:no_plot), err, 'b-*', 'DisplayName', 'Greedily selected samples', 'LineWidth', 2);
-semilogy((1:no_plot), err, 'b-*', 'LineWidth', 2);
+semilogy((1:no_plot), err, color, 'lineWidth', width);
 font_size.axis = 20;
 grid on
 set(gca, 'fontsize', font_size.axis)
@@ -17,3 +23,4 @@ ylabel('Maximum error')
 grid on
 set(gca, 'FontSize', 25)
 % legend('location', 'northeast')
+end

@@ -138,9 +138,6 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.respfromFce(respSVDswitch, ...
             qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
     end
-    if fixie.countGreedy == 2
-        fixie.refinement.thres = 0.008;
-    end
 end
 
 % figure(4)

@@ -13,9 +13,10 @@ for iTr = 1:nVeci
     end
     for jTr = jStart:nVecj
         u2 = respj{jTr};
-        if u1{2}(1) == 0 || u2{2}(1) == 0
+        if u1{2}(1) || u2{2}(1) == 0
             otpt(iTr, jTr) = 0;
         else
+            keyboard
             otpt(iTr, jTr) = ...
                 trace((u2{3}' * u1{3}) * u1{2}' * (u1{1}' * u2{1}) * u2{2});
         end

@@ -52,11 +52,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.01;
+refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -83,7 +83,6 @@ timeType = 'allTime';
 normType = 'fro';
 
 %% all switches
-gridSwitch = 0;
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
 qoiSwitchManual = 0;

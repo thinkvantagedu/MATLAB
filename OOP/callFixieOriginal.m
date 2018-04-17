@@ -81,8 +81,7 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.errStoreAllSurfs('original');
     
     figure(1)
-    fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, ...
-        typeSwitch, '-.k');
+    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
     fixie.maxErrorDisplay(typeSwitch);
     if fixie.countGreedy >= drawRow * drawCol
@@ -98,5 +97,5 @@ while fixie.err.max.val > fixie.err.lowBond
     
 end
 %%
-% figure(2)
-% fixie.plotMaxErrorDecay(fixie.err.store.max);
+% fixie.plotMaxErrorDecayVal('original', 'k-*', 2);
+% fixie.plotMaxErrorDecayLoc('original', 'b-*', 2);

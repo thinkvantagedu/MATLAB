@@ -106,7 +106,7 @@ for iPre = 1:obj.no.pre.hhat
     
     errBlkMain1 = cell2mat(cellfun(@(x) cell2mat(x), errBlkMain, 'un', 0));
     obj.err.pre.hhat(iPre, 2) = {errBlkMain1};
-    keyboard
+    
 end
-keyboard
+
 obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);

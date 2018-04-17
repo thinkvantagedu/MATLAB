@@ -1004,11 +1004,14 @@ classdef beam < handle
                     uFcel = uFcel(:, 1:obj.no.respSVD);
                     uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
                     uFcer = uFcer(:, 1:obj.no.respSVD);
+                    if qoiSwitchSpace == 1 && qoiSwitchTime == 1
+                        uFcel = uFcel(obj.qoi.dof, :);
+                        uFcer = uFcer(obj.qoi.t, :);
+                    end
                     obj.resp.store.fce.hhat{nEx + iPre} = ...
                         [{uFcel}; {uFceSig}; {uFcer}];
                 end
             end
-            
         end
         %%
         function obj = impInitStep(obj, nrb, i_phy)
@@ -1187,9 +1190,17 @@ classdef beam < handle
                                     
                                 elseif qoiSwitchTime == 1 && ...
                                         qoiSwitchSpace == 1
-                                    respQoi = obj.resp.store.tDiff...
-                                        {iPre, iPhy, 1, iRb}...
-                                        (obj.qoi.dof, obj.qoi.t);
+                                    if respSVDswitch == 0
+                                        respQoi = obj.resp.store.tDiff...
+                                            {iPre, iPhy, 1, iRb}...
+                                            (obj.qoi.dof, obj.qoi.t);
+                                    elseif respSVDswitch == 1
+                                        respQoi = obj.resp.store.tDiff...
+                                            {iPre, iPhy, 1, iRb};
+                                        respQoi{1} = respQoi{1}(obj.qoi.dof, :);
+                                        respQoi{3} = respQoi{3}(obj.qoi.t, :);
+                                    end
+                                    
                                     
                                 end
                                 respQoi = respQoi(:);
@@ -1250,6 +1261,11 @@ classdef beam < handle
                                         {iPre, iPhy, 2, iRb}{2};
                                     storePmR = ...
                                         [storePmZeros storePmNonZeros]';
+                                    if qoiSwitchTime == 1 && ...
+                                            qoiSwitchSpace == 1
+                                        storePmL = storePmL(obj.qoi.dof, :);
+                                        storePmR = storePmR(obj.qoi.t, :);
+                                    end
                                     obj.resp.store.pm.hhat...
                                         {iPre, iPhy, iT, iRb}...
                                         = {storePmL; storePmSig; storePmR};
@@ -1588,7 +1604,6 @@ classdef beam < handle
             obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
             obj.no.nRvSVD = nRvSVD;
-            
         end
         %%
         function obj = pmPrepare(obj, rvSVDswitch)
@@ -1989,14 +2004,14 @@ classdef beam < handle
                     obj.err.store.allSurf = [obj.err.store.allSurf; ...
                         obj.err.store.surf];
                 case 'hhat'
-                    obj.err.store.allSurf.hhat = [obj.err.store.allSurf.hhat; ...
-                        obj.err.store.surf.hhat];
+                    obj.err.store.allSurf.hhat = ...
+                        [obj.err.store.allSurf.hhat; obj.err.store.surf.hhat];
                 case 'hat'
                     obj.err.store.allSurf.hat = [obj.err.store.allSurf.hat; ...
                         obj.err.store.surf.hat];
                 case 'diff'
-                    obj.err.store.allSurf.diff = [obj.err.store.allSurf.diff; ...
-                        obj.err.store.surf.diff];
+                    obj.err.store.allSurf.diff = ...
+                    [obj.err.store.allSurf.diff; obj.err.store.surf.diff];
             end
         end
         %%
@@ -2234,7 +2249,9 @@ classdef beam < handle
                     % obj.refinement.condition = ...
                     %     max(obj.err.store.surf.diff ./ ...
                     %     obj.err.store.surf.hat);
-                    obj.refinement.condition = max(obj.err.store.surf.diff);
+                    [emVal, emLoc] = max(obj.err.store.surf.diff);
+                    obj.refinement.condition = ...
+                        abs(emVal / obj.err.store.surf.hat(emLoc));
             end
         end
         %%
@@ -2302,7 +2319,11 @@ classdef beam < handle
             obj.qoi.dof = qoiInc;
             
             if qoiSwitchManual == 1
-                obj.qoi.t = (5:10)';
+%                 obj.qoi.t = [ 2  3 ]';
+                obj.qoi.t = [10 20 30 40 50]';
+%                 obj.qoi.t = [10, 20]';
+                % QoI in space is the lower edge of the single inculsion
+                % for the beam model.
                 obj.qoi.dof = [1 2 11 12 243:260]';
             end
             
