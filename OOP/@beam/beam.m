@@ -292,7 +292,9 @@ classdef beam < handle
             obj.no.node.mtx = obj.no.node.all - obj.no.node.inc;
             obj.no.incNode = cellfun(@(v) size(v, 1), obj.node.inc, 'un', 0);
             obj.no.incNode = (cell2mat(obj.no.incNode))';
-            
+            nodeNoInc = obj.node.inc{:}(:, 1);
+            dofInc = [nodeNoInc * 2 - 1 nodeNoInc * 2];
+            obj.node.dof.inc = sort(dofInc(:));
         end
         %%
         function obj = generatePmSpaceMultiDim(obj)
@@ -2210,7 +2212,7 @@ classdef beam < handle
             end
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
-            keyboard
+            
         end
         %%
         function obj = reducedMatrices(obj)
@@ -2321,11 +2323,13 @@ classdef beam < handle
             
             if qoiSwitchManual == 1
 %                 obj.qoi.t = [ 2  3 ]';
-                obj.qoi.t = [10 20 30 40 50 60 70]';
+                obj.qoi.t = [10:10:50]';
 %                 obj.qoi.t = [10, 20]';
+%                 obj.qoi.t = [10:10:100]';
                 % QoI in space is the lower edge of the single inculsion
                 % for the beam model.
-                obj.qoi.dof = [1 2 11 12 243:260]';
+%                 obj.qoi.dof = [1 2 11 12 243:260]';
+                obj.qoi.dof = obj.node.dof.inc';
             end
             
         end
@@ -2716,6 +2720,7 @@ classdef beam < handle
                     M = obj.mas.reduce;
                     C = obj.dam.reduce;
                     fce = obj.phi.val' * obj.fce.pass;
+                    
             end
             
             obj.dis.val = zeros(length(K), length(t));
@@ -2762,6 +2767,7 @@ classdef beam < handle
                     obj.acc.reduce = obj.acc.val;
                     obj.vel.reduce = obj.vel.val;
                     obj.dis.reduce = obj.dis.val;
+                    
             end
         end
         %%

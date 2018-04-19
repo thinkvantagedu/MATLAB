@@ -29,14 +29,14 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 6.9;
+tMax = 4.9;
 tStep = 0.1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
 ftime = 0.2;
-fRange = 5;
+fRange = 10;
 
 %% parameter data for trial iteration.
 trial = 1;
@@ -56,9 +56,9 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 1;
-nPhiInitial = 5;
-nPhiEnrich = 2;
+drawCol = 11;
+nPhiInitial = 10;
+nPhiEnrich = 4;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -74,13 +74,12 @@ reductionRatio = 0.9;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 100; 
+nRespSVD = 20; 
 % ratio of SVD error reduction for POD on rv. ==========
-rvSVDreRatio = 1;
+rvSVDreRatio = 0.99;
 
 %% set types
 timeType = 'allTime';
-normType = 'fro';
 
 %% all switches
 qoiSwitchSpace = 1;
@@ -91,7 +90,7 @@ respSVDswitch = 1;
 % SVD on reduced variables.
 ratioSwitch = 0;
 singularSwitch = 0;
-randomSwitch = 0;
+randomSwitch = 1;
 AbaqusSwitch = 0;
 
 %% Abaqus route and preliminaries.

@@ -1,0 +1,32 @@
+clear; clc;
+cd ~/Desktop/Temp/thesisResults/18042018_1112;
+load('errOriginalStore.mat', 'errOriginalStore')
+load('errProposedStore.mat', 'errProposedStore')
+load('errRandom1.mat', 'errRandom1')
+load('errRandom2.mat', 'errRandom2')
+load('errRandom3.mat', 'errRandom3')
+
+errOriMax = errOriginalStore.max;
+errOriLoc = errOriginalStore.loc;
+errProMax = errProposedStore.max.hhat;
+errProLoc = errProposedStore.loc.hhat;
+
+errRanMax1 = errRandom1.max;
+errRanMax2 = errRandom2.max;
+errRanMax3 = errRandom3.max;
+
+
+nPhiIni = 10;
+nPhiAdd = 4;
+nRb = 50;
+figure
+semilogy((nPhiIni:nPhiAdd:nRb), errOriMax, 'k-*', 'lineWidth', 2);
+hold on
+semilogy((nPhiIni:nPhiAdd:nRb), errProMax, 'b-*', 'lineWidth', 2);
+semilogy((nPhiIni:nPhiAdd:nRb), errProMax, 'b-*', 'lineWidth', 2);
+semilogy((nPhiIni:nPhiAdd:nRb), errProMax, 'b-*', 'lineWidth', 2);
+semilogy((nPhiIni:nPhiAdd:nRb), errProMax, 'b-*', 'lineWidth', 2);
+
+
+xlim([0 nRb])
+grid on

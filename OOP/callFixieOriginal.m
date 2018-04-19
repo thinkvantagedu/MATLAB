@@ -66,7 +66,7 @@ while fixie.err.max.val > fixie.err.lowBond
         fixie.reducedVar;
         
         fixie.residualfromForce...
-            (normType, qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch, trialName);
+            ('fro', qoiSwitchSpace, qoiSwitchTime, AbaqusSwitch, trialName);
         
         fixie.errStoreSurfs(typeSwitch);
         
@@ -97,5 +97,5 @@ while fixie.err.max.val > fixie.err.lowBond
     
 end
 %%
-% fixie.plotMaxErrorDecayVal('original', 'k-*', 2);
-% fixie.plotMaxErrorDecayLoc('original', 'b-*', 2);
+fixie.plotMaxErrorDecayVal('original', 'k-*', 2, nPhiInitial);
+fixie.plotMaxErrorDecayLoc('original', 'b-*', 2);
