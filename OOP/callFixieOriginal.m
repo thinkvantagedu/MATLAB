@@ -54,7 +54,7 @@ fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
 fixie.errPrepareRemainOriginal;
-
+keyboard
 while fixie.err.max.val > fixie.err.lowBond
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;

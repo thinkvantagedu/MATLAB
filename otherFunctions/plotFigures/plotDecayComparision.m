@@ -35,11 +35,11 @@ semilogy((nPhiIni:nPhiAdd:nRb), errRanMax3, 'k-.', 'lineWidth', 1.5);
 semilogy((nPhiIni:nPhiAdd:nRb), errRanMax4, 'k-.', 'lineWidth', 1.5);
 semilogy((nPhiIni:nPhiAdd:nRb), errRanMax6, 'k-.', 'lineWidth', 1.5);
 
-axis([0 nRb errOriMax(end) / 2 1])
+axis([0 nRb errOriMax(end) / 2 1]);
 axis normal
 grid on
 legend({'Classical POD-Greedy', 'Proposed POD-Greedy', 'Random POD-Greedy'}, ...
-    'FontSize', 20)
-
-xlabel('N', 'FontSize', 20)
-ylabel('Maximum error', 'FontSize', 20)
+    'FontSize', 20);
+set(gca,'fontsize',20)
+xlabel('N', 'FontSize', 20);
+ylabel('Maximum error', 'FontSize', 20);
