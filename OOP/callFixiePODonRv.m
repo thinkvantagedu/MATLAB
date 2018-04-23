@@ -121,9 +121,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     %% extract error information.
     fixie.errStoreSurfs('diff');
-    fixie.extractMaxErrorInfo('hhat');
-    fixie.extractMaxErrorInfo('hat');
-    fixie.refiCond('maxSurf');
+    fixie.extractMaxErrorInfo('hats');
+    fixie.refiCondition('maxSurf');
     % this line extracts parameter values of maximum error and
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
@@ -132,12 +131,12 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
-        fixie.maxErrorDisplay('hhat');
+        fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
-        % fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hat', 'm-v');
+        %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-.');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')
@@ -155,6 +154,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
+        % this method displays refinement informations. 
         fixie.localHrefinement;
         
         fixie.respfromFce(respSVDswitch, ...
@@ -165,5 +165,5 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
 end
 
 %%
-fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
-fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
+% fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
+% fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);

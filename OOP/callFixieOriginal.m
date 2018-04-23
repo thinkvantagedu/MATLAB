@@ -54,7 +54,7 @@ fixie.rbInitial(nPhiInitial);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
 fixie.errPrepareRemainOriginal;
-keyboard
+
 while fixie.err.max.val > fixie.err.lowBond
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
@@ -83,7 +83,7 @@ while fixie.err.max.val > fixie.err.lowBond
     figure(1)
     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
-    fixie.maxErrorDisplay(typeSwitch);
+    fixie.greedyInfoDisplay(typeSwitch);
     if fixie.countGreedy >= drawRow * drawCol
         disp('iterations reach maximum plot number')
         break
@@ -97,5 +97,5 @@ while fixie.err.max.val > fixie.err.lowBond
     
 end
 %%
-fixie.plotMaxErrorDecayVal('original', 'k-*', 2, nPhiInitial);
-fixie.plotMaxErrorDecayLoc('original', 'b-*', 2);
+% fixie.plotMaxErrorDecayVal('original', 'k-*', 2, nPhiInitial);
+% fixie.plotMaxErrorDecayLoc('original', 'b-*', 2);

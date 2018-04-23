@@ -2013,7 +2013,7 @@ classdef beam < handle
                         obj.err.store.surf.hat];
                 case 'diff'
                     obj.err.store.allSurf.diff = ...
-                    [obj.err.store.allSurf.diff; obj.err.store.surf.diff];
+                        [obj.err.store.allSurf.diff; obj.err.store.surf.diff];
             end
         end
         %%
@@ -2043,20 +2043,18 @@ classdef beam < handle
             % extract error max and location from surfaces.
             switch type
                 
-                case 'hhat'
+                case 'hats'
                     [eMaxValhhat, eMaxLocIdxhhat] = ...
                         max(obj.err.store.surf.hhat(:));
                     pmValRowhhat = obj.pmVal.comb.space(eMaxLocIdxhhat, :);
                     obj.err.max.loc.hhat = pmValRowhhat(:, 1:obj.no.inc);
                     obj.err.max.val.hhat = eMaxValhhat;
-                    
-                case 'hat'
                     [eMaxValhat, eMaxLocIdxhat] = ...
                         max(obj.err.store.surf.hat(:));
                     pmValRowhat = obj.pmVal.comb.space(eMaxLocIdxhat, :);
                     obj.err.max.loc.hat = pmValRowhat(:, 1:obj.no.inc);
                     obj.err.max.val.hat = eMaxValhat;
-                    
+                                        
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
                     pmValRow = obj.pmVal.comb.space(eMaxLocIdx, :);
@@ -2127,8 +2125,15 @@ classdef beam < handle
         end
         %%
         function obj = localHrefinement(obj)
-            disp(strcat('condition', {' = '}, ...
-                num2str(obj.refinement.condition), ', Refine'));
+            % find where the maximum distance is between hhat and hat
+            % surfaces.
+            if obj.no.inc == 1
+                obj.pmExpo.maxDist = {obj.pmExpo.i{:}(obj.err.max.diffLoc)};
+            end
+            disp(strcat('error in the error value', {' = '}, ...
+                num2str(obj.refinement.condition), ...
+                {' at sample '}, num2str(obj.err.max.diffLoc),...
+                {', refine around value '}, num2str(obj.pmExpo.maxDist{:})));
             % local h-refinement
             obj.indicator.refine = 1;
             obj.indicator.enrich = 0;
@@ -2139,12 +2144,6 @@ classdef beam < handle
             obj.no.block.hat = size(obj.pmExpo.block.hat, 1);
             % nExist + nAdd should equal to nhhat.
             obj.no.itplEx = obj.no.pre.hat;
-            % find where the maximum distance is between hhat and hat
-            % surfaces.
-            if obj.no.inc == 1
-                [~, maxDistLoc] = max(obj.err.store.surf.diff);
-                obj.pmExpo.maxDist = {obj.pmExpo.i{:}(maxDistLoc)};
-            end
             obj = refineGridLocalwithIdx(obj, 'iteration');
             obj.no.block.add = 2 ^ obj.no.inc - 1;
             
@@ -2230,7 +2229,7 @@ classdef beam < handle
             obj.dam.re.mtx = obj.phi.val' * obj.dam.mtx * obj.phi.val;
         end
         %%
-        function obj = refiCond(obj, type)
+        function obj = refiCondition(obj, type)
             % this method computes the refinement condition.
             switch type
                 case 'maxValue'
@@ -2252,35 +2251,65 @@ classdef beam < handle
                     % obj.refinement.condition = ...
                     %     max(obj.err.store.surf.diff ./ ...
                     %     obj.err.store.surf.hat);
-                    [emVal, emLoc] = max(obj.err.store.surf.diff);
+                    if obj.indicator.refine == 1 && obj.indicator.enrich == 0
+                        currentLoc = obj.err.max.diffLoc;
+                    end
+                    [obj.err.max.diffVal, obj.err.max.diffLoc] = ...
+                        max(obj.err.store.surf.diff);
+                    newLoc = obj.err.max.diffLoc;
                     obj.refinement.condition = ...
-                        abs(emVal / obj.err.store.surf.hat(emLoc));
+                        abs(obj.err.max.diffVal / ...
+                        obj.err.store.surf.hat(obj.err.max.diffLoc));
+                    if obj.indicator.refine == 1 && obj.indicator.enrich == 0
+                        if currentLoc ~= newLoc
+                            obj.refinement.condition = 0;
+                            disp(strcat({'refine sample changes from '}, ...
+                                num2str(currentLoc), {' to '}, ...
+                                num2str(newLoc), {', cease refinement'}))
+                        else
+                            disp(strcat({'continue refinement at sample '}, ...
+                                num2str(currentLoc)))
+                        end
+                    end
             end
         end
         %%
-        function obj = maxErrorDisplay(obj, type)
-            % this method displays maximum error value.
+        function obj = greedyInfoDisplay(obj, type)
+            % this method displays maximum error value and 
+            % informations regarding Greedy iterations.
             
             switch type
                 case 'original'
-                    disp(strcat('location ', {' = '}, ...
+                    disp(strcat('magic point location', {' = '}, ...
                         num2str(obj.err.max.loc)));
-                    disp(strcat('maximum error ', {' = '}, ...
+                    disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val)));
                 case 'hhat'
-                    disp(strcat('location ', {' = '}, ...
+                    obj.refinement.condition = ...
+                        abs(obj.err.max.diffVal / ...
+                        obj.err.store.surf.hat(obj.err.max.diffLoc));
+                    disp(strcat('error in the error value', {' = '}, ...
+                        num2str(obj.refinement.condition), {' at sample '}, ...
+                        num2str(obj.err.max.diffLoc), ', Greedy'));
+                    disp(strcat('magic point location', {' = '}, ...
                         num2str(obj.err.max.loc.hhat)));
-                    disp(strcat('maximum error ', {' = '}, ...
+                    disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val.hhat)));
-                    disp(strcat('condition', {' = '}, ...
-                        num2str(obj.refinement.condition), ', Greedy'));
+                    
                 case 'hat'
-                    disp(strcat('location ', {' = '}, ...
+                    obj.refinement.condition = ...
+                        abs(obj.err.max.diffVal / ...
+                        obj.err.store.surf.hat(obj.err.max.diffLoc));
+                    disp(strcat('error in the error value', {' = '}, ...
+                        num2str(obj.refinement.condition), {' at sample '}, ...
+                        num2str(obj.err.max.diffLoc), ', Greedy'));
+                    disp(strcat('magic point location', {' = '}, ...
                         num2str(obj.err.max.loc.hat)));
-                    disp(strcat('maximum error ', {' = '}, ...
+                    disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val.hat)));
-                    disp(strcat('condition', {' = '}, ...
-                        num2str(obj.refinement.condition), ', Greedy'));
+                    disp(strcat('error in the error value', {' = '}, ...
+                        num2str(obj.refinement.condition), {' at sample '}, ...
+                        num2str(obj.err.max.diffLoc), ', Greedy'));
             end
         end
         %%
@@ -2322,13 +2351,13 @@ classdef beam < handle
             obj.qoi.dof = qoiInc;
             
             if qoiSwitchManual == 1
-%                 obj.qoi.t = [ 2  3 ]';
-                obj.qoi.t = [10:10:50]';
-%                 obj.qoi.t = [10, 20]';
-%                 obj.qoi.t = [10:10:100]';
+                obj.qoi.t = [ 2  3 ]';
+                %                 obj.qoi.t = [10:10:50]';
+                %                 obj.qoi.t = [10, 20]';
+                %                 obj.qoi.t = [10:10:100]';
                 % QoI in space is the lower edge of the single inculsion
                 % for the beam model.
-%                 obj.qoi.dof = [1 2 11 12 243:260]';
+                %                 obj.qoi.dof = [1 2 11 12 243:260]';
                 obj.qoi.dof = obj.node.dof.inc';
             end
             

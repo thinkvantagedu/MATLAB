@@ -1,8 +1,8 @@
 function obj = uiTuj(obj)
 % an IMPORTANT difference from uiTui: no of calculations relates to no of
 % blocks, not no of sample points.
-disp('uiTuj starts')
-tic
+% disp('uiTuj starts')
+% tic
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
     % responses of these indices are needed: all hhat indices.
     idxCompute = obj.pmExpo.hhat(:, 1);
@@ -141,6 +141,6 @@ respCell_(nBlkComp + 1, 3:4) = {[]};
 % indices of modified rows of responses.
 respModIdx = [respCell_{:, 1}];
 obj.err.pre.hhat(respModIdx(1:end - 1), [4 6]) = respCell_((1:end - 1), 3:4);
-toc
-disp('uiTuj ends')
+% toc
+% disp('uiTuj ends')
 end

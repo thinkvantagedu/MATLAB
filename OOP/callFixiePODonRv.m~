@@ -123,7 +123,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     fixie.errStoreSurfs('diff');
     fixie.extractMaxErrorInfo('hhat');
     fixie.extractMaxErrorInfo('hat');
-    fixie.refiCond('maxSurf');
+    fixie.refiCondition('maxSurf');
     % this line extracts parameter values of maximum error and
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
@@ -137,7 +137,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.errStoreAllSurfs('hhat');
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
-        % fixie.plotSurfGrid(drawRow, drawCol, gridSwitch, 1, 'hat', 'm-v');
+        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-v');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')
@@ -165,5 +165,5 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
 end
 
 %%
-% fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2);
+% fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
 % fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
