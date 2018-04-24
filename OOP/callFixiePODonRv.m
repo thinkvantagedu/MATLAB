@@ -165,5 +165,5 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
 end
 
 %%
-% fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
-% fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
+fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
+fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);

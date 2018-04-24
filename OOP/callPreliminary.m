@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 9;
-domLengs = 9;
+domLengi = 1025;
+domLengs = 1025;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -29,20 +29,20 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
-tStep = 0.1;
+tMax = 0.49;
+tStep = 0.01;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
-ftime = 0.2;
+ftime = 0.02;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 5;
+trial = 513;
 
 %% error informations.
-errLowBond = 1e-12;
+errLowBond = 1e-20;
 errMaxValInit = 1;
 errRbCtrl = 1;
 errRbCtrlThres = 0.01;
@@ -52,13 +52,13 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.05;
+refiThres = 1;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 2;
-nPhiInitial = 1;
-nPhiEnrich = 1;
+drawCol = 21;
+nPhiInitial = 5;
+nPhiEnrich = 2;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -76,21 +76,21 @@ reductionRatio = 0.9;
 % number of vectors taking when applying SVD to pre-computed resps.
 nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
-rvSVDreRatio = 1;
+rvSVDreRatio = 0.99999;
 
 %% set types
 timeType = 'allTime';
 
 %% all switches
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
-qoiSwitchManual = 0;
+qoiSwitchSpace = 1;
+qoiSwitchTime = 1;
+qoiSwitchManual = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % SVD on reduced variables.
 ratioSwitch = 0;
 singularSwitch = 0;
-randomSwitch = 1;
+randomSwitch = 0;
 AbaqusSwitch = 0;
 
 %% Abaqus route and preliminaries.

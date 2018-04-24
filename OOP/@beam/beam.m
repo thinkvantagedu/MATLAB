@@ -2260,6 +2260,8 @@ classdef beam < handle
                     obj.refinement.condition = ...
                         abs(obj.err.max.diffVal / ...
                         obj.err.store.surf.hat(obj.err.max.diffLoc));
+                    % if refine continue at a different point, cease
+                    % refinement to prevent too many refinements. 
                     if obj.indicator.refine == 1 && obj.indicator.enrich == 0
                         if currentLoc ~= newLoc
                             obj.refinement.condition = 0;
@@ -2351,14 +2353,15 @@ classdef beam < handle
             obj.qoi.dof = qoiInc;
             
             if qoiSwitchManual == 1
-                obj.qoi.t = [ 2  3 ]';
-                %                 obj.qoi.t = [10:10:50]';
+                %                 obj.qoi.t = [ 2  3 ]';
+                obj.qoi.t = [10:10:50]';
+                obj.qoi.dof = obj.node.dof.inc';
                 %                 obj.qoi.t = [10, 20]';
                 %                 obj.qoi.t = [10:10:100]';
                 % QoI in space is the lower edge of the single inculsion
                 % for the beam model.
                 %                 obj.qoi.dof = [1 2 11 12 243:260]';
-                obj.qoi.dof = obj.node.dof.inc';
+                
             end
             
         end
