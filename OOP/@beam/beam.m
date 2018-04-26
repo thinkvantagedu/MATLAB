@@ -423,7 +423,8 @@ classdef beam < handle
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = nEnrich;
-            
+%             keyboard
+
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
             obj.countGreedy = obj.countGreedy + 1;
@@ -2229,7 +2230,7 @@ classdef beam < handle
             obj.dam.re.mtx = obj.phi.val' * obj.dam.mtx * obj.phi.val;
         end
         %%
-        function obj = refiCondition(obj, type)
+        function obj = refiCondition(obj, type, refCeaseSwitch)
             % this method computes the refinement condition.
             switch type
                 case 'maxValue'
@@ -2261,16 +2262,20 @@ classdef beam < handle
                         abs(obj.err.max.diffVal / ...
                         obj.err.store.surf.hat(obj.err.max.diffLoc));
                     % if refine continue at a different point, cease
-                    % refinement to prevent too many refinements. 
-                    if obj.indicator.refine == 1 && obj.indicator.enrich == 0
-                        if currentLoc ~= newLoc
-                            obj.refinement.condition = 0;
-                            disp(strcat({'refine sample changes from '}, ...
-                                num2str(currentLoc), {' to '}, ...
-                                num2str(newLoc), {', cease refinement'}))
-                        else
-                            disp(strcat({'continue refinement at sample '}, ...
-                                num2str(currentLoc)))
+                    % refinement to prevent too many refinements.
+                    if refCeaseSwitch == 1
+                        if obj.indicator.refine == 1 && ...
+                                obj.indicator.enrich == 0
+                            if currentLoc ~= newLoc
+                                obj.refinement.condition = 0;
+                                disp(strcat({'refine sample changes from '}, ...
+                                    num2str(currentLoc), {' to '}, ...
+                                    num2str(newLoc), {', cease refinement'}))
+                            else
+                                disp(strcat(...
+                                    {'continue refinement at sample '}, ...
+                                    num2str(currentLoc)))
+                            end
                         end
                     end
             end
@@ -2354,16 +2359,15 @@ classdef beam < handle
             
             if qoiSwitchManual == 1
                 %                 obj.qoi.t = [ 2  3 ]';
-                obj.qoi.t = [10:10:50]';
-                obj.qoi.dof = obj.node.dof.inc';
-                %                 obj.qoi.t = [10, 20]';
-                %                 obj.qoi.t = [10:10:100]';
-                % QoI in space is the lower edge of the single inculsion
-                % for the beam model.
-                %                 obj.qoi.dof = [1 2 11 12 243:260]';
+                obj.qoi.t = [10:5:30]';
+                % entire inclusion or the lower edge of the inclusion.
+                % obj.qoi.dof = obj.node.dof.inc';
+                obj.qoi.dof = [1 2 11 12 243:260]';
                 
             end
-            
+            disp(strcat...
+                ('qoi space = lower edge of the inclusion, qoi time = ', ...
+                {' '}, num2str(obj.qoi.t')))
         end
         %%
         function obj = NewmarkBetaMethod(obj, mas, dam, sti, fce, ...

@@ -122,7 +122,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     %% extract error information.
     fixie.errStoreSurfs('diff');
     fixie.extractMaxErrorInfo('hats');
-    fixie.refiCondition('maxSurf');
+    fixie.refiCondition('maxSurf', refCeaseSwitch);
     % this line extracts parameter values of maximum error and
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum

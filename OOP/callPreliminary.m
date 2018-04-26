@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 1025;
-domLengs = 1025;
+domLengi = 129;
+domLengs = 129;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -29,17 +29,17 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.49;
-tStep = 0.01;
+tMax = 2.9;
+tStep = 0.1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 fNode = 9;
-ftime = 0.02;
+ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 513;
+trial = 129;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -52,13 +52,13 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 1;
+refiThres = 0.5;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 21;
-nPhiInitial = 5;
-nPhiEnrich = 2;
+drawCol = 9;
+nPhiInitial = 10;
+nPhiEnrich = 5;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -92,6 +92,7 @@ ratioSwitch = 0;
 singularSwitch = 0;
 randomSwitch = 0;
 AbaqusSwitch = 0;
+refCeaseSwitch = 0;
 
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
