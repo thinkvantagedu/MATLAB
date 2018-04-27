@@ -337,12 +337,13 @@ classdef beam < handle
             % GramSchmidt is applied to the basis to ensure orthogonality.
             
             % new basis from error (phi * phi' * response).
-            rbEnrich = obj.dis.rbEnrich - ...
-                obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
-            
+%             rbEnrich = obj.dis.rbEnrich - ...
+%                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
+            rbEnrich = obj.dis.rbEnrich;
             [u, s, ~] = svd(rbEnrich);
-            
+            s = diag(s);
             if singularSwitch == 0 && ratioSwitch == 0
+%                 keyboard
                 phiEnrich = u(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidt(phi_);
@@ -423,7 +424,6 @@ classdef beam < handle
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = nEnrich;
-%             keyboard
 
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
@@ -537,7 +537,9 @@ classdef beam < handle
             % solution, nPhi is chosen by user.
             snap = obj.dis.trial;
             
-            [u, ~, ~] = svd(snap, 0);
+            [u, s, ~] = svd(snap, 0);
+            s = diag(s);
+%             keyboard
             u = u(:, 1:nInit);
             obj.phi.val = u;
             
@@ -1146,7 +1148,8 @@ classdef beam < handle
                                     (iPreRef, iPhy, iTdiff, iRb) = ...
                                     {obj.dis.full};
                             elseif respSVDswitch == 1
-                                [ul, usig, ur] = svd(obj.dis.full, 0);
+                                disSVD = full(obj.dis.full);
+                                [ul, usig, ur] = svd(disSVD, 0);
                                 ul = ul(:, 1:obj.no.respSVD);
                                 usig = usig(1:obj.no.respSVD, ...
                                     1:obj.no.respSVD);
@@ -2358,15 +2361,18 @@ classdef beam < handle
             obj.qoi.dof = qoiInc;
             
             if qoiSwitchManual == 1
-                %                 obj.qoi.t = [ 2  3 ]';
-                obj.qoi.t = [10:5:30]';
+                obj.qoi.t = [10:10:50]';
                 % entire inclusion or the lower edge of the inclusion.
-                % obj.qoi.dof = obj.node.dof.inc';
-                obj.qoi.dof = [1 2 11 12 243:260]';
+                obj.qoi.dof = obj.node.dof.inc';
+                %                 obj.qoi.dof = [1 2 11 12 243:260]';
                 
             end
+%             disp(strcat...
+%                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
+%                 {' '}, num2str(obj.qoi.t')))
             disp(strcat...
-                ('qoi space = lower edge of the inclusion, qoi time = ', ...
+                ('time step number = ', {' '}, num2str(obj.no.t_step), ...
+                ', qoi space = the inclusion, qoi time = ', ...
                 {' '}, num2str(obj.qoi.t')))
         end
         %%

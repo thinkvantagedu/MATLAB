@@ -154,11 +154,11 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
-        % this method displays refinement informations. 
+        % this method displays refinement informations.
         fixie.localHrefinement;
         
-        fixie.respfromFce(respSVDswitch, ...
-            qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+        fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, ...
+            AbaqusSwitch, trialName);
         
     end
     
