@@ -52,13 +52,13 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.25;
+refiThres = 0.5;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
 drawCol = 10;
-nPhiInitial = 10;
-nPhiEnrich = 4;
+nPhiInitial = 2;
+nPhiEnrich = 1;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -68,7 +68,7 @@ nQoiT = 2;
 
 %% initial error reductions.
 % reduction ratio for method: rbSingularInitial and rbReVarInitial.
-reductionRatio = 0.9;
+reductionRatio = 0.8;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
@@ -89,7 +89,7 @@ qoiSwitchManual = 1;
 respSVDswitch = 1;
 % SVD on reduced variables.
 ratioSwitch = 0;
-singularSwitch = 0;
+singularSwitch = 1;
 randomSwitch = 0;
 AbaqusSwitch = 0;
 refCeaseSwitch = 0;

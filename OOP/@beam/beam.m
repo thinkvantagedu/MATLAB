@@ -337,30 +337,29 @@ classdef beam < handle
             % GramSchmidt is applied to the basis to ensure orthogonality.
             
             % new basis from error (phi * phi' * response).
-%             rbEnrich = obj.dis.rbEnrich - ...
-%                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
-            rbEnrich = obj.dis.rbEnrich;
+            rbEnrich = obj.dis.rbEnrich - ...
+                obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
+%             rbEnrich = obj.dis.rbEnrich; % this is wrong as singularity
+%             % happens when enrich.
             [u, s, ~] = svd(rbEnrich);
-            s = diag(s);
             if singularSwitch == 0 && ratioSwitch == 0
-%                 keyboard
                 phiEnrich = u(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidt(phi_);
                 obj.phi.val = obj.phi.otpt;
                 
             elseif singularSwitch == 1 && ratioSwitch == 0
-                nEnrich = 0;
+                nEnrich = 1;
                 singular = diag(s);
                 singularSum = sqrt(sum(singular .^ 2));
                 
                 for i = 1:length(singular)
                     
                     ss = sqrt(sum((singular(1:i)) .^ 2));
-                    nEnrich = nEnrich + 1;
                     singularRatio = ss / singularSum;
-                    
-                    if singularRatio >= reductionRatio
+                    if singularRatio < reductionRatio
+                        nEnrich = nEnrich + 1;
+                    elseif singularRatio >= reductionRatio
                         break
                     end
                     
@@ -539,7 +538,6 @@ classdef beam < handle
             
             [u, s, ~] = svd(snap, 0);
             s = diag(s);
-%             keyboard
             u = u(:, 1:nInit);
             obj.phi.val = u;
             
