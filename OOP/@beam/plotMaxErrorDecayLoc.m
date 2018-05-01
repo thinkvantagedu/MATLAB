@@ -7,7 +7,6 @@ switch errType
         erry = obj.err.store.max.hhat;
         errx = obj.err.store.loc.hhat;
 end
-figure
 semilogy(errx, erry, color, 'LineWidth', width);
 axis([1 obj.domLeng.i 0 erry(1)])
 for i = 1:length(erry)

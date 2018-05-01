@@ -341,7 +341,7 @@ classdef beam < handle
                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
 %             rbEnrich = obj.dis.rbEnrich; % this is wrong as singularity
 %             % happens when enrich.
-            [u, s, ~] = svd(rbEnrich);
+            [u, s, v] = svd(rbEnrich, 0);
             if singularSwitch == 0 && ratioSwitch == 0
                 phiEnrich = u(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
@@ -367,6 +367,7 @@ classdef beam < handle
                 obj.no.nEnrich = [obj.no.nEnrich; nEnrich];
                 phiEnrich = u(:, 1:nEnrich);
                 obj.phi.val = [obj.phi.val phiEnrich];
+                keyboard
             elseif singularSwitch == 0 && ratioSwitch == 1
                 emax = obj.err.max.val.slct;
                 egoal = emax * (1 - reductionRatio);
@@ -538,14 +539,18 @@ classdef beam < handle
             
             [u, s, ~] = svd(snap, 0);
             s = diag(s);
-            u = u(:, 1:nInit);
-            obj.phi.val = u;
+            uPhi = u(:, 1:nInit);
+            obj.phi.val = uPhi;
+            
+            % calculate reduction ratio.
+            reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
             
             obj.dis.re.inpt = sparse(nInit, 1);
             obj.vel.re.inpt = sparse(nInit, 1);
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = nInit;
+            keyboard
         end
         %%
         function obj = exactSolution(obj, type, ...
@@ -2213,7 +2218,7 @@ classdef beam < handle
             end
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
-            
+            keyboard
         end
         %%
         function obj = reducedMatrices(obj)
@@ -2259,9 +2264,12 @@ classdef beam < handle
                     [obj.err.max.diffVal, obj.err.max.diffLoc] = ...
                         max(obj.err.store.surf.diff);
                     newLoc = obj.err.max.diffLoc;
+                    %  obj.refinement.condition = ...
+                    %  abs(obj.err.max.diffVal / ...
+                    %  obj.err.store.surf.hhat(obj.err.max.diffLoc));
                     obj.refinement.condition = ...
                         abs(obj.err.max.diffVal / ...
-                        obj.err.store.surf.hat(obj.err.max.diffLoc));
+                        norm(obj.dis.qoi.trial, 'fro'));
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1
@@ -2293,9 +2301,6 @@ classdef beam < handle
                     disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val)));
                 case 'hhat'
-                    obj.refinement.condition = ...
-                        abs(obj.err.max.diffVal / ...
-                        obj.err.store.surf.hat(obj.err.max.diffLoc));
                     disp(strcat('error in the error value', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
@@ -2305,9 +2310,6 @@ classdef beam < handle
                         num2str(obj.err.max.val.hhat)));
                     
                 case 'hat'
-                    obj.refinement.condition = ...
-                        abs(obj.err.max.diffVal / ...
-                        obj.err.store.surf.hat(obj.err.max.diffLoc));
                     disp(strcat('error in the error value', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
@@ -2359,7 +2361,8 @@ classdef beam < handle
             obj.qoi.dof = qoiInc;
             
             if qoiSwitchManual == 1
-                obj.qoi.t = [10:10:50]';
+%                 obj.qoi.t = [10:10:50]';
+                obj.qoi.t = [2 4 6 8]';
                 % entire inclusion or the lower edge of the inclusion.
                 obj.qoi.dof = obj.node.dof.inc';
                 %                 obj.qoi.dof = [1 2 11 12 243:260]';

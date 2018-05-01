@@ -5,8 +5,6 @@ switch errType
     case 'hhat'
         err = obj.err.store.max.hhat;
 end
-no_plot = length(err);
-figure
 % semilogy((1:no_plot), err, 'b-*', 'DisplayName', 'Greedily selected samples', 'LineWidth', 2);
 semilogy((nPhiInitial:obj.no.rbAdd:obj.no.rb), err, color, 'lineWidth', width);
 font_size.axis = 20;

@@ -97,5 +97,7 @@ while fixie.err.max.val > fixie.err.lowBond
     
 end
 %%
+figure(2)
 fixie.plotMaxErrorDecayVal('original', 'k-*', 2, nPhiInitial);
-fixie.plotMaxErrorDecayLoc('original', 'b-*', 2);
+figure(3)
+fixie.plotMaxErrorDecayLoc('original', 'k-*', 2);

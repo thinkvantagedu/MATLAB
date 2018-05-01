@@ -134,8 +134,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
-        figure(1)
-        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
+%         figure(1)
+%         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
         %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-.');
         
         if fixie.countGreedy >= drawRow * drawCol
@@ -153,6 +153,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         disp(fixie.countGreedy)
         
     elseif fixie.refinement.condition > fixie.refinement.thres
+        
         %% local h-refinement.
         % this method displays refinement informations.
         fixie.localHrefinement;
@@ -165,5 +166,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
 end
 
 %%
-fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
-fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
+% figure(2)
+% hold on
+% fixie.plotMaxErrorDecayVal('hhat', 'b-*', 2, nPhiInitial);
+% figure(3)
+% hold on
+% fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);

@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 129;
-domLengs = 129;
+domLengi = 33;
+domLengs = 33;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 4.9;
+tMax = 9.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+trial = 17;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -56,8 +56,8 @@ refiThres = 0.5;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 10;
-nPhiInitial = 2;
+drawCol = 3;
+nPhiInitial = 10;
 nPhiEnrich = 1;
 
 %% debug mode for generating nodal force.
@@ -68,7 +68,7 @@ nQoiT = 2;
 
 %% initial error reductions.
 % reduction ratio for method: rbSingularInitial and rbReVarInitial.
-reductionRatio = 0.8;
+reductionRatio = 0.99;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
@@ -82,9 +82,9 @@ rvSVDreRatio = 0.99;
 timeType = 'allTime';
 
 %% all switches
-qoiSwitchSpace = 1;
-qoiSwitchTime = 1;
-qoiSwitchManual = 1;
+qoiSwitchSpace = 0;
+qoiSwitchTime = 0;
+qoiSwitchManual = 0;
 % SVD on responses.
 respSVDswitch = 1;
 % SVD on reduced variables.

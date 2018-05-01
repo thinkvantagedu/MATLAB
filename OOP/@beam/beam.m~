@@ -339,9 +339,9 @@ classdef beam < handle
             % new basis from error (phi * phi' * response).
             rbEnrich = obj.dis.rbEnrich - ...
                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
-            
-            [u, s, ~] = svd(rbEnrich);
-            
+%             rbEnrich = obj.dis.rbEnrich; % this is wrong as singularity
+%             % happens when enrich.
+            [u, s, v] = svd(rbEnrich, 0);
             if singularSwitch == 0 && ratioSwitch == 0
                 phiEnrich = u(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
@@ -349,17 +349,17 @@ classdef beam < handle
                 obj.phi.val = obj.phi.otpt;
                 
             elseif singularSwitch == 1 && ratioSwitch == 0
-                nEnrich = 0;
+                nEnrich = 1;
                 singular = diag(s);
                 singularSum = sqrt(sum(singular .^ 2));
                 
                 for i = 1:length(singular)
                     
                     ss = sqrt(sum((singular(1:i)) .^ 2));
-                    nEnrich = nEnrich + 1;
                     singularRatio = ss / singularSum;
-                    
-                    if singularRatio >= reductionRatio
+                    if singularRatio < reductionRatio
+                        nEnrich = nEnrich + 1;
+                    elseif singularRatio >= reductionRatio
                         break
                     end
                     
@@ -367,6 +367,7 @@ classdef beam < handle
                 obj.no.nEnrich = [obj.no.nEnrich; nEnrich];
                 phiEnrich = u(:, 1:nEnrich);
                 obj.phi.val = [obj.phi.val phiEnrich];
+                keyboard
             elseif singularSwitch == 0 && ratioSwitch == 1
                 emax = obj.err.max.val.slct;
                 egoal = emax * (1 - reductionRatio);
@@ -423,7 +424,7 @@ classdef beam < handle
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = nEnrich;
-            
+
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
             obj.countGreedy = obj.countGreedy + 1;
@@ -536,15 +537,20 @@ classdef beam < handle
             % solution, nPhi is chosen by user.
             snap = obj.dis.trial;
             
-            [u, ~, ~] = svd(snap, 0);
-            u = u(:, 1:nInit);
-            obj.phi.val = u;
+            [u, s, ~] = svd(snap, 0);
+            s = diag(s);
+            uPhi = u(:, 1:nInit);
+            obj.phi.val = uPhi;
+            
+            % calculate reduction ratio.
+            reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
             
             obj.dis.re.inpt = sparse(nInit, 1);
             obj.vel.re.inpt = sparse(nInit, 1);
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = nInit;
+            keyboard
         end
         %%
         function obj = exactSolution(obj, type, ...
@@ -1145,7 +1151,8 @@ classdef beam < handle
                                     (iPreRef, iPhy, iTdiff, iRb) = ...
                                     {obj.dis.full};
                             elseif respSVDswitch == 1
-                                [ul, usig, ur] = svd(obj.dis.full, 0);
+                                disSVD = full(obj.dis.full);
+                                [ul, usig, ur] = svd(disSVD, 0);
                                 ul = ul(:, 1:obj.no.respSVD);
                                 usig = usig(1:obj.no.respSVD, ...
                                     1:obj.no.respSVD);
@@ -2130,7 +2137,7 @@ classdef beam < handle
             if obj.no.inc == 1
                 obj.pmExpo.maxDist = {obj.pmExpo.i{:}(obj.err.max.diffLoc)};
             end
-            disp(strcat('error in the error', {' = '}, ...
+            disp(strcat('error in the error value', {' = '}, ...
                 num2str(obj.refinement.condition), ...
                 {' at sample '}, num2str(obj.err.max.diffLoc),...
                 {', refine around value '}, num2str(obj.pmExpo.maxDist{:})));
@@ -2211,7 +2218,7 @@ classdef beam < handle
             end
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
-            
+            keyboard
         end
         %%
         function obj = reducedMatrices(obj)
@@ -2229,7 +2236,7 @@ classdef beam < handle
             obj.dam.re.mtx = obj.phi.val' * obj.dam.mtx * obj.phi.val;
         end
         %%
-        function obj = refiCondition(obj, type)
+        function obj = refiCondition(obj, type, refCeaseSwitch)
             % this method computes the refinement condition.
             switch type
                 case 'maxValue'
@@ -2257,15 +2264,27 @@ classdef beam < handle
                     [obj.err.max.diffVal, obj.err.max.diffLoc] = ...
                         max(obj.err.store.surf.diff);
                     newLoc = obj.err.max.diffLoc;
+                    %  obj.refinement.condition = ...
+                    %  abs(obj.err.max.diffVal / ...
+                    %  obj.err.store.surf.hhat(obj.err.max.diffLoc));
                     obj.refinement.condition = ...
                         abs(obj.err.max.diffVal / ...
-                        obj.err.store.surf.hat(obj.err.max.diffLoc));
-                    if obj.indicator.refine == 1 && obj.indicator.enrich == 0
-                        if currentLoc ~= newLoc
-                            obj.refinement.condition = 0;
-                            disp(strcat({'refine'}, {'cease refinement'}))
-                        else
-                            disp({'continue refinement at '})
+                        norm(obj.dis.qoi.trial, 'fro'));
+                    % if refine continue at a different point, cease
+                    % refinement to prevent too many refinements.
+                    if refCeaseSwitch == 1
+                        if obj.indicator.refine == 1 && ...
+                                obj.indicator.enrich == 0
+                            if currentLoc ~= newLoc
+                                obj.refinement.condition = 0;
+                                disp(strcat({'refine sample changes from '}, ...
+                                    num2str(currentLoc), {' to '}, ...
+                                    num2str(newLoc), {', cease refinement'}))
+                            else
+                                disp(strcat(...
+                                    {'continue refinement at sample '}, ...
+                                    num2str(currentLoc)))
+                            end
                         end
                     end
             end
@@ -2279,25 +2298,26 @@ classdef beam < handle
                 case 'original'
                     disp(strcat('magic point location', {' = '}, ...
                         num2str(obj.err.max.loc)));
-                    disp(strcat('maximum relative error', {' = '}, ...
+                    disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val)));
                 case 'hhat'
-                    disp(strcat('magic point location', {' = '}, ...
-                        num2str(obj.err.max.loc.hhat)));
-                    disp(strcat('maximum relative error', {' = '}, ...
-                        num2str(obj.err.max.val.hhat)));
-                    obj.refinement.condition = ...
-                        abs(obj.err.max.diffVal / ...
-                        obj.err.store.surf.hat(obj.err.max.diffLoc));
-                    disp(strcat('error in the error', {' = '}, ...
+                    disp(strcat('error in the error value', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
+                    disp(strcat('magic point location', {' = '}, ...
+                        num2str(obj.err.max.loc.hhat)));
+                    disp(strcat('maximum relative error value', {' = '}, ...
+                        num2str(obj.err.max.val.hhat)));
+                    
                 case 'hat'
+                    disp(strcat('error in the error value', {' = '}, ...
+                        num2str(obj.refinement.condition), {' at sample '}, ...
+                        num2str(obj.err.max.diffLoc), ', Greedy'));
                     disp(strcat('magic point location', {' = '}, ...
                         num2str(obj.err.max.loc.hat)));
-                    disp(strcat('maximum relative error', {' = '}, ...
+                    disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val.hat)));
-                    disp(strcat('error in the error', {' = '}, ...
+                    disp(strcat('error in the error value', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
             end
@@ -2341,16 +2361,20 @@ classdef beam < handle
             obj.qoi.dof = qoiInc;
             
             if qoiSwitchManual == 1
-                obj.qoi.t = [ 2  3 ]';
-                %                 obj.qoi.t = [10:10:50]';
-                %                 obj.qoi.t = [10, 20]';
-                %                 obj.qoi.t = [10:10:100]';
-                % QoI in space is the lower edge of the single inculsion
-                % for the beam model.
-                %                 obj.qoi.dof = [1 2 11 12 243:260]';
+%                 obj.qoi.t = [10:10:50]';
+                obj.qoi.t = [2 4 6 8]';
+                % entire inclusion or the lower edge of the inclusion.
                 obj.qoi.dof = obj.node.dof.inc';
+                %                 obj.qoi.dof = [1 2 11 12 243:260]';
+                
             end
-            
+%             disp(strcat...
+%                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
+%                 {' '}, num2str(obj.qoi.t')))
+            disp(strcat...
+                ('time step number = ', {' '}, num2str(obj.no.t_step), ...
+                ', qoi space = the inclusion, qoi time = ', ...
+                {' '}, num2str(obj.qoi.t')))
         end
         %%
         function obj = NewmarkBetaMethod(obj, mas, dam, sti, fce, ...
