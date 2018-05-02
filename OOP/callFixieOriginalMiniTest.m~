@@ -21,7 +21,7 @@ maxt = fixie.time.max;
 [~, ~, ~, U, ~, ~, ~, ~] = ...
     NewmarkBetaReducedMethod(phiId, M, C, K, F, 'average', dt, maxt, U0, V0);
 % compute the basis.
-[phi, singRatio, nr] = basisCompressionSingularRatio(U, reductionRatio);
+[phi, singRatio, nr] = basisCompressionRatio(U, reductionRatio);
 % compute the reduced variable.
 m = phi' * M * phi;
 c = phi' * C * phi;

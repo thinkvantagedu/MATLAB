@@ -341,34 +341,45 @@ classdef beam < handle
                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
 %             rbEnrich = obj.dis.rbEnrich; % this is wrong as singularity
 %             % happens when enrich.
-            [u, s, v] = svd(rbEnrich, 0);
+            
             if singularSwitch == 0 && ratioSwitch == 0
+                [u, ~, ~] = svd(rbEnrich, 0);
                 phiEnrich = u(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidt(phi_);
                 obj.phi.val = obj.phi.otpt;
                 
             elseif singularSwitch == 1 && ratioSwitch == 0
-                nEnrich = 1;
-                singular = diag(s);
-                singularSum = sqrt(sum(singular .^ 2));
                 
-                for i = 1:length(singular)
+                [phiEnrich, reRatio, nEnrich] = ...
+                    basisCompressionSingularRatio(rbEnrich, reductionRatio);
+                obj.no.nEnrich = [obj.no.nEnrich; nEnrich];
+                obj.phi.val = [obj.phi.val phiEnrich];
+                
+            elseif singularSwitch == 0 && ratioSwitch == 1
+                % import system.
+                pmMax = obj.pmVal.max;
+                M = obj.mas.mtx;
+                C = obj.dam.mtx;
+                K = obj.sti.mtxCell;
+                F = obj.fce.val;
+                
+                % generate initial basis.
+                nAdd = 1;
+                phiPre = obj.phi.val;
+                for i = 1:obj.no.dof
                     
-                    ss = sqrt(sum((singular(1:i)) .^ 2));
-                    singularRatio = ss / singularSum;
-                    if singularRatio < reductionRatio
-                        nEnrich = nEnrich + 1;
-                    elseif singularRatio >= reductionRatio
-                        break
-                    end
+                    phiOtpt = [phiPre rbEnrich(:, 1:nAdd)];
+                    m = phiOtpt' * M * phiOtpt;
+                    c = phiOtpt' * C * phiOtpt;
+                    kCell = cellfun(@(v) phiOtpt' * v * phiOtpt, K, 'un', 0);
+                    k = kCell{1} * pmMax + kCell{2} * obj.pmVal.s.fix;
+                    f = phiOtpt' * F;
+                    [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                        (phiOtpt, m, c, k, f, 'average', dT, maxT, U0, V0);
                     
                 end
-                obj.no.nEnrich = [obj.no.nEnrich; nEnrich];
-                phiEnrich = u(:, 1:nEnrich);
-                obj.phi.val = [obj.phi.val phiEnrich];
-                keyboard
-            elseif singularSwitch == 0 && ratioSwitch == 1
+                
                 emax = obj.err.max.val.slct;
                 egoal = emax * (1 - reductionRatio);
                 nEnrich = 0;
@@ -532,24 +543,25 @@ classdef beam < handle
             
         end
         %%
-        function obj = rbInitial(obj, nInit)
+        function obj = rbInitial(obj, nInit, reductionRatio, singularSwitch)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
             snap = obj.dis.trial;
+            if singularSwitch == 0
+                [u, s, ~] = svd(snap, 0);
+                s = diag(s);
+                uPhi = u(:, 1:nInit);
+                obj.phi.val = uPhi;
+                reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
+                obj.no.rb = size(obj.phi.val, 2);
+            elseif singularSwitch == 1
+                [obj.phi.val, reRatio, obj.no.rb] = ...
+                    basisCompressionSingularRatio(snap, reductionRatio);
+            end
             
-            [u, s, ~] = svd(snap, 0);
-            s = diag(s);
-            uPhi = u(:, 1:nInit);
-            obj.phi.val = uPhi;
-            
-            % calculate reduction ratio.
-            reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
-            
-            obj.dis.re.inpt = sparse(nInit, 1);
-            obj.vel.re.inpt = sparse(nInit, 1);
-            
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.no.rbAdd = nInit;
+            obj.dis.re.inpt = sparse(obj.no.rb, 1);
+            obj.vel.re.inpt = sparse(obj.no.rb, 1);
+            obj.no.rbAdd = obj.no.rb;
             
         end
         %%
