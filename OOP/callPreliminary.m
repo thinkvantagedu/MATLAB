@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 17;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -56,8 +56,8 @@ refiThres = 0.5;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
-nPhiInitial = 10;
+drawCol = 1;
+nPhiInitial = 3;
 nPhiEnrich = 1;
 
 %% debug mode for generating nodal force.

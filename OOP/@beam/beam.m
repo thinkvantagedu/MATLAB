@@ -550,7 +550,7 @@ classdef beam < handle
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = nInit;
-            keyboard
+            
         end
         %%
         function obj = exactSolution(obj, type, ...
@@ -1584,6 +1584,7 @@ classdef beam < handle
             obj.acc.re.reVar = obj.acc.reduce;
             obj.vel.re.reVar = obj.vel.reduce;
             obj.dis.re.reVar = obj.dis.reduce;
+            
         end
         %%
         function obj = rvSVD(obj, rvSVDreRatio)
@@ -2218,7 +2219,7 @@ classdef beam < handle
             end
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
-            keyboard
+            
         end
         %%
         function obj = reducedMatrices(obj)
