@@ -47,12 +47,11 @@ fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, ...
 
 % compute initial reduced basis from trial solution. There are different
 % approaches.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch);
-% fixie.rbCtrlInitial(rbCtrlThres);
-% fixie.rbReVarInitial(reductionRatio);
+
+fixie.errPrepareRemainOriginal;
+fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ratioSwitch);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
-fixie.errPrepareRemainOriginal;
 
 while fixie.err.max.val > fixie.err.lowBond
     %% ONLINE

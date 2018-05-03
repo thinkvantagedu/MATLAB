@@ -74,7 +74,6 @@ classdef beam < handle
             obj.no.phy = noIncl + noStruct + noMas + noDam;
             obj.no.t_step = length((0:tStep:tMax));
             obj.no.Greedy = drawRow * drawCol;
-            obj.no.nEnrich = 0;
             
             obj.time.step = tStep;
             obj.time.max = tMax;
@@ -337,232 +336,133 @@ classdef beam < handle
             % GramSchmidt is applied to the basis to ensure orthogonality.
             
             % new basis from error (phi * phi' * response).
-            rbEnrich = obj.dis.rbEnrich - ...
+            rbErrFull = obj.dis.rbEnrich - ...
                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
-%             rbEnrich = obj.dis.rbEnrich; % this is wrong as singularity
+            nRbOld = obj.no.rb;
+%             rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
 %             % happens when enrich.
             
             if singularSwitch == 0 && ratioSwitch == 0
-                [u, ~, ~] = svd(rbEnrich, 0);
-                phiEnrich = u(:, 1:nEnrich);
+                [leftVecAll, ~, ~] = svd(rbErrFull, 0);
+                phiEnrich = leftVecAll(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidt(phi_);
                 obj.phi.val = obj.phi.otpt;
                 
             elseif singularSwitch == 1 && ratioSwitch == 0
                 
-                [phiEnrich, reRatio, nEnrich] = ...
-                    basisCompressionSingularRatio(rbEnrich, reductionRatio);
-                obj.no.nEnrich = [obj.no.nEnrich; nEnrich];
+                [phiEnrich, reRatio, nBasis] = ...
+                    basisCompressionSingularRatio(rbErrFull, reductionRatio);
                 obj.phi.val = [obj.phi.val phiEnrich];
                 
             elseif singularSwitch == 0 && ratioSwitch == 1
                 % import system.
                 pmMax = obj.pmVal.max;
+                disMax = obj.dis.rbEnrich;
                 M = obj.mas.mtx;
                 C = obj.dam.mtx;
                 K = obj.sti.mtxCell;
                 F = obj.fce.val;
+                phiInpt = obj.phi.val;
                 
-                % generate initial basis.
-                nAdd = 1;
-                phiPre = obj.phi.val;
-                for i = 1:obj.no.dof
-                    
-                    phiOtpt = [phiPre rbEnrich(:, 1:nAdd)];
-                    m = phiOtpt' * M * phiOtpt;
-                    c = phiOtpt' * C * phiOtpt;
-                    kCell = cellfun(@(v) phiOtpt' * v * phiOtpt, K, 'un', 0);
-                    k = kCell{1} * pmMax + kCell{2} * obj.pmVal.s.fix;
-                    f = phiOtpt' * F;
-                    [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-                        (phiOtpt, m, c, k, f, 'average', dT, maxT, U0, V0);
-                    
-                end
-                
-                emax = obj.err.max.val.slct;
-                egoal = emax * (1 - reductionRatio);
-                nEnrich = 0;
-                % exact solution at previous maximum error point.
-                m = obj.mas.mtx;
-                c = obj.dam.mtx;
-                pm = [obj.pmVal.max obj.pmVal.s.fix];
-                pm = num2cell(pm');
-                stiCell = cellfun(@(u, v) u * v, obj.sti.mtxCell, pm, 'un', 0);
-                k = sparse(obj.no.dof, obj.no.dof);
-                for i = 1:length(stiCell)
-                    k = k + stiCell{i};
-                end
-                f = obj.fce.val;
-                vInpt = zeros(obj.no.dof, 1);
-                uInpt = zeros(obj.no.dof, 1);
-                obj.NewmarkBetaMethod(m, c, k, f, vInpt, uInpt);
-                uOtpt = obj.dis.val;
-                for i = 1:obj.no.dof
-                    % reduced solution
-                    phi_ = obj.phi.val;
-                    phiEnrich = u(:, 1:i);
-                    nEnrich = nEnrich + 1;
-                    phi_ = [phi_ phiEnrich];
-                    nphi = size(phi_, 2);
-                    obj.GramSchmidt(phi_);
-                    phi_ = obj.phi.otpt;
-                    mr = phi_' * obj.mas.mtx * phi_;
-                    cr = phi_' * obj.dam.mtx * phi_;
-                    krc = cellfun(@(v) phi_' * v * phi_, ...
-                        obj.sti.mtxCell, 'un', 0);
-                    stiRcell = cellfun(@(u, v) u * v, krc, pm, 'un', 0);
-                    kr = sparse(length(mr), length(mr));
-                    for i = 1:length(stiRcell)
-                        kr = kr + stiRcell{i};
-                    end
-                    fr = phi_' * obj.fce.val;
-                    vrInpt = zeros(nphi, 1);
-                    urInpt = zeros(nphi, 1);
-                    obj.NewmarkBetaMethod(mr, cr, kr, fr, vrInpt, urInpt);
-                    urOtpt = phi_ * obj.dis.val;
-                    
-                    relErr = norm(urOtpt - uOtpt, 'fro') / ...
-                        norm(obj.dis.qoi.trial, 'fro');
-                    if relErr <= egoal
-                        break
-                    end
-                    
-                end
-                obj.phi.val = phi_;
-                obj.no.nEnrich = [obj.no.nEnrich; nEnrich];
+                % generate initial RB error.
+                rbErrFull = disMax - phiInpt * phiInpt' * disMax;
+                [phiEnrich, ~, ~] = svd(rbErrFull, 0);
+                % iteratively enrich basis until RB error tolerance is
+                % satisfied. Output is obj.phi.val and obj.err.rbReduction.
+                obj.basisCompressionRvIterate(pmMax, disMax, ...
+                    phiInpt, phiEnrich, M, C, K, F, reductionRatio, 0);
+                obj.err.store.rbReduction = ...
+                    [obj.err.store.rbReduction; obj.err.rbReduction];
             end
             
             obj.no.rb = size(obj.phi.val, 2);
-            obj.no.rbAdd = nEnrich;
-
+            obj.no.rbAdd = obj.no.rb - nRbOld;
+            
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
             obj.countGreedy = obj.countGreedy + 1;
             
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
-            
         end
         %%
-        function obj = rbSingularInitial(obj, reductionRatio)
-            % this method iteratively uses singular value to determine
-            % how many basis vectors are needed in reduced basis.
-            obj.no.nEnrich = 0;
-            [u, s, ~] = svd(obj.dis.qoi.trial, 0);
-            s = diag(s);
-            ssum = sqrt(sum(s .^ 2));
-            for i = 1:length(s)
-                
-                singularSum = sqrt(sum((s(1:i)) .^ 2));
-                obj.no.nEnrich = obj.no.nEnrich + 1;
-                singularRatio = singularSum / ssum;
-                
-                if singularRatio > reductionRatio
-                    break
-                end
-                
-            end
-            obj.phi.val = u(:, 1:obj.no.nEnrich);
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.dis.re.inpt = sparse(obj.no.rb, 1);
-            obj.vel.re.inpt = sparse(obj.no.rb, 1);
-            
-        end
-        %%
-        function obj = rbReVarInitial(obj, reductionRatio)
-            % this method iteratively uses reduced variables to determine
-            % how many vectors are needed in reduced basis (use phi * alpha).
-            obj.no.nEnrich = 0;
-            [rb, ~, ~] = svd(obj.dis.qoi.trial, 0);
-            
+        function obj = basisCompressionRvIterate...
+                (obj, pmInpt, disInpt, phiInpt, phiEnrich, M, C, K, F, ...
+                reductionRatio, initSwitch)
+            % this method generates reduced basis iteratively with
+            % evaluating RB error. Output is obj.phi.val and
+            % obj.err.rbReduction.
+            nEnrich = 1;
+            % iteratively add basis vectors based on errRb.
             for i = 1:obj.no.dof
-                
-                phi_ = rb(:, 1:i);
-                obj.no.nEnrich = i;
-                mr = phi_' * obj.mas.mtx * phi_;
-                cr = phi_' * obj.dam.mtx * phi_;
-                kr = phi_' * obj.sti.trial * phi_;
-                fr = phi_' * obj.fce.val;
-                vr0 = zeros(i, 1);
-                ur0 = zeros(i, 1);
-                obj.NewmarkBetaMethod(mr, cr, kr, fr, vr0, ur0);
-                reVarDis = obj.dis.val;
-                ur = phi_ * reVarDis;
-                relErr = norm(ur - obj.dis.qoi.trial, 'fro') / ...
+                phiOtpt = [phiInpt phiEnrich(:, 1:nEnrich)];
+                if initSwitch == 0
+                    % if not initial iteration, the enriched basis needs to
+                    % be orthogonalized.
+                    obj.GramSchmidt(phiOtpt);
+                    phiOtpt = obj.phi.otpt;
+                end
+                m = phiOtpt' * M * phiOtpt;
+                c = phiOtpt' * C * phiOtpt;
+                kCell = cellfun(@(v) phiOtpt' * v * phiOtpt, K, 'un', 0);
+                k = kCell{1} * pmInpt + kCell{2} * obj.pmVal.s.fix;
+                f = phiOtpt' * F;
+                dT = obj.time.step;
+                maxT = obj.time.max;
+                U0 = zeros(size(m, 1), 1);
+                V0 = zeros(size(m, 1), 1);
+                [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                    (phiOtpt, m, c, k, f, 'average', dT, maxT, U0, V0);
+                ur = phiOtpt * rv;
+                % add QoI here.
+                errRb = norm(disInpt - ur, 'fro') / ...
                     norm(obj.dis.qoi.trial, 'fro');
-                
-                if relErr <= 1 - reductionRatio
+                if errRb >= 1 - reductionRatio
+                    nEnrich = nEnrich + 1;
+                elseif errRb < 1 - reductionRatio
                     break
                 end
-                
             end
-            obj.phi.val = phi_;
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.dis.re.inpt = sparse(obj.no.rb, 1);
-            obj.vel.re.inpt = sparse(obj.no.rb, 1);
-            
+            obj.phi.val = phiOtpt;
+            obj.err.rbReduction = errRb;
         end
         %%
-        function obj = rbCtrlInitial(obj, rbCtrlThres)
-            obj.no.nEnrich = 0;
-            % Error controlled scheme for initial reduced basis from trial
-            % point.
-            
-            while obj.err.rbCtrl > rbCtrlThres
-                
-                snap = obj.dis.trial;
-                [phiVal, ~, ~] = svd(snap, 0);
-                obj.phi.val = phiVal(:, 1:obj.err.rbCtrlTrialNo);
-                obj.mas.re.mtx = obj.phi.val' * obj.mas.mtx * obj.phi.val;
-                % here obj.sti.full is inherited from obj.exactSolution.
-                obj.sti.re.mtx = obj.phi.val' * obj.sti.full * obj.phi.val;
-                obj.dam.re.mtx = ...
-                    sparse(length(obj.sti.re.mtx), length(obj.sti.re.mtx));
-                
-                obj.dis.re.inpt = sparse(obj.err.rbCtrlTrialNo, 1);
-                obj.vel.re.inpt = sparse(obj.err.rbCtrlTrialNo, 1);
-                
-                obj.sti.reduce = obj.sti.re.mtx;
-                obj.mas.reduce = obj.mas.re.mtx;
-                obj.dam.reduce = obj.dam.re.mtx;
-                obj.fce.pass = obj.fce.val;
-                % 'rewRb' needs to be modified.
-                obj = NewmarkBetaReducedMethodOOP(obj, 'reduced');
-                obj.dis.errCtrl = obj.phi.val * obj.dis.reduce;
-                
-                obj.err.rbCtrl = (norm(obj.dis.trial - ...
-                    obj.dis.errCtrl, 'fro')) / norm(obj.dis.trial, 'fro');
-                
-                obj.err.rbCtrlTrialNo = obj.err.rbCtrlTrialNo + 1;
-                
-            end
-            
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.no.nEnrich = obj.no.rb;
-            
-        end
-        %%
-        function obj = rbInitial(obj, nInit, reductionRatio, singularSwitch)
+        function obj = rbInitial(obj, nInit, reductionRatio, ...
+                singularSwitch, ratioSwitch)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
-            snap = obj.dis.trial;
-            if singularSwitch == 0
-                [u, s, ~] = svd(snap, 0);
+            disTrial = obj.dis.trial;
+            [u, s, ~] = svd(disTrial, 0);
+            nEnrich = 1;
+            if singularSwitch == 0 && ratioSwitch == 0
                 s = diag(s);
                 uPhi = u(:, 1:nInit);
                 obj.phi.val = uPhi;
                 reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
-                obj.no.rb = size(obj.phi.val, 2);
-            elseif singularSwitch == 1
+            elseif singularSwitch == 1 && ratioSwitch == 0
                 [obj.phi.val, reRatio, obj.no.rb] = ...
-                    basisCompressionSingularRatio(snap, reductionRatio);
+                    basisCompressionSingularRatio(disTrial, reductionRatio);
+            elseif singularSwitch == 0 && ratioSwitch == 1
+                % import system.
+                pmTrial = obj.pmVal.i.trial;
+                M = obj.mas.mtx;
+                C = obj.dam.mtx;
+                K = obj.sti.mtxCell;
+                F = obj.fce.val;
+                phiInpt = u(:, 1);
+                phiEnrich = u(:, 2:end);
+                
+                obj.basisCompressionRvIterate(pmTrial, disTrial, ...
+                    phiInpt, phiEnrich, M, C, K, F, reductionRatio, 1);
+                obj.err.store.rbReduction = ...
+                    [obj.err.store.rbReduction; obj.err.rbReduction];
             end
             
+            obj.no.rb = size(obj.phi.val, 2);
+            obj.no.rbAdd = obj.no.rb;
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
-            obj.no.rbAdd = obj.no.rb;
-            
         end
         %%
         function obj = exactSolution(obj, type, ...
@@ -700,6 +600,7 @@ classdef beam < handle
             % initialise maximum error
             obj.err.max = rmfield(obj.err.max, 'val');
             obj.err.max.val.hhat = 1;
+            obj.err.store.rbReduction = [];
         end
         %%
         function obj = errPrepareRemainOriginal(obj)
@@ -707,6 +608,7 @@ classdef beam < handle
             obj.err.store.max = [];
             obj.err.store.loc = [];
             obj.err.store.allSurf = {};
+            obj.err.store.rbReduction = [];
             
         end
         %%

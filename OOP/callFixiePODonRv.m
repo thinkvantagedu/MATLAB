@@ -40,22 +40,22 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 % quantity of interest.
 fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
 
+% initialise interpolation samples.
+fixie.initHatPm;
+fixie.refineGridLocalwithIdx('initial');
+% prepare essential storage for error and responses.
+fixie.otherPrepare(nRespSVD);
+fixie.errPrepareRemainProp;
+
 % compute initial exact solution.
 fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, ...
     AbaqusSwitch, trialName);
 
 % compute initial reduced basis from trial solution.
-fixie.rbInitial(nPhiInitial);
+fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ratioSwitch);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
 
-% initialise interpolation samples.
-fixie.initHatPm;
-fixie.refineGridLocalwithIdx('initial');
-
-% prepare essential storage for error and responses.
-fixie.otherPrepare(nRespSVD);
-fixie.errPrepareRemainProp;
 fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
 
@@ -134,8 +134,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
-%         figure(1)
-%         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
+        figure(1)
+        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
         %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-.');
         
         if fixie.countGreedy >= drawRow * drawCol
