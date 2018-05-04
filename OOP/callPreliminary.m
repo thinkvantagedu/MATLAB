@@ -3,7 +3,7 @@ figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
 % route = '/Users/kevin/Documents/Temp';
 oopPath = strcat(route, '/MATLAB/OOP');
 addpath(genpath(oopPath));
-cd /home/xiaohan/Desktop/Temp/MATLAB/OOP;
+cd /home/xiaohan/Desktop/Temp/MATLAB/OOP/@beam;
 %% data for beam class.
 lin = 1;
 [INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+trial = 5;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -56,7 +56,7 @@ refiThres = 0.5;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 5;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -67,8 +67,9 @@ debugMode = 0;
 nQoiT = 2;
 
 %% initial error reductions.
-% reduction ratio for method: rbSingularInitial and rbReVarInitial.
-reductionRatio = 0.8;
+% reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
+% maximum error.
+reductionRatio = 0.99;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 

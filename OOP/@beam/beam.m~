@@ -331,6 +331,7 @@ classdef beam < handle
         %%
         function obj = rbEnrichment(obj, nEnrich, reductionRatio, ...
                 singularSwitch, ratioSwitch)
+            obj.countGreedy = obj.countGreedy + 1;
             % this method add a new basis vector to current basis. New basis
             % vector = SVD(current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
@@ -338,6 +339,7 @@ classdef beam < handle
             % new basis from error (phi * phi' * response).
             rbErrFull = obj.dis.rbEnrich - ...
                 obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
+            nRbOld = obj.no.rb;
 %             rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
 %             % happens when enrich.
             
@@ -356,7 +358,7 @@ classdef beam < handle
                 
             elseif singularSwitch == 0 && ratioSwitch == 1
                 % import system.
-                pmMax = obj.pmVal.max;
+                pmValMax = obj.pmVal.max;
                 disMax = obj.dis.rbEnrich;
                 M = obj.mas.mtx;
                 C = obj.dam.mtx;
@@ -369,18 +371,25 @@ classdef beam < handle
                 [phiEnrich, ~, ~] = svd(rbErrFull, 0);
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbReduction.
-                obj.basisCompressionRvIterate(pmMax, disMax, ...
+                obj.basisCompressionRvIterate(pmValMax, disMax, ...
                     phiInpt, phiEnrich, M, C, K, F, reductionRatio, 0);
+                keyboard
+                errMaxPre = obj.err.store.max(obj.countGreedy - 1);
+                errMaxCur = obj.err.rbReduction;
+                redRatio = 
+                redInfo = {obj.err.max.loc obj.pmVal.max ...
+                    size(obj.phi.val, 2) obj.err.rbReduction ...
+                    obj.err.store.max(obj.countGreedy - 1) obj.err.rbReduction};
+                obj.err.store.rbReduction(obj.countGreedy + 1, :) = ...
+                    reductionInfo;
             end
             
-            obj.err.store.rbReduction = ...
-                [obj.err.store.rbReduction; obj.err.rbReduction];
             obj.no.rb = size(obj.phi.val, 2);
-            obj.no.rbAdd = obj.no.rb - 
+            obj.no.rbAdd = obj.no.rb - nRbOld;
             
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
-            obj.countGreedy = obj.countGreedy + 1;
+            
             
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
@@ -395,8 +404,12 @@ classdef beam < handle
             nEnrich = 1;
             % iteratively add basis vectors based on errRb.
             for i = 1:obj.no.dof
-                phiOtpt = [phiInpt phiEnrich(:, 1:nEnrich)];
-                if initSwitch == 0
+                if initSwitch == 1
+                    % if initial enrichment, phiEnrich is the input
+                    % displacement.
+                    phiOtpt = phiEnrich(:, 1:nEnrich);
+                elseif initSwitch == 0
+                    phiOtpt = [phiInpt phiEnrich(:, 1:nEnrich)];
                     % if not initial iteration, the enriched basis needs to
                     % be orthogonalized.
                     obj.GramSchmidt(phiOtpt);
@@ -425,6 +438,7 @@ classdef beam < handle
             end
             obj.phi.val = phiOtpt;
             obj.err.rbReduction = errRb;
+            keyboard
         end
         %%
         function obj = rbInitial(obj, nInit, reductionRatio, ...
@@ -439,7 +453,6 @@ classdef beam < handle
                 uPhi = u(:, 1:nInit);
                 obj.phi.val = uPhi;
                 reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
-                obj.no.rb = size(obj.phi.val, 2);
             elseif singularSwitch == 1 && ratioSwitch == 0
                 [obj.phi.val, reRatio, obj.no.rb] = ...
                     basisCompressionSingularRatio(disTrial, reductionRatio);
@@ -450,14 +463,16 @@ classdef beam < handle
                 C = obj.dam.mtx;
                 K = obj.sti.mtxCell;
                 F = obj.fce.val;
-                phiInpt = u(:, 1);
-                phiEnrich = u(:, 2:end);
                 
                 obj.basisCompressionRvIterate(pmTrial, disTrial, ...
-                    phiInpt, phiEnrich, M, C, K, F, reductionRatio, 1);
+                    [], u, M, C, K, F, reductionRatio, 1);
+                reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
+                    size(obj.phi.val, 2) 1 - obj.err.rbReduction ...
+                    1 obj.err.rbReduction};
+                obj.err.store.rbReduction(2, :) = reductionInfo;
+                keyboard
             end
-            obj.err.store.rbReduction = ...
-                [obj.err.store.rbReduction; obj.err.rbReduction];
+            
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = obj.no.rb;
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
@@ -519,9 +534,9 @@ classdef beam < handle
         %%
         function obj = pmTrial(obj)
             % extract parameter information for trial point.
-            pmValCombIdx = obj.pmVal.comb.space(:, 1:obj.no.inc);
-            for i = 1:length(pmValCombIdx)
-                pmCombComp = isequal(obj.pmVal.comb.trial, pmValCombIdx(i, :));
+            pmPointCombIdx = obj.pmVal.comb.space(:, 1:obj.no.inc);
+            for i = 1:length(pmPointCombIdx)
+                pmCombComp = isequal(obj.pmVal.comb.trial, pmPointCombIdx(i, :));
                 if pmCombComp == 1
                     pmIdx = i;
                 end
@@ -599,7 +614,12 @@ classdef beam < handle
             % initialise maximum error
             obj.err.max = rmfield(obj.err.max, 'val');
             obj.err.max.val.hhat = 1;
-            obj.err.store.rbReduction = [];
+            obj.err.store.rbReduction = cell(1, 6);
+            reductionText = {'magic point' 'parameter value' ...
+                'no of vectors' 'reduction ratio' ...
+                'error before' 'error after'};
+            obj.err.store.rbReduction(1, :) = reductionText;
+            
         end
         %%
         function obj = errPrepareRemainOriginal(obj)
@@ -607,7 +627,11 @@ classdef beam < handle
             obj.err.store.max = [];
             obj.err.store.loc = [];
             obj.err.store.allSurf = {};
-            obj.err.store.rbReduction = [];
+            obj.err.store.rbReduction = cell(1, 6);
+            reductionText = {'magic point' 'parameter value' ...
+                'no of vectors' 'reduction ratio' ...
+                'error before' 'error after'};
+            obj.err.store.rbReduction(1, :) = reductionText;
             
         end
         %%
