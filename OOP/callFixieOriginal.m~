@@ -47,8 +47,7 @@ fixie.exactSolution('initial', AbaqusSwitch, trialName);
 % compute initial reduced basis from trial solution. There are different
 % approaches.
 fixie.errPrepareRemainOriginal;
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
-    ratioSwitch, 'original');
+fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ratioSwitch);
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
 
@@ -87,8 +86,7 @@ while fixie.err.max.val > fixie.err.lowBond
     
     fixie.exactSolution('Greedy', AbaqusSwitch);
     
-    fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-        ratioSwitch, 'original');
+    fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ratioSwitch);
     fixie.reducedMatrices;
     disp(fixie.countGreedy)
     

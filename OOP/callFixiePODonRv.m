@@ -38,7 +38,7 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
+fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 
 % initialise interpolation samples.
 fixie.initHatPm;
@@ -48,11 +48,11 @@ fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainProp;
 
 % compute initial exact solution.
-fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, ...
-    AbaqusSwitch, trialName);
+fixie.exactSolution('initial', AbaqusSwitch, trialName);
 
 % compute initial reduced basis from trial solution.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ratioSwitch);
+fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
+    ratioSwitch, 'hhat');
 disp(fixie.countGreedy)
 fixie.reducedMatrices;
 
@@ -60,8 +60,7 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, ...
-    AbaqusSwitch, trialName);
+fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
@@ -94,7 +93,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName);
     
-    fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
+    fixie.respTimeShift(respSVDswitch);
     
     % CHANGE SIGN in this method!
     fixie.reshapeRespStore;
@@ -134,7 +133,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
-        figure(1)
+        figure(5)
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
         %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-.');
         
@@ -143,12 +142,11 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             break
         end
         
-        fixie.exactSolution('Greedy', ...
-            qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+        fixie.exactSolution('Greedy', AbaqusSwitch);
         
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-            ratioSwitch);
+            ratioSwitch, 'hhat');
         fixie.reducedMatrices;
         disp(fixie.countGreedy)
         
@@ -158,8 +156,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         % this method displays refinement informations.
         fixie.localHrefinement;
         
-        fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, ...
-            AbaqusSwitch, trialName);
+        fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
         
     end
     

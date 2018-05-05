@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
+tMax = 1.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 5;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -56,7 +56,7 @@ refiThres = 0.5;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 4;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -75,7 +75,7 @@ reductionRatio = 0.99;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 10; 
+nRespSVD = 12; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -86,7 +86,6 @@ timeType = 'allTime';
 % QoI switches, qoiSwitchManual manually set QoI.
 qoiSwitchSpace = 0;
 qoiSwitchTime = 0;
-qoiSwitchManual = 0;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,

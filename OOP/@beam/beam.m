@@ -330,7 +330,7 @@ classdef beam < handle
         end
         %%
         function obj = rbEnrichment(obj, nEnrich, redRatio, ...
-                singularSwitch, ratioSwitch)
+                singularSwitch, ratioSwitch, errType)
             obj.countGreedy = obj.countGreedy + 1;
             % this method add a new basis vector to current basis. New basis
             % vector = SVD(current exact solution -  previous approximation).
@@ -372,13 +372,20 @@ classdef beam < handle
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
                 obj.basisCompressionRvIterate(pmValMax, disMax, ...
-                    phiInpt, phiEnrich, M, C, K, F, redRatio, 0);
+                    phiInpt, phiEnrich, M, C, K, F, redRatio, 0, errType);
+                switch errType
+                    case 'original'
+                        eMaxPre = obj.err.store.max(obj.countGreedy - 1);
+                        eMaxLoc = obj.err.max.loc;
+                    case 'hhat'
+                        eMaxPre = obj.err.store.max.hhat(obj.countGreedy - 1);
+                        eMaxLoc = obj.err.max.loc.hhat;
+                end
+                eMaxCur = obj.err.rbRedRemain;
+                redRatioOtpt = (eMaxPre - eMaxCur) / eMaxPre;
                 
-                errMaxPre = obj.err.store.max(obj.countGreedy - 1);
-                errMaxCur = obj.err.rbRedRemain;
-                redRatioOtpt = (errMaxPre - errMaxCur) / errMaxPre;
-                redInfo = {obj.err.max.loc obj.pmVal.max ...
-                    size(obj.phi.val, 2) redRatioOtpt errMaxPre errMaxCur};
+                redInfo = {eMaxLoc obj.pmVal.max ...
+                    size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
                 obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             end
             
@@ -395,7 +402,7 @@ classdef beam < handle
         %%
         function obj = basisCompressionRvIterate...
                 (obj, pmInpt, disInpt, phiInpt, phiEnrich, M, C, K, F, ...
-                redRatio, initSwitch)
+                redRatio, initSwitch, errType)
             % this method generates reduced basis iteratively with
             % evaluating RB error. Output is obj.phi.val and
             % obj.err.rbRedRemain.
@@ -413,7 +420,13 @@ classdef beam < handle
                     % be orthogonalized.
                     obj.GramSchmidt(phiOtpt);
                     phiOtpt = obj.phi.otpt;
-                    errPre = obj.err.store.max(obj.countGreedy - 1);
+                    switch errType
+                        case 'original'
+                            errPre = obj.err.store.max(obj.countGreedy - 1);
+                        case 'hhat'
+                            errPre = ...
+                                obj.err.store.max.hhat(obj.countGreedy - 1);
+                    end
                 end
                 m = phiOtpt' * M * phiOtpt;
                 c = phiOtpt' * C * phiOtpt;
@@ -428,9 +441,10 @@ classdef beam < handle
                     (phiOtpt, m, c, k, f, 'average', dT, maxT, U0, V0);
                 ur = phiOtpt * rv;
                 % add QoI here.
-                errRb = norm(disInpt - ur, 'fro') / ...
+                disQoiInpt = disInpt(obj.qoi.dof, obj.qoi.t);
+                urQoi = ur(obj.qoi.dof, obj.qoi.t);
+                errRb = norm(disQoiInpt - urQoi, 'fro') / ...
                     norm(obj.dis.qoi.trial, 'fro');
-                
                 if errRb >= (1 - redRatio) * errPre
                     nEnrich = nEnrich + 1;
                 elseif errRb < (1 - redRatio) * errPre
@@ -443,7 +457,7 @@ classdef beam < handle
         end
         %%
         function obj = rbInitial(obj, nInit, redRatio, ...
-                singularSwitch, ratioSwitch)
+                singularSwitch, ratioSwitch, errType)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
             disTrial = obj.dis.trial;
@@ -465,7 +479,7 @@ classdef beam < handle
                 F = obj.fce.val;
                 
                 obj.basisCompressionRvIterate(pmTrial, disTrial, ...
-                    [], u, M, C, K, F, redRatio, 1);
+                    [], u, M, C, K, F, redRatio, 1, errType);
                 reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
                     size(obj.phi.val, 2) 1 - obj.err.rbRedRemain ...
                     1 obj.err.rbRedRemain};
@@ -478,8 +492,7 @@ classdef beam < handle
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
         end
         %%
-        function obj = exactSolution(obj, type, ...
-                qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch, trialName)
+        function obj = exactSolution(obj, type, AbaqusSwitch, trialName)
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
@@ -511,20 +524,8 @@ classdef beam < handle
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
-                    
-                    if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                        obj.dis.qoi.trial = obj.dis.trial;
-                        
-                    elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                        obj.dis.qoi.trial = obj.dis.trial(:, obj.qoi.t);
-                        
-                    elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                        obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, :);
-                        
-                    elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                        obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, ...
-                            obj.qoi.t);
-                    end
+                    obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, ...
+                        obj.qoi.t);
                 case 'Greedy'
                     obj.dis.rbEnrich = obj.dis.full;
             end
@@ -887,8 +888,7 @@ classdef beam < handle
             end
         end
         %%
-        function obj = respfromFce(obj, respSVDswitch, ...
-                qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch, trialName)
+        function obj = respfromFce(obj, respSVDswitch, AbaqusSwitch, trialName)
             % this method compute exact solutions regarding external force.
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % if no refinement, only enrich, force related responses does
@@ -928,30 +928,16 @@ classdef beam < handle
                     obj.abaqusOtpt;
                 end
                 if respSVDswitch == 0
-                    if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                        obj.resp.store.fce.hhat{nEx + iPre} = {obj.dis.full(:)};
-                    elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                        dis_ = obj.dis.full(:, obj.qoi.t);
-                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
-                        
-                    elseif qoiSwitchTime == 0 && qoiSwitchSpace == 1
-                        dis_ = obj.dis.full(obj.qoi.dof, :);
-                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
-                        
-                    elseif qoiSwitchTime == 1 && qoiSwitchSpace == 1
-                        dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
-                        obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
-                    end
+                    dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
+                    obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
                     [uFcel, uFceSig, uFcer] = svd(obj.dis.full, 0);
                     uFcel = uFcel(:, 1:obj.no.respSVD);
                     uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
                     uFcer = uFcer(:, 1:obj.no.respSVD);
-                    if qoiSwitchSpace == 1 && qoiSwitchTime == 1
-                        uFcel = uFcel(obj.qoi.dof, :);
-                        uFcer = uFcer(obj.qoi.t, :);
-                    end
+                    uFcel = uFcel(obj.qoi.dof, :);
+                    uFcer = uFcer(obj.qoi.t, :);
                     obj.resp.store.fce.hhat{nEx + iPre} = ...
                         [{uFcel}; {uFceSig}; {uFcer}];
                 end
@@ -1110,8 +1096,7 @@ classdef beam < handle
             end
         end
         %%
-        function obj = respTimeShift...
-                (obj, qoiSwitchTime, qoiSwitchSpace, respSVDswitch)
+        function obj = respTimeShift(obj, respSVDswitch)
             % this method shifts the responses in time.
             for iPre = 1:obj.no.pre.hhat
                 for iPhy = 1:obj.no.phy
@@ -1119,35 +1104,17 @@ classdef beam < handle
                         for iRb = 1:obj.no.rb
                             if iT == 1
                                 % conditions for quantity of interest
-                                if qoiSwitchTime == 0 && qoiSwitchSpace == 0
+                                if respSVDswitch == 0
+                                    respQoi = obj.resp.store.tDiff...
+                                        {iPre, iPhy, 1, iRb}...
+                                        (obj.qoi.dof, obj.qoi.t);
+                                elseif respSVDswitch == 1
                                     respQoi = obj.resp.store.tDiff...
                                         {iPre, iPhy, 1, iRb};
-                                    
-                                elseif qoiSwitchTime == 1 && ...
-                                        qoiSwitchSpace == 0
-                                    respQoi = obj.resp.store.tDiff...
-                                        {iPre, iPhy, 1, iRb}(:, obj.qoi.t);
-                                    
-                                elseif qoiSwitchTime == 0 && ...
-                                        qoiSwitchSpace == 1
-                                    respQoi = obj.resp.store.tDiff...
-                                        {iPre, iPhy, 1, iRb}(obj.qoi.dof, :);
-                                    
-                                elseif qoiSwitchTime == 1 && ...
-                                        qoiSwitchSpace == 1
-                                    if respSVDswitch == 0
-                                        respQoi = obj.resp.store.tDiff...
-                                            {iPre, iPhy, 1, iRb}...
-                                            (obj.qoi.dof, obj.qoi.t);
-                                    elseif respSVDswitch == 1
-                                        respQoi = obj.resp.store.tDiff...
-                                            {iPre, iPhy, 1, iRb};
-                                        respQoi{1} = respQoi{1}(obj.qoi.dof, :);
-                                        respQoi{3} = respQoi{3}(obj.qoi.t, :);
-                                    end
-                                    
-                                    
+                                    respQoi{1} = respQoi{1}(obj.qoi.dof, :);
+                                    respQoi{3} = respQoi{3}(obj.qoi.t, :);
                                 end
+                                
                                 respQoi = respQoi(:);
                                 if respSVDswitch == 0
                                     obj.resp.store.pm.hhat...
@@ -1166,24 +1133,9 @@ classdef beam < handle
                                         (:, 1:obj.no.t_step - iT + 2);
                                     storePmAsemb = ...
                                         [storePmZeros storePmNonZeros];
-                                    if qoiSwitchTime == 0 && ...
-                                            qoiSwitchSpace == 0
-                                        storePmQoi = storePmAsemb;
-                                        
-                                    elseif qoiSwitchTime == 1 && ...
-                                            qoiSwitchSpace == 0
-                                        storePmQoi = storePmAsemb(:, obj.qoi.t);
-                                        
-                                    elseif qoiSwitchTime == 0 && ...
-                                            qoiSwitchSpace == 1
-                                        storePmQoi = ...
-                                            storePmAsemb(obj.qoi.dof, :);
-                                        
-                                    elseif qoiSwitchTime == 1 && ...
-                                            qoiSwitchSpace == 1
-                                        storePmQoi = storePmAsemb...
-                                            (obj.qoi.dof, obj.qoi.t);
-                                    end
+                                    
+                                    storePmQoi = storePmAsemb...
+                                        (obj.qoi.dof, obj.qoi.t);
                                     
                                     obj.resp.store.pm.hhat...
                                         (iPre, iPhy, iT, iRb)...
@@ -1206,11 +1158,10 @@ classdef beam < handle
                                         {iPre, iPhy, 2, iRb}{2};
                                     storePmR = ...
                                         [storePmZeros storePmNonZeros]';
-                                    if qoiSwitchTime == 1 && ...
-                                            qoiSwitchSpace == 1
-                                        storePmL = storePmL(obj.qoi.dof, :);
-                                        storePmR = storePmR(obj.qoi.t, :);
-                                    end
+                                    
+                                    storePmL = storePmL(obj.qoi.dof, :);
+                                    storePmR = storePmR(obj.qoi.t, :);
+                                    
                                     obj.resp.store.pm.hhat...
                                         {iPre, iPhy, iT, iRb}...
                                         = {storePmL; storePmSig; storePmR};
@@ -1325,7 +1276,7 @@ classdef beam < handle
             obj.err.pre.trans = sortrows(respStoreCell_, 1);
         end
         %%
-        function obj = resptoErrPreCompPartTime(obj, qoiSwitchTime, ~)
+        function obj = resptoErrPreCompPartTime(obj)
             obj.err.pre.blk = cell(obj.no.pre.hhat, 1);
             nVecShift = obj.no.phy;
             % number of upper triangular blocks.
@@ -1350,14 +1301,11 @@ classdef beam < handle
                 respFce = zeros(obj.no.dof, obj.no.t_step);
                 respFce_ = obj.resp.store.fce.hhat{iPre};
                 
-                if qoiSwitchTime == 1
-                    
-                    respFce_ = reshape(respFce_, ...
-                        [obj.no.dof, length(obj.qoi.t)]);
-                    for i = 1:length(obj.qoi.t)
-                        respFce(:, obj.qoi.t(i)) = ...
-                            respFce(:, obj.qoi.t(i)) + respFce_(:, i);
-                    end
+                respFce_ = reshape(respFce_, ...
+                    [obj.no.dof, length(obj.qoi.t)]);
+                for i = 1:length(obj.qoi.t)
+                    respFce(:, obj.qoi.t(i)) = ...
+                        respFce(:, obj.qoi.t(i)) + respFce_(:, i);
                 end
                 
                 respPre_ = cellfun(@(v) v(:), respPre_, 'un', 0);
@@ -1399,10 +1347,8 @@ classdef beam < handle
                                             respFixN{jrb}(1:end - ...
                                             obj.no.dof * (jsh - 2), :)];
                                     end
-                                    if qoiSwitchTime == 1
-                                        respT1(obj.qoi.vecIndSetdiff, :) = 0;
-                                        respT2(obj.qoi.vecIndSetdiff, :) = 0;
-                                    end
+                                    respT1(obj.qoi.vecIndSetdiff, :) = 0;
+                                    respT2(obj.qoi.vecIndSetdiff, :) = 0;
                                     cell_(counter) = {respT1' * respT2};
                                     counter = counter + 1;
                                 end
@@ -1417,10 +1363,8 @@ classdef beam < handle
                                             respFixN{jrb}(1:end - ...
                                             obj.no.dof * (jsh - 2), :)];
                                     end
-                                    if qoiSwitchTime == 1
-                                        respT1(obj.qoi.vecIndSetdiff, :) = 0;
-                                        respT2(obj.qoi.vecIndSetdiff, :) = 0;
-                                    end
+                                    respT1(obj.qoi.vecIndSetdiff, :) = 0;
+                                    respT2(obj.qoi.vecIndSetdiff, :) = 0;
                                     cell_(counter) = {respT1' * respT2};
                                     counter = counter + 1;
                                 end
@@ -2106,9 +2050,7 @@ classdef beam < handle
             obj.no.itplAdd = size(obj.pmVal.add, 1);
         end
         %%
-        function obj = residualfromForce...
-                (obj, normType, qoiSwitchSpace, qoiSwitchTime, ...
-                AbaqusSwitch, trialName)
+        function obj = residualfromForce(obj, normType, AbaqusSwitch, trialName)
             switch normType
                 case 'l1'
                     relativeErrSq = @(xNum, xInit) ...
@@ -2140,19 +2082,7 @@ classdef beam < handle
             end
             obj.dis.resi = obj.dis.full;
             
-            if qoiSwitchTime == 0 && qoiSwitchSpace == 0
-                obj.dis.qoi.resi = obj.dis.resi;
-                
-            elseif qoiSwitchTime == 1 && qoiSwitchSpace == 0
-                obj.dis.qoi.resi = obj.dis.resi(:, obj.qoi.t);
-                
-            elseif qoiSwitchSpace == 1 && qoiSwitchTime == 0
-                obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, :);
-                
-            elseif qoiSwitchSpace == 1 && qoiSwitchTime == 1
-                obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, obj.qoi.t);
-                
-            end
+            obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, obj.qoi.t);
             
             obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
             
@@ -2260,51 +2190,29 @@ classdef beam < handle
             end
         end
         %%
-        function obj = qoiSpaceTime(obj, nQoiT, nDofPerNode, qoiSwitchManual)
+        function obj = qoiSpaceTime(obj, qoiSwitchSpace, qoiSwitchTime)
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
-            
-            nt = obj.no.t_step;
-            ntVec = 2:nt;
-            ind = round(linspace(1, length(ntVec), nQoiT));
-            %             obj.qoi.t = ntVec([2, 5, 10, 15, 20, 25]);
-            obj.qoi.t = ntVec(ind)';
-            
-            obj.qoi.tSetdiff = setdiff((1:obj.no.t_step), obj.qoi.t)';
-            
-            obj.qoi.vecInd = zeros(obj.no.dof, length(obj.qoi.t));
-            
-            for i = 1:length(obj.qoi.t)
+            qoiDof = obj.node.dof.inc';
+            qoiT = [2 4 6 8]';
+            if qoiSwitchSpace == 0 && qoiSwitchTime == 0
+                obj.qoi.dof = (1:obj.no.dof)';
+                obj.qoi.t = (1:obj.no.t_step)';
                 
-                obj.qoi.vecInd(:, i) = obj.qoi.vecInd(:, i) + ...
-                    (obj.qoi.t(i) - 1) * obj.no.dof + 1:obj.qoi.t(i) * ...
-                    obj.no.dof;
+            elseif qoiSwitchSpace == 0 && qoiSwitchTime == 1
+                obj.qoi.dof = (1:obj.no.dof)';
+                obj.qoi.t = qoiT';
                 
-            end
-            obj.qoi.vecInd = obj.qoi.vecInd(:);
-            obj.qoi.vecIndSetdiff = setdiff([1:obj.no.dof * obj.no.t_step], ...
-                obj.qoi.vecInd);
-            
-            obj.qoi.node = obj.node.inc;
-            
-            if nDofPerNode == 2
+            elseif qoiSwitchSpace == 1 && qoiSwitchTime == 0
+                obj.qoi.dof = qoiDof;
+                obj.qoi.t = (1:obj.no.t_step)';
                 
-                qoiInc = [obj.qoi.node{1}(:, 1) * 2 - 1, ...
-                    obj.qoi.node{1}(:, 1) * 2];
-                qoiInc = qoiInc';
-                qoiInc = qoiInc(:);
+            elseif qoiSwitchSpace == 1 && qoiSwitchTime == 1
+                obj.qoi.dof = qoiDof;
+                obj.qoi.t = qoiT;
                 
             end
-            obj.qoi.dof = qoiInc;
             
-            if qoiSwitchManual == 1
-%                 obj.qoi.t = [10:10:50]';
-                obj.qoi.t = [2 4 6 8]';
-                % entire inclusion or the lower edge of the inclusion.
-                obj.qoi.dof = obj.node.dof.inc';
-                %                 obj.qoi.dof = [1 2 11 12 243:260]';
-                
-            end
 %             disp(strcat...
 %                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
 %                 {' '}, num2str(obj.qoi.t')))
