@@ -133,9 +133,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
-        figure(5)
-        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
-        %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-.');
+        figure(2)
+        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
+        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')

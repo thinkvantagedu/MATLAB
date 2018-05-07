@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 9;
-domLengs = 9;
+domLengi = 33;
+domLengs = 33;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 1.9;
+tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+trial = 17;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -52,11 +52,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.5;
+refiThres = 0.03;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 4;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -69,13 +69,13 @@ nQoiT = 2;
 %% initial error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.99;
+reductionRatio = 0.9;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 12; 
+nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -84,8 +84,8 @@ timeType = 'allTime';
 
 %% all switches
 % QoI switches, qoiSwitchManual manually set QoI.
-qoiSwitchSpace = 0;
-qoiSwitchTime = 0;
+qoiSwitchSpace = 1;
+qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,

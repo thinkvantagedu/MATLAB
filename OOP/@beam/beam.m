@@ -1879,7 +1879,8 @@ classdef beam < handle
                     
                 case 'diff'
                     obj.err.store.surf.diff = ...
-                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat);
+                        [obj.pmExpo.i{:} ...
+                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat)];
                     
                 case 'original'
                     obj.err.store.surf(idx) = ...
@@ -1901,7 +1902,8 @@ classdef beam < handle
                         obj.err.store.surf.hat];
                 case 'diff'
                     obj.err.store.allSurf.diff = ...
-                        [obj.err.store.allSurf.diff; obj.err.store.surf.diff];
+                        [obj.err.store.allSurf.diff; ...
+                        obj.err.store.surf.diff(:, 2)];
             end
         end
         %%
@@ -2128,8 +2130,39 @@ classdef beam < handle
                     if obj.indicator.refine == 1 && obj.indicator.enrich == 0
                         currentLoc = obj.err.max.diffLoc;
                     end
+                    
+                    % when seeking the maximum eine location, seek only in
+                    % the block where the maximum error of eHhat is largest. 
+                    nBlk = obj.no.block.hhat;
+                    hhatBlk = cell(nBlk, 1);
+                    diffBlk = cell(nBlk, 1);
+                    for iBlk = 1:nBlk
+                        
+                        pmExpoBlk = obj.pmExpo.block.hhat{iBlk}(:, 2);
+                        lVal = pmExpoBlk(1);
+                        rVal = pmExpoBlk(2);
+                        pmIdxHhat = obj.pmExpo.i{:};
+                        pmIdxBlk = pmIdxHhat >= lVal & pmIdxHhat <= rVal;
+                        hhatBlk{iBlk} = obj.err.store.surf.hhat(pmIdxBlk, :);
+                        diffBlk{iBlk} = obj.err.store.surf.diff(pmIdxBlk, :);
+                        
+                    end
+                    
+                    % find max values in each cell of hhatBlk, then find
+                    % index of these max values. This index points which
+                    % block to be measured with eine and to be refined (if
+                    % eine exceeds the tolerance).
+                    [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v), hhatBlk, ...
+                        'un', 0)));
+                    blkToCheck = diffBlk{mpIdx};
+                    keyboard
+                    
+                    
+                    
+                    
+                    
                     [obj.err.max.diffVal, obj.err.max.diffLoc] = ...
-                        max(obj.err.store.surf.diff);
+                        max(obj.err.store.surf.diff(:, 2));
                     newLoc = obj.err.max.diffLoc;
                     %  obj.refinement.condition = ...
                     %  abs(obj.err.max.diffVal / ...
@@ -2137,6 +2170,7 @@ classdef beam < handle
                     obj.refinement.condition = ...
                         abs(obj.err.max.diffVal / ...
                         norm(obj.dis.qoi.trial, 'fro'));
+                    keyboard
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1

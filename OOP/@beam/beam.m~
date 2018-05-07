@@ -330,7 +330,7 @@ classdef beam < handle
         end
         %%
         function obj = rbEnrichment(obj, nEnrich, redRatio, ...
-                singularSwitch, ratioSwitch)
+                singularSwitch, ratioSwitch, errType)
             obj.countGreedy = obj.countGreedy + 1;
             % this method add a new basis vector to current basis. New basis
             % vector = SVD(current exact solution -  previous approximation).
@@ -372,13 +372,20 @@ classdef beam < handle
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
                 obj.basisCompressionRvIterate(pmValMax, disMax, ...
-                    phiInpt, phiEnrich, M, C, K, F, redRatio, 0);
+                    phiInpt, phiEnrich, M, C, K, F, redRatio, 0, errType);
+                switch errType
+                    case 'original'
+                        eMaxPre = obj.err.store.max(obj.countGreedy - 1);
+                        eMaxLoc = obj.err.max.loc;
+                    case 'hhat'
+                        eMaxPre = obj.err.store.max.hhat(obj.countGreedy - 1);
+                        eMaxLoc = obj.err.max.loc.hhat;
+                end
+                eMaxCur = obj.err.rbRedRemain;
+                redRatioOtpt = (eMaxPre - eMaxCur) / eMaxPre;
                 
-                errMaxPre = obj.err.store.max(obj.countGreedy - 1);
-                errMaxCur = obj.err.rbRedRemain;
-                redRatioOtpt = (errMaxPre - errMaxCur) / errMaxPre;
-                redInfo = {obj.err.max.loc obj.pmVal.max ...
-                    size(obj.phi.val, 2) redRatioOtpt errMaxPre errMaxCur};
+                redInfo = {eMaxLoc obj.pmVal.max ...
+                    size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
                 obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             end
             
@@ -415,8 +422,10 @@ classdef beam < handle
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
-                    errPre = obj.err.store.max(obj.countGreedy - 1);
+                            errPre = obj.err.store.max(obj.countGreedy - 1);
                         case 'hhat'
+                            errPre = ...
+                                obj.err.store.max.hhat(obj.countGreedy - 1);
                     end
                 end
                 m = phiOtpt' * M * phiOtpt;
@@ -436,7 +445,6 @@ classdef beam < handle
                 urQoi = ur(obj.qoi.dof, obj.qoi.t);
                 errRb = norm(disQoiInpt - urQoi, 'fro') / ...
                     norm(obj.dis.qoi.trial, 'fro');
-                keyboard
                 if errRb >= (1 - redRatio) * errPre
                     nEnrich = nEnrich + 1;
                 elseif errRb < (1 - redRatio) * errPre
@@ -449,7 +457,7 @@ classdef beam < handle
         end
         %%
         function obj = rbInitial(obj, nInit, redRatio, ...
-                singularSwitch, ratioSwitch)
+                singularSwitch, ratioSwitch, errType)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
             disTrial = obj.dis.trial;
@@ -471,7 +479,7 @@ classdef beam < handle
                 F = obj.fce.val;
                 
                 obj.basisCompressionRvIterate(pmTrial, disTrial, ...
-                    [], u, M, C, K, F, redRatio, 1);
+                    [], u, M, C, K, F, redRatio, 1, errType);
                 reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
                     size(obj.phi.val, 2) 1 - obj.err.rbRedRemain ...
                     1 obj.err.rbRedRemain};
@@ -1871,7 +1879,8 @@ classdef beam < handle
                     
                 case 'diff'
                     obj.err.store.surf.diff = ...
-                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat);
+                        [obj.pmExpo.i{:} ...
+                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat)];
                     
                 case 'original'
                     obj.err.store.surf(idx) = ...
@@ -1893,7 +1902,8 @@ classdef beam < handle
                         obj.err.store.surf.hat];
                 case 'diff'
                     obj.err.store.allSurf.diff = ...
-                        [obj.err.store.allSurf.diff; obj.err.store.surf.diff];
+                        [obj.err.store.allSurf.diff; ...
+                        obj.err.store.surf.diff(:, 2)];
             end
         end
         %%
@@ -2120,8 +2130,36 @@ classdef beam < handle
                     if obj.indicator.refine == 1 && obj.indicator.enrich == 0
                         currentLoc = obj.err.max.diffLoc;
                     end
+                    
+                    % when seeking the maximum eine location, seek only in
+                    % the block where the maximum error of eHhat is largest. 
+                    nBlk = obj.no.block.hhat;
+                    hhatBlk = cell(nBlk, 1);
+                    for iBlk = 1:nBlk
+                        
+                        pmExpoBlk = obj.pmExpo.block.hhat{iBlk}(:, 2);
+                        lVal = pmExpoBlk(1);
+                        rVal = pmExpoBlk(2);
+                        pmIdxHhat = obj.pmExpo.i{:};
+                        pmIdxBlk = pmIdxHhat >= lVal & pmIdxHhat <= rVal;
+                        hhatBlk{iBlk} = obj.err.store.surf.diff(pmIdxBlk, :);
+                        
+                    end
+                    % find max values in each cell of hhatBlk, then find
+                    % index of these max values. This index points which
+                    % block to be measured with eine and to be refined (if
+                    % eine exceeds the tolerance).
+                    [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v(:, 2)), ...
+                        hhatBlk, 'un', 0)));
+                    
+                    keyboard
+                    
+                    
+                    
+                    
+                    
                     [obj.err.max.diffVal, obj.err.max.diffLoc] = ...
-                        max(obj.err.store.surf.diff);
+                        max(obj.err.store.surf.diff(:, 2));
                     newLoc = obj.err.max.diffLoc;
                     %  obj.refinement.condition = ...
                     %  abs(obj.err.max.diffVal / ...
@@ -2129,6 +2167,7 @@ classdef beam < handle
                     obj.refinement.condition = ...
                         abs(obj.err.max.diffVal / ...
                         norm(obj.dis.qoi.trial, 'fro'));
+                    keyboard
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1
