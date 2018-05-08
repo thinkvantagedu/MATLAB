@@ -38,30 +38,29 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(nQoiT, nDofPerNode, qoiSwitchManual);
-
-% compute initial exact solution.
-fixie.exactSolution('initial', qoiSwitchTime, qoiSwitchSpace, ...
-    AbaqusSwitch, trialName);
-
-% compute initial reduced basis from trial solution.
-fixie.rbInitial(nPhiInitial);
-disp(fixie.countGreedy)
-fixie.reducedMatrices;
+fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 
 % initialise interpolation samples.
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
-
 % prepare essential storage for error and responses.
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainProp;
+
+% compute initial exact solution.
+fixie.exactSolution('initial', AbaqusSwitch, trialName);
+
+% compute initial reduced basis from trial solution.
+fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
+    ratioSwitch, 'hhat');
+disp(fixie.countGreedy)
+fixie.reducedMatrices;
+
 fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(respSVDswitch, qoiSwitchTime, qoiSwitchSpace, ...
-    AbaqusSwitch, trialName);
+fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
@@ -76,6 +75,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.pmIter(iIter);
         
         fixie.reducedVar;
+        
+        fixie.rvDisStore(iIter);
         
         fixie.pmPrepare(rvSVDswitch);
         
@@ -94,7 +95,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName);
     
-    fixie.respTimeShift(qoiSwitchTime, qoiSwitchSpace, respSVDswitch);
+    fixie.respTimeShift(respSVDswitch);
     
     % CHANGE SIGN in this method!
     fixie.reshapeRespStore;
@@ -114,7 +115,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
-        CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
+        CmdWinTool('statusText', ...
+            sprintf('online stage progress: %d of %d', iIter, nIter));
         
     end
     % disp('online end')
@@ -135,35 +137,50 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         figure(1)
-        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b--');
-        %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'm-.');
+        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
+        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
         
         if fixie.countGreedy >= drawRow * drawCol
             disp('iterations reach maximum plot number')
             break
         end
         
-        fixie.exactSolution('Greedy', ...
-            qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+        fixie.exactSolution('Greedy', AbaqusSwitch);
         
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-            ratioSwitch);
+            ratioSwitch, 'hhat');
         fixie.reducedMatrices;
         disp(fixie.countGreedy)
         
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
-        % this method displays refinement informations. 
+        % this method displays refinement informations.
         fixie.localHrefinement;
         
-        fixie.respfromFce(respSVDswitch, ...
-            qoiSwitchTime, qoiSwitchSpace, AbaqusSwitch);
+        fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
         
     end
     
 end
 
+%% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
+for iGre = 1:fixie.countGreedy
+    for iIter = 1:nIter
+        
+        fixie.pmIter(iIter);
+        fixie.exactSolution('verify', 0);
+        fixie.verifiExactError;
+        CmdWinTool('statusText', ...
+            sprintf('verification stage progress: %d of %d', iIter, nIter));
+        
+    end
+end
+
 %%
-fixie.plotMaxErrorDecayVal('hhat', 'k-*', 2, nPhiInitial);
-fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
+% figure(2)
+% hold on
+% fixie.plotMaxErrorDecayVal('hhat', 'b-*', 2, nPhiInitial);
+% figure(3)
+% hold on
+% fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);

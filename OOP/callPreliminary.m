@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 17;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;

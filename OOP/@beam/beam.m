@@ -499,6 +499,8 @@ classdef beam < handle
                     pmValcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
                 case 'Greedy'
                     pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
+                case 'verify'
+                    pmValcell = cell2mat(obj.pmVal.iter);
             end
             if AbaqusSwitch == 0
                 % use MATLAB Newmark code to obtain exact solutions.
@@ -528,6 +530,8 @@ classdef beam < handle
                         obj.qoi.t);
                 case 'Greedy'
                     obj.dis.rbEnrich = obj.dis.full;
+                case 'verify'
+                    obj.dis.verify = obj.dis.full;
             end
             
         end
@@ -582,11 +586,12 @@ classdef beam < handle
         end
         %%
         function obj = otherPrepare(obj, nSVD)
-            
+            % prepare other essential storages.
             obj.no.respSVD = nSVD;
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
             obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+            obj.resp.rv.dis.store = cell(1);
             
         end
         %%
@@ -1452,18 +1457,30 @@ classdef beam < handle
         %%
         function obj = reducedVar(obj)
             % compute reduced variables for each pm value.
+            phiInpt = obj.phi.val;
             stiReIter = ...
                 cellfun(@(v, w) full(v) * w, ...
                 obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
-            stiReIter = sum(cat(3, stiReIter{:}), 3);
-            obj.sti.reduce = stiReIter;
-            obj.mas.reduce = obj.mas.re.mtx;
-            obj.dam.reduce = obj.dam.re.mtx;
-            obj.fce.pass = obj.fce.val;
-            obj = NewmarkBetaReducedMethodOOP(obj, 'reduced');
-            obj.acc.re.reVar = obj.acc.reduce;
-            obj.vel.re.reVar = obj.vel.reduce;
-            obj.dis.re.reVar = obj.dis.reduce;
+            k = sum(cat(3, stiReIter{:}), 3);
+            m = obj.mas.re.mtx;
+            c = obj.dam.re.mtx;
+            f = phiInpt' * obj.fce.val;
+            dT = obj.time.step;
+            maxT = obj.time.max;
+            u0 = zeros(obj.no.rb, 1);
+            v0 = zeros(obj.no.rb, 1);
+            [rvDis, rvVel, rvAcc, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                (phiInpt, m, c, k, f, 'average', dT, maxT, u0, v0);
+            obj.acc.re.reVar = rvAcc;
+            obj.vel.re.reVar = rvVel;
+            obj.dis.re.reVar = rvDis;
+                        
+        end
+        %%
+        function obj = rvDisStore(obj, iIter)
+            % this method stores dieplacement reduced variables for
+            % verification purpose. 
+            obj.resp.rv.dis.store{iIter, obj.countGreedy} = obj.dis.re.reVar;
             
         end
         %%
@@ -1471,23 +1488,16 @@ classdef beam < handle
             % this method performs SVD on the stored reduced variables.
             rvStore = cell2mat(obj.resp.rv.store);
             [rvL, rvSig, rvR] = svd(rvStore, 0);
-            rvL = rvL * rvSig;
-            rvSigCol = diag(rvSig);
-            for isig = 1:length(rvSigCol)
-                sigSumRatio = sum(rvSigCol(1:(length(rvSigCol) - isig))) /...
-                    sum(rvSigCol);
-                if sigSumRatio < rvSVDreRatio
-                    nRvSVD = length(rvSigCol) - isig + 1;
-                    break
-                end
-            end
+            
+            [~, ~, nRvSVD] = basisCompressionSingularRatio(rvStore, ...
+                rvSVDreRatio);
             
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
             % rvL' * eTe * rvL * rvR') = domain size * domain size
             % (rvL * rvR' = origin), and truncation can be performed.
             % what's being interpolated here is: rvL' * eTe * rvL.
-            
+            rvL = rvL * rvSig;
             rvL = rvL(:, 1:nRvSVD);
             rvR = rvR(:, 1:nRvSVD);
             obj.resp.rv.sig = rvSig(1:nRvSVD, 1:nRvSVD);
@@ -1907,6 +1917,24 @@ classdef beam < handle
             end
         end
         %%
+        function obj = verifyExtractBasis(obj, iGre)
+            % this method extracts the reduced basis history at each Greedy
+            % iteration, output is used in method verifiExactError.
+            rvStore = obj.resp.rv.dis.store;
+            nphi = size(rvStore{1, iGre}, 1);
+            obj.phi.verify = obj.phi.val(:, 1:nphi);
+            
+        end
+        %%
+        function obj = verifyExactError(obj, iGre, iIter)
+            % this method verifies the proposed algorithm by computing
+            % RB error e(\mu) = U(\mu) - \bPhi\alpha(\mu). 
+            rvmu = obj.resp.rv.dis.store{iGre, iIter};
+            keyboard
+%             err = obj.dis.verify - obj.phi.verify * ;
+            
+        end
+        %%
         function obj = rvPmErrProdSumSlct(obj)
             
             % multiply the square matrices: norm error * rv * pm.
@@ -1944,7 +1972,7 @@ classdef beam < handle
                     pmValRowhat = obj.pmVal.comb.space(eMaxLocIdxhat, :);
                     obj.err.max.loc.hat = pmValRowhat(:, 1:obj.no.inc);
                     obj.err.max.val.hat = eMaxValhat;
-                                        
+                    
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
                     pmValRow = obj.pmVal.comb.space(eMaxLocIdx, :);
@@ -2106,7 +2134,9 @@ classdef beam < handle
         end
         %%
         function obj = refiCondition(obj, type, refCeaseSwitch)
-            % this method computes the refinement condition.
+            % this method computes the refinement condition. Max val and
+            % loc of eDiff is evaluated at the interpolation block which
+            % possesses the largest error. 
             switch type
                 case 'maxValue'
                     % maximum distance between maximum values of 2 surfaces.
@@ -2132,7 +2162,7 @@ classdef beam < handle
                     end
                     
                     % when seeking the maximum eine location, seek only in
-                    % the block where the maximum error of eHhat is largest. 
+                    % the block where the maximum error of eHhat is largest.
                     nBlk = obj.no.block.hhat;
                     hhatBlk = cell(nBlk, 1);
                     diffBlk = cell(nBlk, 1);
@@ -2155,25 +2185,17 @@ classdef beam < handle
                     [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v), hhatBlk, ...
                         'un', 0)));
                     blkToCheck = diffBlk{mpIdx};
-                    keyboard
+                    % loc_ is not the maximum difference location. 
+                    [obj.err.max.diffVal, loc_] = max(blkToCheck(:, 2));
+                    locPmExpo_ = blkToCheck(loc_, 1);
+                    obj.err.max.diffLoc = find(obj.pmExpo.i{:} == locPmExpo_);
                     
-                    
-                    
-                    
-                    
-                    [obj.err.max.diffVal, obj.err.max.diffLoc] = ...
-                        max(obj.err.store.surf.diff(:, 2));
-                    newLoc = obj.err.max.diffLoc;
-                    %  obj.refinement.condition = ...
-                    %  abs(obj.err.max.diffVal / ...
-                    %  obj.err.store.surf.hhat(obj.err.max.diffLoc));
-                    obj.refinement.condition = ...
-                        abs(obj.err.max.diffVal / ...
+                    obj.refinement.condition = abs(obj.err.max.diffVal / ...
                         norm(obj.dis.qoi.trial, 'fro'));
-                    keyboard
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1
+                        newLoc = obj.err.max.diffLoc;
                         if obj.indicator.refine == 1 && ...
                                 obj.indicator.enrich == 0
                             if currentLoc ~= newLoc
@@ -2192,7 +2214,7 @@ classdef beam < handle
         end
         %%
         function obj = greedyInfoDisplay(obj, type)
-            % this method displays maximum error value and 
+            % this method displays maximum error value and
             % informations regarding Greedy iterations.
             
             switch type
@@ -2247,9 +2269,9 @@ classdef beam < handle
                 
             end
             
-%             disp(strcat...
-%                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
-%                 {' '}, num2str(obj.qoi.t')))
+            %             disp(strcat...
+            %                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
+            %                 {' '}, num2str(obj.qoi.t')))
             disp(strcat...
                 ('time step number = ', {' '}, num2str(obj.no.t_step), ...
                 ', qoi space = the inclusion, qoi time = ', ...

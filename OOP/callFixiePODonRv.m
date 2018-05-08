@@ -76,6 +76,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.reducedVar;
         
+        fixie.rvDisStore(iIter);
+        
         fixie.pmPrepare(rvSVDswitch);
         
         fixie.rvPrepare(rvSVDswitch);
@@ -113,7 +115,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
-        CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
+        CmdWinTool('statusText', ...
+            sprintf('online stage progress: %d of %d', iIter, nIter));
         
     end
     % disp('online end')
@@ -133,7 +136,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
-        figure(2)
+        figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
         
@@ -151,7 +154,6 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         disp(fixie.countGreedy)
         
     elseif fixie.refinement.condition > fixie.refinement.thres
-        
         %% local h-refinement.
         % this method displays refinement informations.
         fixie.localHrefinement;
@@ -160,6 +162,20 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
     end
     
+end
+
+%% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
+for iGre = 1:fixie.countGreedy
+    fixie.verifyExtractBasis(iGre);
+    for iIter = 1:nIter
+        
+        fixie.pmIter(iIter);
+        fixie.exactSolution('verify', 0);
+        fixie.verifyExactError(iGre, iIter);
+        CmdWinTool('statusText', ...
+            sprintf('verification stage progress: %d of %d', iIter, nIter));
+        
+    end
 end
 
 %%

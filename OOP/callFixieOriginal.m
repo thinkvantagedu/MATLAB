@@ -66,7 +66,8 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.errStoreSurfs(typeSwitch);
         
-        CmdWinTool('statusText', sprintf('Progress: %d of %d', iIter, nIter));
+        CmdWinTool('statusText', ...
+            sprintf('verification stage progress: %d of %d', iIter, nIter));
         
     end
        
