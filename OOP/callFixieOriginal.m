@@ -73,6 +73,8 @@ while fixie.err.max.val > fixie.err.lowBond
        
     fixie.extractMaxErrorInfo(typeSwitch, randomSwitch);
     fixie.extractMaxPmInfo(typeSwitch);
+    
+    fixie.greedyInfoDisplay('original');
     fixie.storeErrorInfoOriginal;
     
     fixie.errStoreAllSurfs('original');
@@ -80,22 +82,21 @@ while fixie.err.max.val > fixie.err.lowBond
     figure(1)
     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
-    fixie.greedyInfoDisplay(typeSwitch);
-    if fixie.countGreedy >= drawRow * drawCol
-        disp('iterations reach maximum plot number')
-        break
-    end
-    
     fixie.exactSolution('Greedy', AbaqusSwitch);
-    
+    % rbEnrichment set the indicators.
     fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
         ratioSwitch, 'original');
     fixie.reducedMatrices;
+    
+    if fixie.countGreedy > drawRow * drawCol
+        disp('iterations reach maximum plot number')
+        break
+    end
     disp(fixie.countGreedy)
     
 end
 %%
 % figure(2)
 % fixie.plotMaxErrorDecayVal('original', 'k-*', 2, nPhiInitial);
-% figure(3)
-% fixie.plotMaxErrorDecayLoc('original', 'k-*', 2);
+figure(3)
+fixie.plotMaxErrorDecayLoc('original', 'k-*', 2);

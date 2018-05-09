@@ -136,23 +136,22 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
+        
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
-        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
-        
-        if fixie.countGreedy >= drawRow * drawCol
-            disp('iterations reach maximum plot number')
-            break
-        end
+%         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
         
         fixie.exactSolution('Greedy', AbaqusSwitch);
-        
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
             ratioSwitch, 'hhat');
         fixie.reducedMatrices;
-        disp(fixie.countGreedy)
         
+        if fixie.countGreedy > drawRow * drawCol
+            disp('iterations reach maximum plot number')
+            break
+        end
+        disp(fixie.countGreedy)
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
         % this method displays refinement informations.
@@ -165,7 +164,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
 end
 
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
-for iGre = 1:fixie.countGreedy
+% All Greedy iterations are included here.
+fixie.verifyPrepare;
+figure(1)
+for iGre = 1:fixie.countGreedy - 1
     fixie.verifyExtractBasis(iGre);
     for iIter = 1:nIter
         
@@ -176,12 +178,16 @@ for iGre = 1:fixie.countGreedy
             sprintf('verification stage progress: %d of %d', iIter, nIter));
         
     end
+    fixie.verifyExtractMaxErr(iGre);
+    fixie.verifyPlotSurf(iGre, 'r-^');
 end
+
+
+
+
 
 %%
 % figure(2)
-% hold on
-% fixie.plotMaxErrorDecayVal('hhat', 'b-*', 2, nPhiInitial);
-% figure(3)
-% hold on
-% fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
+% fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, nPhiInitial);
+figure(3)
+fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2);

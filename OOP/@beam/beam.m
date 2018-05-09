@@ -391,6 +391,7 @@ classdef beam < handle
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = obj.no.rb - nRbOld;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
@@ -460,6 +461,7 @@ classdef beam < handle
                 singularSwitch, ratioSwitch, errType)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
+            obj.no.store.rbAdd = [];
             disTrial = obj.dis.trial;
             [u, s, ~] = svd(disTrial, 0);
             if singularSwitch == 0 && ratioSwitch == 0
@@ -488,6 +490,7 @@ classdef beam < handle
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = obj.no.rb;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
         end
@@ -1474,12 +1477,12 @@ classdef beam < handle
             obj.acc.re.reVar = rvAcc;
             obj.vel.re.reVar = rvVel;
             obj.dis.re.reVar = rvDis;
-                        
+            
         end
         %%
         function obj = rvDisStore(obj, iIter)
             % this method stores dieplacement reduced variables for
-            % verification purpose. 
+            % verification purpose.
             obj.resp.rv.dis.store{iIter, obj.countGreedy} = obj.dis.re.reVar;
             
         end
@@ -1917,21 +1920,52 @@ classdef beam < handle
             end
         end
         %%
+        function obj = verifyPrepare(obj)
+            % this method prepares for the verification.
+            obj.err.store.allSurf.verify = zeros(obj.countGreedy, ...
+                obj.domLeng.i);
+            obj.err.store.max.verify = zeros(obj.countGreedy, 1);
+            obj.err.store.loc.verify = zeros(obj.countGreedy, 1);
+        end
+        %%
         function obj = verifyExtractBasis(obj, iGre)
             % this method extracts the reduced basis history at each Greedy
             % iteration, output is used in method verifiExactError.
             rvStore = obj.resp.rv.dis.store;
             nphi = size(rvStore{1, iGre}, 1);
             obj.phi.verify = obj.phi.val(:, 1:nphi);
-            
         end
         %%
         function obj = verifyExactError(obj, iGre, iIter)
             % this method verifies the proposed algorithm by computing
-            % RB error e(\mu) = U(\mu) - \bPhi\alpha(\mu). 
-            rvmu = obj.resp.rv.dis.store{iGre, iIter};
-            keyboard
-%             err = obj.dis.verify - obj.phi.verify * ;
+            % RB error e(\mu) = U(\mu) - \bPhi\alpha(\mu).
+            % compute relative norm error at each iteration, then store in
+            % variable: obj.err.store.allSurf.verify.
+            rvmu = obj.resp.rv.dis.store{iIter, iGre};
+            disErr = obj.dis.verify - obj.phi.verify * rvmu;
+            disErrQoI = disErr(obj.qoi.dof, obj.qoi.t);
+            errVerify = norm(disErrQoI, 'fro') / norm(obj.dis.qoi.trial, 'fro');
+            obj.err.store.allSurf.verify(iGre, iIter) = errVerify;
+            
+        end
+        %%
+        function obj = verifyExtractMaxErr(obj, iGre)
+            % this method extracts the maximum error for each Greedy
+            % iteration for verification purpose. 
+            errSurfStore = obj.err.store.allSurf.verify(iGre, :);
+            [eMval, eMloc] = max(errSurfStore);
+            obj.err.store.max.verify(iGre) = eMval;
+            obj.err.store.loc.verify(iGre) = eMloc;
+        end
+        %%
+        function obj = verifyPlotSurf(obj, iGre, plotColor)
+            % this method plots the response surface for verification
+            % purpose.
+            xVal = obj.pmExpo.i{:};
+            yVal = obj.err.store.allSurf.verify(iGre, :);
+            semilogy(xVal, yVal, plotColor);
+            hold on
+            grid on
             
         end
         %%
@@ -2136,7 +2170,7 @@ classdef beam < handle
         function obj = refiCondition(obj, type, refCeaseSwitch)
             % this method computes the refinement condition. Max val and
             % loc of eDiff is evaluated at the interpolation block which
-            % possesses the largest error. 
+            % possesses the largest error.
             switch type
                 case 'maxValue'
                     % maximum distance between maximum values of 2 surfaces.
@@ -2185,7 +2219,7 @@ classdef beam < handle
                     [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v), hhatBlk, ...
                         'un', 0)));
                     blkToCheck = diffBlk{mpIdx};
-                    % loc_ is not the maximum difference location. 
+                    % loc_ is not the maximum difference location.
                     [obj.err.max.diffVal, loc_] = max(blkToCheck(:, 2));
                     locPmExpo_ = blkToCheck(loc_, 1);
                     obj.err.max.diffLoc = find(obj.pmExpo.i{:} == locPmExpo_);
@@ -2268,10 +2302,6 @@ classdef beam < handle
                 obj.qoi.t = qoiT;
                 
             end
-            
-            %             disp(strcat...
-            %                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
-            %                 {' '}, num2str(obj.qoi.t')))
             disp(strcat...
                 ('time step number = ', {' '}, num2str(obj.no.t_step), ...
                 ', qoi space = the inclusion, qoi time = ', ...

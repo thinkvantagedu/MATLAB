@@ -4,9 +4,12 @@ switch errType
         err = obj.err.store.max;
     case 'hhat'
         err = obj.err.store.max.hhat;
+    case 'verify'
+        err = obj.err.store.max.verify;
 end
 % semilogy((1:no_plot), err, 'b-*', 'DisplayName', 'Greedily selected samples', 'LineWidth', 2);
 semilogy((nPhiInitial:obj.no.rbAdd:obj.no.rb), err, color, 'lineWidth', width);
+hold on
 font_size.axis = 20;
 grid on
 set(gca, 'fontsize', font_size.axis)
