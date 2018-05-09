@@ -1,4 +1,4 @@
-clear; clc; clf;
+clear; clc;
 trialName = 'l9h2SingleInc';
 typeSwitch = 'original';
 rvSVDswitch = 0;
@@ -79,8 +79,8 @@ while fixie.err.max.val > fixie.err.lowBond
     
     fixie.errStoreAllSurfs('original');
     
-    figure(1)
-    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
+%     figure(1)
+%     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
     fixie.exactSolution('Greedy', AbaqusSwitch);
     % rbEnrichment set the indicators.
@@ -96,7 +96,15 @@ while fixie.err.max.val > fixie.err.lowBond
     
 end
 %%
-% figure(2)
-% fixie.plotMaxErrorDecayVal('original', 'k-*', 2, nPhiInitial);
+if randomSwitch == 0
+    clf
+    lineWidth = 2;
+    lineColor = 'k-*';
+elseif randomSwitch == 1
+    lineWidth = 1;
+    lineColor = 'c--';
+end
+figure(2)
+fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth);
 figure(3)
-fixie.plotMaxErrorDecayLoc('original', 'k-*', 2);
+fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth);

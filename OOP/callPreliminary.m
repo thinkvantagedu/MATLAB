@@ -29,7 +29,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
+tMax = 1.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -52,11 +52,11 @@ errRbCtrlTNo = 1;
 cntInit = 1;
 
 %% refinement threshold. ==========
-refiThres = 0.03;
+refiThres = 0.1;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 8;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -69,13 +69,13 @@ nQoiT = 2;
 %% initial error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.9;
+reductionRatio = 0.8;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 10; 
+nRespSVD = 20; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 

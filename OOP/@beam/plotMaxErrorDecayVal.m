@@ -1,27 +1,37 @@
-function obj = plotMaxErrorDecayVal(obj, errType, color, width, nPhiInitial)
+function obj = plotMaxErrorDecayVal(obj, errType, color, width)
+errx = obj.no.store.rb(2:end);
+
 switch errType
     case 'original'
-        err = obj.err.store.max;
+        erry = obj.err.store.max;
+        xLocText = obj.err.store.loc;
     case 'hhat'
-        err = obj.err.store.max.hhat;
+        erry = obj.err.store.max.hhat;
     case 'verify'
-        err = obj.err.store.max.verify;
+        erry = obj.err.store.max.verify;
+        xLocText = obj.err.store.loc.verify;
 end
-% semilogy((1:no_plot), err, 'b-*', 'DisplayName', 'Greedily selected samples', 'LineWidth', 2);
-semilogy((nPhiInitial:obj.no.rbAdd:obj.no.rb), err, color, 'lineWidth', width);
+
+semilogy(errx, erry, color, 'lineWidth', width);
 hold on
-font_size.axis = 20;
-grid on
-set(gca, 'fontsize', font_size.axis)
-xlim([0 obj.no.rb])
-% ylim([err(end), err(1)])
-% axis square
-% legend(plotName, 'Location', 'southwest')
+
+% for i = 1:length(erry)
+%     stri = strcat(num2str(erry(i)), {', '}, num2str(xLocText(i)));
+%     text(errx(i), erry(i), stri, 'HorizontalAlignment', 'left', ...
+%      'VerticalAlignment', 'bottom', 'FontSize', 20);
+% end
+
+
+xlim([0 inf])
+% xlim([0 obj.no.rb])
+% ylim([erry(end), erry(1)])
+xticks(errx);
+
 xlabel('N')
 ylabel('Maximum error')
 
-% legend('show')
 grid on
-set(gca, 'FontSize', 25)
-% legend('location', 'northeast')
+set(gca, 'FontSize', 20)
+axis square
+
 end

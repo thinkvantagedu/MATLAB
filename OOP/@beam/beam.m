@@ -390,6 +390,7 @@ classdef beam < handle
             end
             
             obj.no.rb = size(obj.phi.val, 2);
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
             obj.no.rbAdd = obj.no.rb - nRbOld;
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
@@ -462,6 +463,7 @@ classdef beam < handle
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
             obj.no.store.rbAdd = [];
+            obj.no.store.rb = [];
             disTrial = obj.dis.trial;
             [u, s, ~] = svd(disTrial, 0);
             if singularSwitch == 0 && ratioSwitch == 0
@@ -491,6 +493,7 @@ classdef beam < handle
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = obj.no.rb;
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
         end
@@ -1922,10 +1925,10 @@ classdef beam < handle
         %%
         function obj = verifyPrepare(obj)
             % this method prepares for the verification.
-            obj.err.store.allSurf.verify = zeros(obj.countGreedy, ...
+            obj.err.store.allSurf.verify = zeros(obj.countGreedy - 1, ...
                 obj.domLeng.i);
-            obj.err.store.max.verify = zeros(obj.countGreedy, 1);
-            obj.err.store.loc.verify = zeros(obj.countGreedy, 1);
+            obj.err.store.max.verify = zeros(obj.countGreedy - 1, 1);
+            obj.err.store.loc.verify = zeros(obj.countGreedy - 1, 1);
         end
         %%
         function obj = verifyExtractBasis(obj, iGre)
@@ -2284,7 +2287,7 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-            qoiT = [2 4 6 8]';
+            qoiT = [2:2:20]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
