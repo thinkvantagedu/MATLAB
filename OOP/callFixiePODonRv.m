@@ -116,7 +116,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
         CmdWinTool('statusText', ...
-            sprintf('online stage progress: %d of %d', iIter, nIter));
+            sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
     % disp('online end')
@@ -184,6 +184,6 @@ end
 
 %%
 figure(2)
-fixie.plotMaxErrorDecayVal('verify', 'b-*', 2);
+fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
 figure(3)
 fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2);

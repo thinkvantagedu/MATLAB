@@ -44,10 +44,10 @@ set(gca,'fontsize',20)
 xlabel('Total number of basis vectors', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
 
-% %% plot eine development on value curve.
-% eine = [0.0048194 0.0037142 0.0032078 0.0024127 0.0012452 0.0014238 ...
-%     0.0017214 0.0014185 0.00099074 0.0013527 0.0011604]';
-% semilogy(errx, eine, 'r-^', 'LineWidth', 1.5);
+%% plot eine development on value curve.
+eine = [0.0048194 0.0037142 0.0032078 0.0024127 0.0012452 0.0014238 ...
+    0.0017214 0.0014185 0.00099074 0.0013527 0.0011604]';
+semilogy(errx, eine, 'r-');
 
 %% plot decay location curve.
 figure(2)

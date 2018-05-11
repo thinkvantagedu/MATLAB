@@ -1,5 +1,5 @@
-function obj = plotMaxErrorDecayVal(obj, errType, color, width)
-errx = obj.no.store.rb(2:end);
+function obj = plotMaxErrorDecayVal(obj, errType, color, width, randomSwitch)
+errx = obj.no.store.rb(1:end - 1);
 
 switch errType
     case 'original'
@@ -14,7 +14,7 @@ end
 
 semilogy(errx, erry, color, 'lineWidth', width);
 hold on
-
+axis([0 inf 0 erry(1)])
 % for i = 1:length(erry)
 %     stri = strcat(num2str(erry(i)), {', '}, num2str(xLocText(i)));
 %     text(errx(i), erry(i), stri, 'HorizontalAlignment', 'left', ...
@@ -22,10 +22,11 @@ hold on
 % end
 
 
-xlim([0 inf])
-% xlim([0 obj.no.rb])
-% ylim([erry(end), erry(1)])
-xticks(errx);
+if randomSwitch == 0
+    xticks(errx);
+elseif randomSwitch == 1
+    
+end
 
 xlabel('N')
 ylabel('Maximum error')

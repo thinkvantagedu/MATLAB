@@ -67,7 +67,7 @@ while fixie.err.max.val > fixie.err.lowBond
         fixie.errStoreSurfs(typeSwitch);
         
         CmdWinTool('statusText', ...
-            sprintf('verification stage progress: %d of %d', iIter, nIter));
+            sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
        
@@ -97,7 +97,7 @@ while fixie.err.max.val > fixie.err.lowBond
 end
 %%
 if randomSwitch == 0
-    clf
+%     clf
     lineWidth = 2;
     lineColor = 'k-*';
 elseif randomSwitch == 1
@@ -105,6 +105,6 @@ elseif randomSwitch == 1
     lineColor = 'c--';
 end
 figure(2)
-fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth);
+fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
 figure(3)
 fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth);

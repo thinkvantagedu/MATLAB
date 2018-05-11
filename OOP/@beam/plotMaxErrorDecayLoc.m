@@ -1,13 +1,15 @@
 function obj = plotMaxErrorDecayLoc(obj, errType, color, width)
-errx = [obj.err.store.redInfo{3:end, 2}];
+
 
 switch errType
     case 'original'
+        errx = obj.pmVal.i.space{:}(obj.err.store.loc, 2);
         erry = obj.err.store.max;
         xLocText = obj.err.store.loc;
     case 'hhat'
         erry = obj.err.store.max.hhat;
     case 'verify'
+        errx = obj.err.store.loc.verify(:, 2);
         erry = obj.err.store.max.verify;
         xLocText = obj.err.store.loc.verify;
 end
@@ -22,9 +24,6 @@ for i = 1:length(erry)
 end
 
 
-
-
-% ylim([erry(end), erry(1)])
 xlabel('Youngs Modulus')
 ylabel('Maximum Relative Error')
 

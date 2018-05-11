@@ -349,9 +349,9 @@ classdef beam < handle
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidt(phi_);
                 obj.phi.val = obj.phi.otpt;
+                obj.basisCompressionFixNo(0);
                 
             elseif singularSwitch == 1 && ratioSwitch == 0
-                
                 [phiEnrich, ~, ~] = basisCompressionSingularRatio...
                     (rbErrFull, redRatio);
                 obj.phi.val = [obj.phi.val phiEnrich];
@@ -373,24 +373,28 @@ classdef beam < handle
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
                 obj.basisCompressionRvIterate(pmValMax, disMax, ...
                     phiInpt, phiEnrich, M, C, K, F, redRatio, 0, errType);
-                switch errType
-                    case 'original'
-                        eMaxPre = obj.err.store.max(obj.countGreedy - 1);
-                        eMaxLoc = obj.err.max.loc;
-                    case 'hhat'
-                        eMaxPre = obj.err.store.max.hhat(obj.countGreedy - 1);
-                        eMaxLoc = obj.err.max.loc.hhat;
-                end
-                eMaxCur = obj.err.rbRedRemain;
-                redRatioOtpt = (eMaxPre - eMaxCur) / eMaxPre;
                 
-                redInfo = {eMaxLoc obj.pmVal.max ...
-                    size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
-                obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             end
             
+            switch errType
+                case 'original'
+                    eMaxPre = obj.err.store.max(obj.countGreedy - 1);
+                    eMaxLoc = obj.err.max.loc;
+                case 'hhat'
+                    eMaxPre = obj.err.store.max.hhat(obj.countGreedy - 1);
+                    eMaxLoc = obj.err.max.loc.hhat;
+            end
+            eMaxCur = obj.err.rbRedRemain;
+            redRatioOtpt = (eMaxPre - eMaxCur) / eMaxPre;
+            
+            redInfo = {eMaxLoc obj.pmVal.max ...
+                size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
+            obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
+            
             obj.no.rb = size(obj.phi.val, 2);
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
             obj.no.rbAdd = obj.no.rb - nRbOld;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
@@ -404,7 +408,7 @@ classdef beam < handle
                 (obj, pmInpt, disInpt, phiInpt, phiEnrich, M, C, K, F, ...
                 redRatio, initSwitch, errType)
             % this method generates reduced basis iteratively with
-            % evaluating RB error. Output is obj.phi.val and
+            % evaluating RB errorat the magic point. Output is obj.phi.val and
             % obj.err.rbRedRemain.
             nEnrich = 1;
             % iteratively add basis vectors based on errRb.
@@ -460,15 +464,16 @@ classdef beam < handle
                 singularSwitch, ratioSwitch, errType)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
+            obj.no.store.rbAdd = [];
+            obj.no.store.rb = [];
             disTrial = obj.dis.trial;
-            [u, s, ~] = svd(disTrial, 0);
+            [u, ~, ~] = svd(disTrial, 0);
             if singularSwitch == 0 && ratioSwitch == 0
-                s = diag(s);
                 uPhi = u(:, 1:nInit);
                 obj.phi.val = uPhi;
-                reRatio = sqrt(sum((s(1:nInit)).^2) / sum(s.^2));
+                obj.basisCompressionFixNo(1);
             elseif singularSwitch == 1 && ratioSwitch == 0
-                [obj.phi.val, reRatio, obj.no.rb] = ...
+                [obj.phi.val, ~, obj.no.rb] = ...
                     basisCompressionSingularRatio(disTrial, redRatio);
             elseif singularSwitch == 0 && ratioSwitch == 1
                 % import system.
@@ -480,16 +485,49 @@ classdef beam < handle
                 
                 obj.basisCompressionRvIterate(pmTrial, disTrial, ...
                     [], u, M, C, K, F, redRatio, 1, errType);
-                reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
-                    size(obj.phi.val, 2) 1 - obj.err.rbRedRemain ...
-                    1 obj.err.rbRedRemain};
-                obj.err.store.redInfo(2, :) = reductionInfo;
+                
             end
+            
+            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
+                size(obj.phi.val, 2) 1 - obj.err.rbRedRemain ...
+                1 obj.err.rbRedRemain};
+            obj.err.store.redInfo(2, :) = reductionInfo;
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.rbAdd = obj.no.rb;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
+        end
+        %%
+        function obj = basisCompressionFixNo(obj, initSwitch)
+            % this method compute the error reduction ratio at the magic point 
+            % when a fixed number of basis vectors is used. 
+            if initSwitch == 1
+                disQoiInpt = obj.dis.qoi.trial;
+                pmInpt = obj.pmVal.i.trial;
+            else
+                disQoiInpt = obj.dis.rbEnrich(obj.qoi.dof, obj.qoi.t);
+                pmInpt = obj.pmVal.max;
+            end
+            phiInpt = obj.phi.val;
+            Kcell = obj.sti.mtxCell;
+            m = phiInpt' * obj.mas.mtx * phiInpt;
+            c = phiInpt' * obj.dam.mtx * phiInpt;
+            k = phiInpt' * (Kcell{1} * pmInpt + ...
+                Kcell{2} * obj.pmVal.s.fix) * phiInpt;
+            f = phiInpt' * obj.fce.val;
+            dT = obj.time.step;
+            maxT = obj.time.max;
+            U0 = zeros(size(m, 1), 1);
+            V0 = zeros(size(m, 1), 1);
+            [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                (phiInpt, m, c, k, f, 'average', dT, maxT, U0, V0);
+            ur = phiInpt * rv;
+            urQoi = ur(obj.qoi.dof, obj.qoi.t);
+            obj.err.rbRedRemain = norm(disQoiInpt - urQoi, 'fro') / ...
+                norm(obj.dis.qoi.trial, 'fro');
         end
         %%
         function obj = exactSolution(obj, type, AbaqusSwitch, trialName)
@@ -1474,12 +1512,12 @@ classdef beam < handle
             obj.acc.re.reVar = rvAcc;
             obj.vel.re.reVar = rvVel;
             obj.dis.re.reVar = rvDis;
-                        
+            
         end
         %%
         function obj = rvDisStore(obj, iIter)
             % this method stores dieplacement reduced variables for
-            % verification purpose. 
+            % verification purpose.
             obj.resp.rv.dis.store{iIter, obj.countGreedy} = obj.dis.re.reVar;
             
         end
@@ -1917,21 +1955,53 @@ classdef beam < handle
             end
         end
         %%
+        function obj = verifyPrepare(obj)
+            % this method prepares for the verification.
+            obj.err.store.allSurf.verify = zeros(obj.countGreedy - 1, ...
+                obj.domLeng.i);
+            obj.err.store.max.verify = zeros(obj.countGreedy - 1, 1);
+            obj.err.store.loc.verify = zeros(obj.countGreedy - 1, 2);
+        end
+        %%
         function obj = verifyExtractBasis(obj, iGre)
             % this method extracts the reduced basis history at each Greedy
             % iteration, output is used in method verifiExactError.
             rvStore = obj.resp.rv.dis.store;
             nphi = size(rvStore{1, iGre}, 1);
             obj.phi.verify = obj.phi.val(:, 1:nphi);
-            
         end
         %%
         function obj = verifyExactError(obj, iGre, iIter)
             % this method verifies the proposed algorithm by computing
-            % RB error e(\mu) = U(\mu) - \bPhi\alpha(\mu). 
-            rvmu = obj.resp.rv.dis.store{};
-            keyboard
-%             err = obj.dis.verify - obj.phi.verify * ;
+            % RB error e(\mu) = U(\mu) - \bPhi\alpha(\mu).
+            % compute relative norm error at each iteration, then store in
+            % variable: obj.err.store.allSurf.verify.
+            rvmu = obj.resp.rv.dis.store{iIter, iGre};
+            disErr = obj.dis.verify - obj.phi.verify * rvmu;
+            disErrQoI = disErr(obj.qoi.dof, obj.qoi.t);
+            errVerify = norm(disErrQoI, 'fro') / norm(obj.dis.qoi.trial, 'fro');
+            obj.err.store.allSurf.verify(iGre, iIter) = errVerify;
+            
+        end
+        %%
+        function obj = verifyExtractMaxErr(obj, iGre)
+            % this method extracts the maximum error for each Greedy
+            % iteration for verification purpose. 
+            errSurfStore = obj.err.store.allSurf.verify(iGre, :);
+            [eMval, eMloc] = max(errSurfStore);
+            obj.err.store.max.verify(iGre) = eMval;
+            obj.err.store.loc.verify(iGre, 1) = eMloc;
+            obj.err.store.loc.verify(iGre, 2) = obj.pmVal.i.space{:}();
+        end
+        %%
+        function obj = verifyPlotSurf(obj, iGre, plotColor)
+            % this method plots the response surface for verification
+            % purpose.
+            xVal = obj.pmExpo.i{:};
+            yVal = obj.err.store.allSurf.verify(iGre, :);
+            semilogy(xVal, yVal, plotColor);
+            hold on
+            grid on
             
         end
         %%
@@ -2136,7 +2206,7 @@ classdef beam < handle
         function obj = refiCondition(obj, type, refCeaseSwitch)
             % this method computes the refinement condition. Max val and
             % loc of eDiff is evaluated at the interpolation block which
-            % possesses the largest error. 
+            % possesses the largest error.
             switch type
                 case 'maxValue'
                     % maximum distance between maximum values of 2 surfaces.
@@ -2185,7 +2255,7 @@ classdef beam < handle
                     [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v), hhatBlk, ...
                         'un', 0)));
                     blkToCheck = diffBlk{mpIdx};
-                    % loc_ is not the maximum difference location. 
+                    % loc_ is not the maximum difference location.
                     [obj.err.max.diffVal, loc_] = max(blkToCheck(:, 2));
                     locPmExpo_ = blkToCheck(loc_, 1);
                     obj.err.max.diffLoc = find(obj.pmExpo.i{:} == locPmExpo_);
@@ -2250,7 +2320,7 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-            qoiT = [2 4 6 8]';
+            qoiT = [10 20 30 40 50]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -2268,10 +2338,6 @@ classdef beam < handle
                 obj.qoi.t = qoiT;
                 
             end
-            
-            %             disp(strcat...
-            %                 ('qoi space = lower edge of the inclusion, qoi time = ', ...
-            %                 {' '}, num2str(obj.qoi.t')))
             disp(strcat...
                 ('time step number = ', {' '}, num2str(obj.no.t_step), ...
                 ', qoi space = the inclusion, qoi time = ', ...
