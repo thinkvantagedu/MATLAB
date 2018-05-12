@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 1025;
-domLengs = 1025;
+domLengi = 129;
+domLengs = 129;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -69,7 +69,7 @@ nQoiT = 2;
 %% initial error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.8;
+reductionRatio = 0.6;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
@@ -90,7 +90,7 @@ qoiSwitchTime = 1;
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
 % singularSwitch add basis vector based on singular values.
-ratioSwitch = 0;
+ratioSwitch = 1;
 singularSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;

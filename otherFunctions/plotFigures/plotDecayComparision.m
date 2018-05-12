@@ -1,7 +1,8 @@
 clf; clear; clc;
 cd ~/Desktop/Temp/thesisResults/11052018_0935+;
 load('errOriginalStore.mat', 'errOriginalStore')
-load('errProposedStore.mat', 'errProposedStore')
+load('errProposedStore129.mat', 'errProposedStore')
+load('errProposedStore1025.mat', 'errProposedStore1025')
 load('errRandom1.mat', 'errRandom1')
 load('errRandom2.mat', 'errRandom2')
 load('errRandom3.mat', 'errRandom3')
@@ -15,7 +16,8 @@ nRb = 50;
 %% plot decay value curve.
 errx = (nPhiIni:nPhiAdd:nRb);
 errOriMax = errOriginalStore.max;
-errProMax = errProposedStore.store.max.verify;
+errProMax129 = errProposedStore.store.max.verify;
+errProMax1025 = errProposedStore1025.store.max.verify;
 
 errRanMax1 = errRandom1.store.max;
 errRanMax2 = errRandom2.store.max;
@@ -27,13 +29,15 @@ figure(1)
 semilogy((nPhiIni:nPhiAdd:nRb), errOriMax, ...
     'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 hold on
-semilogy((nPhiIni:nPhiAdd:nRb), errProMax, ...
-    'r-+', 'MarkerSize', 10, 'lineWidth', 3);
-semilogy(errx, errRanMax1, 'k-.', 'lineWidth', 1.5);
-semilogy(errx, errRanMax2, 'k-.', 'lineWidth', 1.5);
-semilogy(errx, errRanMax3, 'k-.', 'lineWidth', 1.5);
-semilogy(errx, errRanMax4, 'k-.', 'lineWidth', 1.5);
-semilogy(errx, errRanMax6, 'k-.', 'lineWidth', 1.5);
+semilogy((nPhiIni:nPhiAdd:nRb), errProMax129, ...
+    'r-^', 'MarkerSize', 10, 'lineWidth', 3);
+semilogy((nPhiIni:nPhiAdd:nRb), errProMax1025, ...
+    'r-v', 'MarkerSize', 10, 'lineWidth', 3);
+% semilogy(errx, errRanMax1, 'k-.', 'lineWidth', 1.5);
+% semilogy(errx, errRanMax2, 'k-.', 'lineWidth', 1.5);
+% semilogy(errx, errRanMax3, 'k-.', 'lineWidth', 1.5);
+% semilogy(errx, errRanMax4, 'k-.', 'lineWidth', 1.5);
+% semilogy(errx, errRanMax6, 'k-.', 'lineWidth', 1.5);
 xticks(errx);
 axis([0 nRb 0 errOriMax(1)]);
 axis normal
@@ -62,7 +66,7 @@ errPmLocPro = pmSpacePro(errProposedStore.store.loc.verify);
 % errPmLocRan6 = pmSpaceOri(errRandom6.store.loc);
 loglog(errPmLocOri, errOriMax, 'b-o', 'MarkerSize', 10, 'LineWidth', 3)
 hold on
-loglog(errPmLocPro, errProMax, 'r-+', 'MarkerSize', 10, 'LineWidth', 3)
+loglog(errPmLocPro, errProMax129, 'r-+', 'MarkerSize', 10, 'LineWidth', 3)
 
 % loglog(errPmLocRan1, errRanMax1, 'k-.', 'MarkerSize', 10, 'LineWidth', 1.5)
 % loglog(errPmLocRan2, errRanMax2, 'k-.', 'MarkerSize', 10, 'LineWidth', 1.5)
