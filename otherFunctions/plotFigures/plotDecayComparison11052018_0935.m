@@ -26,13 +26,10 @@ errRanMax4 = errRandom4.store.max;
 errRanMax6 = errRandom6.store.max;
 
 figure(1)
-semilogy((nPhiIni:nPhiAdd:nRb), errOriMax, ...
-    'b-o', 'MarkerSize', 10, 'lineWidth', 3);
+semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 hold on
-semilogy((nPhiIni:nPhiAdd:nRb), errProMax129, ...
-    'r-^', 'MarkerSize', 10, 'lineWidth', 3);
-semilogy((nPhiIni:nPhiAdd:nRb), errProMax1025, ...
-    'r-v', 'MarkerSize', 10, 'lineWidth', 3);
+semilogy(errx, errProMax129, 'r-^', 'MarkerSize', 10, 'lineWidth', 3);
+semilogy(errx, errProMax1025, 'r-v', 'MarkerSize', 10, 'lineWidth', 3);
 % semilogy(errx, errRanMax1, 'k-.', 'lineWidth', 1.5);
 % semilogy(errx, errRanMax2, 'k-.', 'lineWidth', 1.5);
 % semilogy(errx, errRanMax3, 'k-.', 'lineWidth', 1.5);
