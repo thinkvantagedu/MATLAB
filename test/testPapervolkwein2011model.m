@@ -30,4 +30,14 @@ P1 = 0;
 for i = 1:n
     P1 = P1 + (abs(u1' * Y(:, i))) ^ 2;
 end
-
+%% test if projection error equals to truncation error.
+% truncation error.
+[rb, tError, nrb] = basisCompressionSingularRatio(Y, 0.99);
+tError = 1 - tError;
+% projection error: u - \phi\phi^T * u.
+pError = norm(Y - u(:, 1:nrb) * (u(:, 1:nrb))' * Y, 'fro');
+pe = 0;
+for i = 1:nrb
+    pe = pe + (norm(Y - u(:, i) * (u(:, i))' * Y, 'fro')) ^ 2;
+end
+pe = pe / nrb;

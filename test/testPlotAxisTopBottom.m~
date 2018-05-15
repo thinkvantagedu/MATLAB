@@ -1,0 +1,27 @@
+clear; clc; clf
+x1 = [1 3 5 7];
+y1 = [1 4 3 5];
+
+line(x1,y1,'Color','r')
+ax1 = gca; % current axes
+ax1.XColor = 'r';
+ax1.YColor = 'r';
+
+axes('Position',ax1.Position,...
+    'XAxisLocation','top',...
+    'YAxisLocation','right',...
+    'Color','none', ...
+    'XTick', x1);
+hold on
+
+% x2 = [1 2 4 7];
+% y2 = [4 3 2 1];
+% line(x2,y2,'Color','k')
+% ax3 = gca;
+% ax3_pos = ax3.Position; % position of first axes
+% ax4 = axes('Position',ax3_pos,...
+%     'XAxisLocation','bottom',...
+%     'Color','none', ...
+%     'XTick', x1);
+grid on
+
