@@ -1,9 +1,9 @@
 clear; clc;
 % this script tests paper: Model reduction using proper orthogonal
 % Decomposition by S.Volkwein.
-n = 4;
+n = 5;
 % P1, page 2
-Y = rand(n);
+Y = [1 2 3 4 5; 3 4 2 5 1; 1 3 5 4 2; 2 3 4 1 5; 2 1 4 3 5];
 [u, sig, v] = svd(Y, 0);
 sigVal = diag(sig);
 % first i singular vector.
@@ -23,7 +23,7 @@ test1 = sum((uPick' * Y)' .^ 2)';
 % 
 YYT = Y * Y';
 [eVecYYT, eValYYT] = eig(YYT);
-
+eValDiag = sort(diag(eValYYT), 'descend');
 %% test P1, page 2
 u1 = u(:, 3);
 P1 = 0;
@@ -32,12 +32,15 @@ for i = 1:n
 end
 %% test if projection error equals to truncation error.
 % truncation error.
-[rb, tError, nrb] = basisCompressionSingularRatio(Y, 0.99);
+[rb, tError, nrb] = basisCompressionSingularRatio(Y, 0.95);
 tError = 1 - tError;
+tErrorSVD = 1 - norm(u(:, 1:nrb) * sig(1:nrb, 1:nrb) * v(:, 1:nrb)', 'fro') ...
+    / norm(Y, 'fro'); % tError = tErrorSVD.
 % projection error: u - \phi\phi^T * u.
 pError = norm(Y - u(:, 1:nrb) * (u(:, 1:nrb))' * Y, 'fro');
-pe = 0;
-for i = 1:nrb
-    pe = pe + (norm(Y - u(:, i) * (u(:, i))' * Y, 'fro')) ^ 2;
-end
-pe = pe / nrb;
+
+% SVD error: u - ul * sigl * vlT.
+sError = norm(Y - u(:, 1:nrb) * sig(1:nrb, 1:nrb) * v(:, 1:nrb)', 'fro');
+
+% pError = sError.
+
