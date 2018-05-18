@@ -44,3 +44,14 @@ sError = norm(Y - u(:, 1:nrb) * sig(1:nrb, 1:nrb) * v(:, 1:nrb)', 'fro');
 
 % pError = sError.
 
+%% test global-POD and POD, do they result in the same basis?
+y1 = Y;
+y2 = [8 7 6 5 4; 9 8 7 9 2; 8 7 2 3 6; 8 0 1 7 5; 8 7 6 3 9];
+% i. POD
+[u1, s1, ~] = svd(y1, 0);
+[u2, s2, ~] = svd(y2, 0);
+n = 2;
+basis = [u1(:, 1:n) u2(:, 1:n)];
+
+% ii. global-POD
+[ug, sg, ~] = svd([y1 y2], 0);
