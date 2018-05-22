@@ -39,8 +39,7 @@ xticks(errx);
 axis([0 nRb 0 errOriMax(1)]);
 axis normal
 grid on
-legend({'Classical', 'Implemented', 'Random'}, ...
-    'FontSize', 20);
+legend({'Classical', 'Implemented', 'Random'}, 'FontSize', 20);
 set(gca,'fontsize',20)
 xlabel('Total number of basis vectors', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
