@@ -359,6 +359,7 @@ classdef beam < handle
             elseif singularSwitch == 0 && ratioSwitch == 1
                 % import system.
                 pmValMax = obj.pmVal.max;
+                keyboard
                 disMax = obj.dis.rbEnrich;
                 M = obj.mas.mtx;
                 C = obj.dam.mtx;
@@ -1991,7 +1992,7 @@ classdef beam < handle
             [eMval, eMloc] = max(errSurfStore);
             obj.err.store.max.verify(iGre) = eMval;
             obj.err.store.loc.verify(iGre, 1) = eMloc;
-            obj.err.store.loc.verify(iGre, 2) = obj.pmVal.i.space{:}();
+            obj.err.store.loc.verify(iGre, 2) = obj.pmVal.i.space{:}(eMloc, 2);
         end
         %%
         function obj = verifyPlotSurf(obj, iGre, plotColor)
@@ -2062,7 +2063,7 @@ classdef beam < handle
                     else
                         obj.err.max.loc = pmValRow(:, 1:obj.no.inc);
                     end
-                    
+                    keyboard
             end
         end
         %%
@@ -2109,7 +2110,7 @@ classdef beam < handle
             
             obj.pmVal.max = pmValMax;
             obj.pmExpo.max = num2cell(log10(obj.pmVal.max));
-            
+            keyboard
         end
         %%
         function obj = localHrefinement(obj)

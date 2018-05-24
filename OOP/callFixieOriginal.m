@@ -79,8 +79,8 @@ while fixie.err.max.val > fixie.err.lowBond
     
     fixie.errStoreAllSurfs('original');
     
-%     figure(1)
-%     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
+    figure(1)
+    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
     fixie.exactSolution('Greedy', AbaqusSwitch);
     % rbEnrichment set the indicators.
@@ -99,10 +99,10 @@ end
 if randomSwitch == 0
 %     clf
     lineWidth = 2;
-    lineColor = 'k-*';
+    lineColor = 'b-*';
 elseif randomSwitch == 1
     lineWidth = 1;
-    lineColor = 'c--';
+    lineColor = 'k--';
 end
 figure(2)
 fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
