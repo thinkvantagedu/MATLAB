@@ -52,7 +52,7 @@ if obj.no.inc == 1
         'color', '[0 0 0]', 'Fontsize', 10);
     
     xlabel('Youngs Modulus')
-    ylabel('Error')
+    ylabel('Maximum relative error')
     hold on
     axis square
     
@@ -109,8 +109,6 @@ if obj.countGreedy > 1
     axis tight
     
 end
-alpha(0.7)
-axi_lim = [0, axisLim];
 
 grid on
 

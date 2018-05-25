@@ -54,7 +54,8 @@ fixie.exactSolution('initial', AbaqusSwitch, trialName);
 fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
     ratioSwitch, 'hhat');
 disp(fixie.countGreedy)
-fixie.reducedMatrices;
+fixie.reducedMatricesStatic;
+fixie.reducedMatricesDynamic;
 
 fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
@@ -145,7 +146,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
             ratioSwitch, 'hhat');
-        fixie.reducedMatrices;
+        fixie.reducedMatricesStatic;
+        fixie.reducedMatricesDynamic;
         
         if fixie.countGreedy > drawRow * drawCol
             disp('iterations reach maximum plot number')

@@ -39,10 +39,10 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+trial = 65;
 
 %% error informations.
-errLowBond = 0.0337;
+errLowBond = 1e-10;
 errMaxValInit = 1;
 errRbCtrl = 1;
 errRbCtrlThres = 0.01;
@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 50;
+drawCol = 5;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -93,7 +93,7 @@ respSVDswitch = 1;
 ratioSwitch = 1;
 singularSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
-randomSwitch = 1;
+randomSwitch = 0;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;

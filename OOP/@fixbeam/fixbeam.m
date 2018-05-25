@@ -81,6 +81,16 @@ classdef fixbeam < beam
             obj.fce.val = -obj.fce.val;
             
         end
+        
+        %%
+        function obj = generateNodalFceStatic(obj, ndofPerNode)
+            % generate -1 static force.
+            obj.fce.dof = ndofPerNode * obj.fce.node;
+            obj.fce.val = sparse(obj.no.dof, 1);
+            % gaussian(obj, shift, sig, unit_amp)            
+            obj.fce.val(obj.fce.dof) = obj.fce.val(obj.fce.dof) - 1;
+            
+        end
         %%
         function obj = readINPconsFixie(obj, dim)
             % Read constraint information from INP file. Still manually

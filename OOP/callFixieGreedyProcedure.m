@@ -1,4 +1,4 @@
-clear; clc;
+clear; clc; clf
 trialName = 'l9h2SingleInc';
 typeSwitch = 'original';
 rvSVDswitch = 0;
@@ -11,9 +11,6 @@ fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
     noMas, noDam, tMax, tStep, errLowBond, errMaxValInit, ...
     errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
     drawRow, drawCol, fNode, ftime, fRange, nConsEnd);
-
-% read mass matrix. 
-fixie.readMasMTX2DOF(nDofPerNode);
 
 % read constraint infomation.
 fixie.readINPconsFixie(nDofPerNode);
@@ -30,28 +27,20 @@ fixie.readStiMTX2DOFBCMod(nDofPerNode);
 % extract parameter infomation for trial point.
 fixie.pmTrial;
 
-% initialise damping, velocity, displacement input.
-fixie.damMtx;
-fixie.velInpt;
-fixie.disInpt;
-
 % generate nodal force.
-fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
+fixie.generateNodalFceStatic(nDofPerNode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', AbaqusSwitch, trialName);
+fixie.exactSolutionStatic('initial');
 
-fixie.errPrepareRemainOriginal;
-% compute initial reduced basis from trial solution. There are different
-% approaches.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
-    ratioSwitch, 'original');
+% compute initial reduced basis from trial solution. 
+fixie.errPrepareRemainStatic;
+fixie.rbInitialStatic;
 disp(fixie.countGreedy)
 fixie.reducedMatricesStatic;
-fixie.reducedMatricesDynamic;
 while fixie.err.max.val > fixie.err.lowBond
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
@@ -60,9 +49,9 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.pmIter(iIter);
         
-        fixie.reducedVar;
+        fixie.reducedVarStatic;
         
-        fixie.residualfromForce('fro', AbaqusSwitch, trialName);
+        fixie.residualfromForceStatic;
         
         fixie.errStoreSurfs(typeSwitch);
         
@@ -80,14 +69,12 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.errStoreAllSurfs('original');
     
     figure(1)
-    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
+    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, 'b');
     
-    fixie.exactSolution('Greedy', AbaqusSwitch);
+    fixie.exactSolutionStatic('Greedy');
     % rbEnrichment set the indicators.
-    fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-        ratioSwitch, 'original');
+    fixie.rbEnrichmentStatic;
     fixie.reducedMatricesStatic;
-    fixie.reducedMatricesDynamic;
     
     if fixie.countGreedy > drawRow * drawCol
         disp('iterations reach maximum plot number')
@@ -96,16 +83,3 @@ while fixie.err.max.val > fixie.err.lowBond
     disp(fixie.countGreedy)
     
 end
-%%
-if randomSwitch == 0
-%     clf
-    lineWidth = 2;
-    lineColor = 'b-*';
-elseif randomSwitch == 1
-    lineWidth = 1;
-    lineColor = 'k--';
-end
-figure(2)
-fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
-figure(3)
-fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth);
