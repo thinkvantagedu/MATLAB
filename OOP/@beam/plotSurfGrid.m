@@ -34,7 +34,7 @@ end
 if obj.no.inc == 1
     
     % for single inclusion case, plot error response curve.
-    hAx = semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 1);
+    hAx = semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 3);
     
     % text of current maximum error.
     switch originalSwitch
@@ -49,7 +49,7 @@ if obj.no.inc == 1
         obj.countGreedy);
     % add text to figure location.
     errTxt = text(obj.pmExpo.max{:}, errMax, txtPlotCurrentMax, ...
-        'color', '[0 0 0]', 'Fontsize', 10);
+        'color', '[0 0 0]', 'Fontsize', 20);
     
     xlabel('Youngs Modulus')
     ylabel('Maximum relative error')
@@ -97,7 +97,7 @@ if obj.countGreedy > 1
         txtPlotPrevMax = sprintf('[%d %.2g]', eLocPrevMax{1}, ...
             eValPrevMaxCurrent);
         text(pmExpoPrev, eValPrevMaxCurrent, txtPlotPrevMax, ...
-            'color', '[1 0 1]', 'Fontsize', 10);
+            'color', '[1 0 1]', 'Fontsize', 20);
     elseif obj.no.inc == 2
         txtPlotPrevMax = sprintf('[%d %d, %d]', ...
             eLocPrevMax{1}, eLocPrevMax{2}, eValPrevMaxCurrent);
