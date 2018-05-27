@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 65;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-10;
@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 3;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -69,7 +69,7 @@ nQoiT = 2;
 %% initial error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.6;
+reductionRatio = 0.8;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
@@ -90,7 +90,7 @@ qoiSwitchTime = 1;
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
 % singularSwitch add basis vector based on singular values.
-ratioSwitch = 1;
+ratioSwitch = 0;
 singularSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;

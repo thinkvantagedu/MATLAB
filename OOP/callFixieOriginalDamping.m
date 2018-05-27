@@ -1,4 +1,4 @@
-% this is the original callFixie without damping.
+% this is the original callFixie with damping.
 
 clear; clc;
 trialName = 'l9h2SingleInc';
@@ -26,14 +26,15 @@ fixie.readINPgeoMultiInc;
 % generate parameter space.
 fixie.generatePmSpaceMultiDim;
 
+% generate damping coefficient space.
+
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
 fixie.pmTrial;
 
-% initialise damping, velocity, displacement input.
-fixie.damMtx;
+% initialise velocity, displacement input.
 fixie.velInpt;
 fixie.disInpt;
 
@@ -81,8 +82,8 @@ while fixie.err.max.val > fixie.err.lowBond
     
     fixie.errStoreAllSurfs('original');
     
-    figure(1)
-    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
+%     figure(1)
+%     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
     fixie.exactSolution('Greedy', AbaqusSwitch);
     % rbEnrichment set the indicators.

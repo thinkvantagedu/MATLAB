@@ -50,7 +50,7 @@ ylabel('Maximum relative error', 'FontSize', 20);
 figure(2)
 pmSpaceOri = logspace(-1, 1, 129);
 pmSpacePro = logspace(-1, 1, 129);
-errPmLocOri = pmSpaceOri(errOriginalStore.loc);
+errPmLocOri = pmSpaceOri(errOriginalStore.store.loc);
 errPmLocPro = pmSpacePro(errProposedStore.store.loc.verify);
 % errPmLocRan1 = pmSpaceOri(errRandom1.store.loc);
 % errPmLocRan2 = pmSpaceOri(errRandom2.store.loc);

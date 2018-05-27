@@ -2248,6 +2248,44 @@ classdef beam < handle
             obj.no.itplAdd = size(obj.pmVal.add, 1);
         end
         %%
+        function obj = residualfromForce(obj, normType, AbaqusSwitch, trialName)
+            switch normType
+                case 'l1'
+                    relativeErrSq = @(xNum, xInit) ...
+                        (norm(xNum, 1)) / (norm(xInit, 1));
+                case 'fro'
+                    relativeErrSq = @(xNum, xInit) ...
+                        (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
+            end
+            pmValCell = obj.pmVal.iter;
+            stiPre = sparse(obj.no.dof, obj.no.dof);
+            for iSti = 1:obj.no.inc + 1
+                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
+            end
+            obj.sti.full = stiPre;
+            obj.fce.pass = obj.fce.val - ...
+                obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
+                obj.dam.mtx * obj.phi.val * obj.vel.re.reVar - ...
+                obj.sti.full * obj.phi.val * obj.dis.re.reVar;
+            if AbaqusSwitch == 0
+                obj = NewmarkBetaReducedMethodOOP(obj, 'full');
+            elseif AbaqusSwitch == 1
+                % use Abaqus to obtain exact solutions.
+                pmI = obj.pmVal.iter{1};
+                pmS = obj.pmVal.iter{2};
+                % input parameter 1 indicates the force is completely
+                % modified.
+                obj.abaqusJob(trialName, pmI, pmS, 1, 'residual');
+                obj.abaqusOtpt;
+            end
+            obj.dis.resi = obj.dis.full;
+            
+            obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, obj.qoi.t);
+            
+            obj.err.val = relativeErrSq(obj.dis.qoi.resi, obj.dis.qoi.trial);
+            
+        end
+        %%
         function obj = residualfromForceStatic(obj)
             relativeErrSq = @(xNum, xInit) ...
                 (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
