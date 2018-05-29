@@ -56,9 +56,9 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
-nPhiInitial = 10;
-nPhiEnrich = 4;
+drawCol = 2;
+nPhiInitial = 1;
+nPhiEnrich = 2;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -66,10 +66,10 @@ debugMode = 0;
 %% quantity of interest.
 nQoiT = 2;
 
-%% initial error reductions.
+%% error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.8;
+reductionRatio = 0.6;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
@@ -90,8 +90,7 @@ qoiSwitchTime = 1;
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
 % singularSwitch add basis vector based on singular values.
-ratioSwitch = 0;
-singularSwitch = 0;
+ratioSwitch = 1;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;
 AbaqusSwitch = 0;

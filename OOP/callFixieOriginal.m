@@ -44,13 +44,12 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', AbaqusSwitch, trialName);
+fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 0);
 
 fixie.errPrepareRemainOriginal;
 % compute initial reduced basis from trial solution. There are different
 % approaches.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
-    ratioSwitch, 'original');
+fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'original', 0);
 disp(fixie.countGreedy)
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
@@ -62,9 +61,9 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.pmIter(iIter);
         
-        fixie.reducedVar;
+        fixie.reducedVar(0);
         
-        fixie.residualfromForce('fro', AbaqusSwitch, trialName);
+        fixie.residualfromForce('fro', AbaqusSwitch, trialName, 0);
         
         fixie.errStoreSurfs(typeSwitch);
         
@@ -84,10 +83,9 @@ while fixie.err.max.val > fixie.err.lowBond
     figure(1)
     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
-    fixie.exactSolution('Greedy', AbaqusSwitch);
+    fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
     % rbEnrichment set the indicators.
-    fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-        ratioSwitch, 'original');
+    fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'original', 0);
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     

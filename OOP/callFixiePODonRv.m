@@ -50,11 +50,10 @@ fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainProp;
 
 % compute initial exact solution.
-fixie.exactSolution('initial', AbaqusSwitch, trialName);
+fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 0);
 
 % compute initial reduced basis from trial solution.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
-    ratioSwitch, 'hhat');
+fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'hhat', 0);
 disp(fixie.countGreedy)
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
@@ -77,7 +76,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.pmIter(iIter);
         
-        fixie.reducedVar;
+        fixie.reducedVar(0);
         
         fixie.rvDisStore(iIter);
         
@@ -144,10 +143,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
 %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
 %         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
         
-        fixie.exactSolution('Greedy', AbaqusSwitch);
+        fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
         % rbEnrichment set the indicators.
-        fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-            ratioSwitch, 'hhat');
+        fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 0);
         fixie.reducedMatricesStatic;
         fixie.reducedMatricesDynamic;
         
@@ -176,7 +174,7 @@ for iGre = 1:fixie.countGreedy - 1
     for iIter = 1:nIter
         
         fixie.pmIter(iIter);
-        fixie.exactSolution('verify', 0);
+        fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 0);
         fixie.verifyExactError(iGre, iIter);
         CmdWinTool('statusText', ...
             sprintf('verification stage progress: %d of %d', iIter, nIter));

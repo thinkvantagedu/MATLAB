@@ -27,6 +27,7 @@ fixie.readINPgeoMultiInc;
 fixie.generatePmSpaceMultiDim;
 
 % generate damping coefficient space.
+fixie.generateDampingSpace;
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -34,7 +35,8 @@ fixie.readStiMTX2DOFBCMod(nDofPerNode);
 % extract parameter infomation for trial point.
 fixie.pmTrial;
 
-% initialise velocity, displacement input.
+% initialise damping, velocity, displacement input.
+fixie.damMtx;
 fixie.velInpt;
 fixie.disInpt;
 
@@ -45,13 +47,12 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 
 % compute initial exact solution.
-fixie.exactSolution('initial', AbaqusSwitch, trialName);
+fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 1);
 
 fixie.errPrepareRemainOriginal;
 % compute initial reduced basis from trial solution. There are different
 % approaches.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
-    ratioSwitch, 'original');
+fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'original', 1);
 disp(fixie.countGreedy)
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
@@ -63,9 +64,9 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.pmIter(iIter);
         
-        fixie.reducedVar;
+        fixie.reducedVar(1);
         
-        fixie.residualfromForce('fro', AbaqusSwitch, trialName);
+        fixie.residualfromForce('fro', AbaqusSwitch, trialName, 1);
         
         fixie.errStoreSurfs(typeSwitch);
         
@@ -82,13 +83,12 @@ while fixie.err.max.val > fixie.err.lowBond
     
     fixie.errStoreAllSurfs('original');
     
-%     figure(1)
-%     fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
+    figure(1)
+    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
     
-    fixie.exactSolution('Greedy', AbaqusSwitch);
+    fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
     % rbEnrichment set the indicators.
-    fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-        ratioSwitch, 'original');
+    fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'original', 1);
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     
