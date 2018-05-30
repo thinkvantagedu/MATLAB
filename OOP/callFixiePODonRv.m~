@@ -1,3 +1,5 @@
+% this is the implemented callFixie without damping.
+
 clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 1;
@@ -48,13 +50,13 @@ fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainProp;
 
 % compute initial exact solution.
-fixie.exactSolution('initial', AbaqusSwitch, trialName);
+fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 0);
 
 % compute initial reduced basis from trial solution.
-fixie.rbInitial(nPhiInitial, reductionRatio, singularSwitch, ...
-    ratioSwitch, 'hhat');
+fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'hhat', 0);
 disp(fixie.countGreedy)
-fixie.reducedMatrices;
+fixie.reducedMatricesStatic;
+fixie.reducedMatricesDynamic;
 
 fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
@@ -74,7 +76,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.pmIter(iIter);
         
-        fixie.reducedVar;
+        fixie.reducedVar(0);
         
         fixie.rvDisStore(iIter);
         
@@ -116,7 +118,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
         CmdWinTool('statusText', ...
-            sprintf('online stage progress: %d of %d', iIter, nIter));
+            sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
     % disp('online end')
@@ -136,22 +138,17 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat');
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
+        
         figure(1)
         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
-        fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
+%         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
         
-        if fixie.countGreedy >= drawRow * drawCol
-            disp('iterations reach maximum plot number')
-            break
-        end
-        
-        fixie.exactSolution('Greedy', AbaqusSwitch);
-        
+        fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
         % rbEnrichment set the indicators.
-        fixie.rbEnrichment(nPhiEnrich, reductionRatio, singularSwitch, ...
-            ratioSwitch, 'hhat');
-        fixie.reducedMatrices;
-        disp(fixie.countGreedy)
+        fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 0);
+        fixie.reducedMatricesStatic;
+        fixie.reducedMatricesDynamic;
+        
         
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
@@ -166,24 +163,25 @@ end
 
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % All Greedy iterations are included here.
-fixie.
-for iGre = 1:fixie.countGreedy
+fixie.verifyPrepare;
+% figure(1)
+for iGre = 1:fixie.countGreedy - 1
     fixie.verifyExtractBasis(iGre);
     for iIter = 1:nIter
         
         fixie.pmIter(iIter);
-        fixie.exactSolution('verify', 0);
+        fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 0);
         fixie.verifyExactError(iGre, iIter);
         CmdWinTool('statusText', ...
             sprintf('verification stage progress: %d of %d', iIter, nIter));
         
     end
+    fixie.verifyExtractMaxErr(iGre);
+%     fixie.verifyPlotSurf(iGre, 'r-^');
 end
 
 %%
-% figure(2)
-% hold on
-% fixie.plotMaxErrorDecayVal('hhat', 'b-*', 2, nPhiInitial);
-% figure(3)
-% hold on
-% fixie.plotMaxErrorDecayLoc('hhat', 'b-*', 2);
+figure(2)
+fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
+figure(3)
+fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2);

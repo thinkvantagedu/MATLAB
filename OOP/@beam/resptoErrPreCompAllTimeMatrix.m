@@ -34,7 +34,7 @@ for iPre = 1:nPre
     respCol = reshape(respPmPass, [1, numel(respPmPass)]);
     % change sign here.
     if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-        if obj.countGreedy == 1
+        if obj.countGreedy == 0
             respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
                 cellfun(@(x) cellfun(@uminus, x, 'un', 0), respCol, 'un', 0)];
         else

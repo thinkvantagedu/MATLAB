@@ -331,10 +331,9 @@ classdef beam < handle
             for ipm = 1:obj.no.inc
                 obj.pmVal.damp.space = (logspace(obj.domBond.i{ipm}(1), ...
                     obj.domBond.i{ipm}(2), obj.domLeng.i(ipm)))';
-                %                 obj.pmVal.damp.space = zeros(129, 1);
+%                 obj.pmVal.damp.space = zeros(129, 1);
             end
         end
-        
         %%
         function obj = rbEnrichmentStatic(obj)
             obj.countGreedy = obj.countGreedy + 1;
@@ -352,7 +351,7 @@ classdef beam < handle
             obj.GramSchmidt(phi_);
             obj.phi.val = obj.phi.otpt;
             
-            eMaxPre = obj.err.store.max(obj.countGreedy - 1);
+            eMaxPre = obj.err.store.max(obj.countGreedy);
             eMaxLoc = obj.err.max.loc;
             
             redInfo = {eMaxLoc obj.pmVal.max ...
@@ -371,7 +370,7 @@ classdef beam < handle
         %%
         function obj = rbEnrichment(obj, nEnrich, redRatio, ratioSwitch, ...
                 errType, damSwitch)
-            obj.countGreedy = obj.countGreedy + 1;
+            
             % this method add a new basis vector to current basis. New basis
             % vector = SVD(current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
@@ -417,10 +416,10 @@ classdef beam < handle
             end
             switch errType
                 case 'original'
-                    eMaxPre = obj.err.store.max(obj.countGreedy - 1);
+                    eMaxPre = obj.err.store.max(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc;
                 case 'hhat'
-                    eMaxPre = obj.err.store.max.hhat(obj.countGreedy - 1);
+                    eMaxPre = obj.err.store.max.hhat(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc.hhat;
             end
             eMaxCur = obj.err.rbRedRemain;
@@ -428,7 +427,8 @@ classdef beam < handle
             
             redInfo = {eMaxLoc obj.pmVal.max ...
                 size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
-            obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
+            
+            obj.err.store.redInfo(obj.countGreedy + 2, :) = redInfo;
             
             obj.no.rb = size(obj.phi.val, 2);
             obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
@@ -537,10 +537,10 @@ classdef beam < handle
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
-                            errPre = obj.err.store.max(obj.countGreedy - 1);
+                            errPre = obj.err.store.max(obj.countGreedy);
                         case 'hhat'
                             errPre = ...
-                                obj.err.store.max.hhat(obj.countGreedy - 1);
+                                obj.err.store.max.hhat(obj.countGreedy);
                     end
                 end
                 m = phiOtpt' * M * phiOtpt;
@@ -778,7 +778,6 @@ classdef beam < handle
             reductionText = {'magic point' 'parameter value' ...
                 'no of vectors' 'reduction ratio' 'error before' 'error after'};
             obj.err.store.redInfo(1, :) = reductionText;
-            
         end
         %%
         function obj = errPrepareRemainStatic(obj)
@@ -806,6 +805,7 @@ classdef beam < handle
             else
                 obj.err.store.surf = obj.err.setZ.mInc;
             end
+            
         end
         
         %%
@@ -823,7 +823,7 @@ classdef beam < handle
             obj.err.pre.slct.hhat = cell(obj.no.pre.hhat, 2);
             obj.err.pre.unslct = cell(obj.no.pre.hhat, 1);
             
-            if obj.countGreedy == 1
+            if obj.countGreedy == 0
                 obj.err.pre.slct.hhat = errPre;
             else
                 nold = obj.no.t_step * obj.no.phy * (obj.no.rb - 1) + 1;
@@ -1619,13 +1619,17 @@ classdef beam < handle
         function obj = reducedVar(obj, damSwitch)
             % compute reduced variables for each pm value.
             phiInpt = obj.phi.val;
+            m = obj.mas.re.mtx;
             stiReIter = ...
                 cellfun(@(v, w) full(v) * w, ...
                 obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
             k = sum(cat(3, stiReIter{:}), 3);
-            m = obj.mas.re.mtx;
-            
-            c = obj.dam.re.mtx;
+            if damSwitch == 0
+                c = obj.dam.re.mtx;
+            elseif damSwitch == 1
+                dcIter = obj.pmVal.damp.space(obj.pmLoc.iter);
+                c = k * dcIter;
+            end
             f = phiInpt' * obj.fce.val;
             dT = obj.time.step;
             maxT = obj.time.max;
@@ -1654,7 +1658,8 @@ classdef beam < handle
         function obj = rvDisStore(obj, iIter)
             % this method stores dieplacement reduced variables for
             % verification purpose.
-            obj.resp.rv.dis.store{iIter, obj.countGreedy} = obj.dis.re.reVar;
+            obj.resp.rv.dis.store{iIter, obj.countGreedy + 1} = ...
+                obj.dis.re.reVar;
             
         end
         %%
@@ -2012,7 +2017,7 @@ classdef beam < handle
         function obj = rvpmSlct(obj)
             % select rv and pm to interpolate
             nold = obj.no.t_step * obj.no.phy * (obj.no.rb - 1) + 1;
-            if obj.countGreedy == 1
+            if obj.countGreedy == 0
                 obj.pmVal.rvSlct = obj.pmVal.rv;
                 obj.pmVal.pmSlct = obj.pmVal.pm;
             else
@@ -2093,10 +2098,10 @@ classdef beam < handle
         %%
         function obj = verifyPrepare(obj)
             % this method prepares for the verification.
-            obj.err.store.allSurf.verify = zeros(obj.countGreedy - 1, ...
+            obj.err.store.allSurf.verify = zeros(obj.countGreedy, ...
                 obj.domLeng.i);
-            obj.err.store.max.verify = zeros(obj.countGreedy - 1, 1);
-            obj.err.store.loc.verify = zeros(obj.countGreedy - 1, 2);
+            obj.err.store.max.verify = zeros(obj.countGreedy, 1);
+            obj.err.store.loc.verify = zeros(obj.countGreedy, 2);
         end
         %%
         function obj = verifyExtractBasis(obj, iGre)
@@ -2164,7 +2169,7 @@ classdef beam < handle
         end
         %%
         function obj = extractMaxErrorInfo(obj, type, randomSwitch)
-            % extract error max and location from surfaces.
+            % extract error max and location from surfaces, greedy + 1.
             switch type
                 
                 case 'hats'
@@ -2185,9 +2190,9 @@ classdef beam < handle
                     obj.err.max.val = eMaxVal;
                     
                     if randomSwitch == 1
-                        if obj.countGreedy == 1
+                        if obj.countGreedy == 0
                             obj.err.max.loc = pmValRow(:, 1:obj.no.inc);
-                        elseif obj.countGreedy > 1
+                        else
                             eMlocRand = [];
                             for i = 1:obj.no.inc
                                 eMlocRand = [eMlocRand ...
@@ -2200,6 +2205,8 @@ classdef beam < handle
                     end
                     
             end
+            
+            obj.countGreedy = obj.countGreedy + 1;
         end
         %%
         function obj = storeErrorInfo(obj)

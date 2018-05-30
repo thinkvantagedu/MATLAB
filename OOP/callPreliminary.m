@@ -1,3 +1,4 @@
+clf;
 route = '/home/xiaohan/Desktop/Temp';
 figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
 % route = '/Users/kevin/Documents/Temp';
@@ -15,8 +16,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 129;
-domLengs = 129;
+domLengi = 33;
+domLengs = 33;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -48,17 +49,17 @@ errRbCtrl = 1;
 errRbCtrlThres = 0.01;
 errRbCtrlTNo = 1;
 
-%% counter.
-cntInit = 1;
+%% count Greedy.
+cntInit = 0;
 
 %% refinement threshold. ==========
 refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 nPhiInitial = 1;
-nPhiEnrich = 2;
+nPhiEnrich = 1;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -89,8 +90,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-% singularSwitch add basis vector based on singular values.
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;
 AbaqusSwitch = 0;

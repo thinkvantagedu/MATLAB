@@ -27,7 +27,7 @@ for iPre = 1:nPre
     % elseif enrich, ordinary resp only; elseif refine, force resp combines
     % ordinary resp. 
     if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-        if obj.countGreedy == 1
+        if obj.countGreedy == 0
             respCol = [obj.resp.store.fce.hhat(iPre) ...
                 cellfun(@(x) cellfun(@uminus, x, 'un', 0), respCol, 'un', 0)];
         else

@@ -14,8 +14,8 @@ elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     nBlkComp = obj.no.block.add + 1;
 end
 
-if obj.countGreedy == 1
-    % initial Greedy there is no new response vectors. If countGreedy = 1,
+if obj.countGreedy == 0
+    % initial Greedy there is no new response vectors. If countGreedy = 0,
     % there is no reuse of part 1.
     nVecNew = 0;
 else
@@ -57,7 +57,7 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
         respExtNew = respSorthat{iPre, 3}(end - nVecNew + 1:end);
         respExtpOld = respSorthat{iPre + 1, 3}(1:nVecOld);
         respExtpNew = respSorthat{iPre + 1, 3}(end - nVecNew + 1:end);
-        if obj.countGreedy == 1
+        if obj.countGreedy == 0
             % if initial, re-compute eTe part 1.
             lu11 = eTePart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
             
@@ -108,7 +108,7 @@ for iPre = 1:nBlkComp
     respExtpNew = respSorthhat{iPre + 1, 3}(end - nVecNew + 1:end);
     
     % part 1: left upper block, unsymmetric.
-    if obj.countGreedy == 1 || obj.indicator.enrich == 0 && ...
+    if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
         lu11 = eTePart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');

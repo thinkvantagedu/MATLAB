@@ -6,7 +6,7 @@ tic
 % all lu11, rd22 blocks are symmetric, thus triangulated. Use triu when
 % case 1: respSVDswitch == 0, case 2: respSVDswitch == 1 and enrich (inherit).
 
-% countGreedy = 1 <==> enrich = 1 && refine == 0
+% count Greedy = 0 <==> enrich = 1 && refine == 0
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
     % nPre denotes number of newly added interpolation samples,
     nPointPre = obj.no.pre.hhat;
@@ -18,7 +18,7 @@ elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     nPointEx = obj.no.itplEx;
 end
 
-if obj.countGreedy == 1
+if obj.countGreedy == 0
     % initial Greedy there is no new response vectors.
     nVecNew = 0;
 else
@@ -34,7 +34,7 @@ for iPre = 1:nPointPre
     respOld = respExt(1:nVecOld);
     respNew = respExt(end - nVecNew + 1:end);
     % part 1: left upper block, right upper triangle, symmetric.
-    if obj.countGreedy == 1 || obj.indicator.enrich == 0 && ...
+    if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
         lu11 = eTePart(nVecOld, nVecOld, respOld, respOld, 'triangle');

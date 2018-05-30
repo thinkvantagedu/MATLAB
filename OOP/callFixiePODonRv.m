@@ -54,7 +54,6 @@ fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 0);
 
 % compute initial reduced basis from trial solution.
 fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'hhat', 0);
-disp(fixie.countGreedy)
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
@@ -66,7 +65,12 @@ fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
-    %% OFFLINE.
+    if fixie.countGreedy == drawRow * drawCol
+        % put here to stop any uncessary computations.
+        disp('iterations reach maximum plot number')
+        break
+    end
+    %% Greedy OFFLINE.
     % disp('offline start')
     fixie.errPrepareSetZero;
     
@@ -108,7 +112,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     % disp('offline end')
     
-    %% ONLINE.
+    %% Greedy ONLINE.
     % disp('online start')
     % multiply the output with pm and interpolate.
     for iIter = 1:nIter
@@ -125,7 +129,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     %% extract error information.
     fixie.errStoreSurfs('diff');
-    fixie.extractMaxErrorInfo('hats');
+    fixie.extractMaxErrorInfo('hats'); % greedy + 1
+    disp({'Greedy iteration no' fixie.countGreedy})
+    
     fixie.refiCondition('maxSurf', refCeaseSwitch);
     % this line extracts parameter values of maximum error and
     % corresponding location. Change input accordingly.
@@ -139,9 +145,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         
-%         figure(1)
-%         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hhat', 'b-.');
-%         fixie.plotSurfGrid(drawRow, drawCol, 1, 'hat', 'r--');
+        figure(1)
+        fixie.plotSurfGrid('hhat', 'b-.');
+%         fixie.plotSurfGrid('hat', 'r--');
         
         fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
         % rbEnrichment set the indicators.
@@ -149,11 +155,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.reducedMatricesStatic;
         fixie.reducedMatricesDynamic;
         
-        if fixie.countGreedy > drawRow * drawCol
-            disp('iterations reach maximum plot number')
-            break
-        end
-        disp(fixie.countGreedy)
+        
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
         % this method displays refinement informations.
