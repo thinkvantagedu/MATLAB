@@ -1,9 +1,10 @@
 % this script tests callFixieOriginalDamping, run after the main script is
 % finished. 
+ppick = 13;
 M = fixie.mas.mtx;
-K = fixie.sti.mtxCell{1} * fixie.pmVal.iter{1} + fixie.sti.mtxCell{2} * ...
-    fixie.pmVal.iter{2};
-C = fixie.pmVal.damp.space(end) * K;
+K = fixie.sti.mtxCell{1} * fixie.pmVal.comb.space(ppick, 2) + ...
+    fixie.sti.mtxCell{2} * 1;
+C = fixie.pmVal.damp.space(ppick) * K;
 
 F = fixie.fce.val;
 
@@ -11,7 +12,7 @@ nd = length(F);
 dt = fixie.time.step;
 mt = fixie.time.max;
 
-phiI = ones(nd, nd);
+phiI = eye(nd);
 
 u0 = zeros(nd, 1);
 v0 = zeros(nd, 1);
@@ -19,12 +20,27 @@ v0 = zeros(nd, 1);
 [~, ~, ~, u, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
     (phiI, M, C, K, F, 'average', dt, mt, u0, v0);
 
-rv = fixie.dis.re.reVar;
-phi = fixie.phi.val(:, 1:end - 1);
+phi = fixie.phi.val;
+
+m = phi' * M * phi;
+c = phi' * C * phi;
+k = phi' * K * phi;
+f = phi' * F;
+
+nr = size(m, 1);
+u0r = zeros(nr, 1);
+v0r = zeros(nr, 1);
+
+[rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+    (phi, m, c, k, f, 'average', dt, mt, u0r, v0r);
 
 ur = phi * rv;
 
 uq = u(fixie.qoi.dof, fixie.qoi.t);
 urq = ur(fixie.qoi.dof, fixie.qoi.t);
 
-e = norm(uq - urq, 'fro') / norm(fixie.dis.qoi.trial);
+ue = uq - urq;
+
+e = norm(ue, 'fro') / norm(fixie.dis.qoi.trial, 'fro');
+
+% test passed for all pm points.

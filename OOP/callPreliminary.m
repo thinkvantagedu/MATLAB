@@ -16,8 +16,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 33;
-domLengs = 33;
+domLengi = 129;
+domLengs = 129;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -57,9 +57,9 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
-nPhiInitial = 1;
-nPhiEnrich = 1;
+drawCol = 5;
+nPhiInitial = 10;
+nPhiEnrich = 4;
 
 %% debug mode for generating nodal force.
 debugMode = 0;

@@ -25,8 +25,9 @@ fixie.readINPgeoMultiInc;
 % generate parameter space.
 fixie.generatePmSpaceMultiDim;
 
-% generate damping coefficient space.
-fixie.generateDampingSpace;
+% generate damping coefficient space, the combination is stiffness then damping.
+damLeng = 5;
+fixie.generateDampingSpace(damLeng);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -57,11 +58,13 @@ fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
 while fixie.err.max.val > fixie.err.lowBond
+    
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.
         disp('iterations reach maximum plot number')
         break
     end
+%     nIter = domLengi * domLengs;
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
     
@@ -90,6 +93,12 @@ while fixie.err.max.val > fixie.err.lowBond
     
     figure(1)
     fixie.plotSurfGrid('original', '-.k');
+    
+    if fixie.countGreedy == drawRow * drawCol
+        % put here to stop any uncessary computations.
+        disp('iterations reach maximum plot number')
+        break
+    end
     
     fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
     % rbEnrichment set the indicators.

@@ -1,5 +1,5 @@
 function obj = plotMaxErrorDecayVal(obj, errType, color, width, randomSwitch)
-errx = obj.no.store.rb(2:end);
+errx = obj.no.store.rb;
 
 switch errType
     case 'original'

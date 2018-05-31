@@ -2,7 +2,6 @@
 
 clear; clc;
 trialName = 'l9h2SingleInc';
-typeSwitch = 'original';
 rvSVDswitch = 0;
 callPreliminary;
 
@@ -14,7 +13,7 @@ fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
     errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
     drawRow, drawCol, fNode, ftime, fRange, nConsEnd);
 
-% read mass matrix. 
+% read mass matrix.
 fixie.readMasMTX2DOF(nDofPerNode);
 
 % read constraint infomation.
@@ -26,8 +25,9 @@ fixie.readINPgeoMultiInc;
 % generate parameter space.
 fixie.generatePmSpaceMultiDim;
 
-% generate damping coefficient space.
-fixie.generateDampingSpace;
+% generate damping coefficient space, the combination is stiffness then damping.
+damLeng = 5;
+fixie.generateDampingSpace(damLeng);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -58,6 +58,13 @@ fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
 while fixie.err.max.val > fixie.err.lowBond
+    
+    if fixie.countGreedy == drawRow * drawCol
+        % put here to stop any uncessary computations.
+        disp('iterations reach maximum plot number')
+        break
+    end
+%     nIter = domLengi * domLengs;
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
     
@@ -69,29 +76,29 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.residualfromForce('fro', AbaqusSwitch, trialName, 1);
         
-        fixie.errStoreSurfs(typeSwitch);
+        fixie.errStoreSurfs('original');
         
         CmdWinTool('statusText', ...
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
     
-    if fixie.countGreedy > drawRow * drawCol
+    fixie.extractMaxErrorInfo('original', randomSwitch); % greedy + 1
+    disp({'Greedy iteration no' fixie.countGreedy})
+    
+    fixie.extractMaxPmInfo('original');    
+    fixie.greedyInfoDisplay('original');
+    fixie.storeErrorInfoOriginal;
+    fixie.errStoreAllSurfs('original');
+    
+    figure(1)
+    fixie.plotSurfGrid('original', '-.k');
+    
+    if fixie.countGreedy == drawRow * drawCol
+        % put here to stop any uncessary computations.
         disp('iterations reach maximum plot number')
         break
     end
-    disp(fixie.countGreedy)
-    
-    figure(1)
-    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, '-.k');
-    
-    fixie.extractMaxErrorInfo(typeSwitch, randomSwitch);
-    fixie.extractMaxPmInfo(typeSwitch);
-    
-    fixie.greedyInfoDisplay('original');
-    fixie.storeErrorInfoOriginal;
-    
-    fixie.errStoreAllSurfs('original');
     
     fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
     % rbEnrichment set the indicators.
@@ -99,12 +106,9 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     
-    
-    
 end
 %%
 if randomSwitch == 0
-%     clf
     lineWidth = 2;
     lineColor = 'b-*';
 elseif randomSwitch == 1

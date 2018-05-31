@@ -327,12 +327,18 @@ classdef beam < handle
             
         end
         %%
-        function obj = generateDampingSpace(obj)
-            for ipm = 1:obj.no.inc
-                obj.pmVal.damp.space = (logspace(obj.domBond.i{ipm}(1), ...
-                    obj.domBond.i{ipm}(2), obj.domLeng.i(ipm)))';
-%                 obj.pmVal.damp.space = zeros(129, 1);
-            end
+        function obj = generateDampingSpace(obj, damLeng)
+            % this method add damping as a parameter. 
+            damVal = (logspace(obj.domBond.i{1}(1), obj.domBond.i{1}(2), ...
+                damLeng));
+            damVal = [1:damLeng; damVal];
+            pmValInp = obj.pmVal.comb.space';
+            damPm = combvec(pmValInp, damVal);
+            damPm = damPm';
+            damPm(:, [2 3]) = damPm(:, [3 2]);
+            obj.pmVal.comb.space = [(1:length(damPm))' damPm];
+            obj.pmVal.damp.space = [1:damLeng; damVal]';
+            
         end
         %%
         function obj = rbEnrichmentStatic(obj)
@@ -386,12 +392,14 @@ classdef beam < handle
             % import system inputs.
             M = obj.mas.mtx;
             if damSwitch == 0
+                K = obj.sti.mtxCell{1} * pmValMax(2) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
                 % here damping is the coefficient, not matrix.
                 C = obj.pmVal.damp.space(obj.pmLoc.max);
             end
-            K = obj.sti.mtxCell;
+            
             F = obj.fce.val;
             if ratioSwitch == 0
                 [leftVecAll, ~, ~] = svd(rbErrFull, 0);
@@ -399,8 +407,8 @@ classdef beam < handle
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidt(phi_);
                 obj.phi.val = obj.phi.otpt;
-                obj.basisCompressionFixNoRedRatio(pmValMax, disMax, ...
-                    obj.phi.val, M, C, K, F, damSwitch);
+                obj.basisCompressionFixNoRedRatio(disMax, obj.phi.val, ...
+                    M, C, K, F);
                 
             elseif ratioSwitch == 1
                 phiInpt = obj.phi.val;
@@ -409,9 +417,8 @@ classdef beam < handle
                 [phiEnrich, ~, ~] = svd(rbErrFull, 0);
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
-                obj.basisCompressionRvIterate(pmValMax, disMax, ...
-                    phiInpt, phiEnrich, M, C, K, F, redRatio, 0, errType, ...
-                    damSwitch);
+                obj.basisCompressionRvIterate(disMax, phiInpt, phiEnrich, ...
+                    M, C, K, F, redRatio, 0, errType);
                 
             end
             switch errType
@@ -452,25 +459,29 @@ classdef beam < handle
             disTrial = obj.dis.trial;
             pmTrial = obj.pmVal.i.trial;
             [u, ~, ~] = svd(disTrial, 0);
+            
             % construct system inputs.
             M = obj.mas.mtx;
             if damSwitch == 0
+                K = obj.sti.mtxCell{1} * pmTrial(2) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
-                % here C is the coefficient, not matrix.
-                C = obj.pmVal.damp.space(obj.pmVal.comb.trial);
+                K = obj.sti.mtxCell{1} * pmTrial(3) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = pmTrial(4) * K;
             end
-            K = obj.sti.mtxCell;
             F = obj.fce.val;
+            
             if ratioSwitch == 0
                 phiInpt = u(:, 1:nInit);
                 obj.phi.val = phiInpt;
-                obj.basisCompressionFixNoRedRatio(pmTrial, disTrial, ...
-                    phiInpt, M, C, K, F, damSwitch);
+                obj.basisCompressionFixNoRedRatio(disTrial, phiInpt, ...
+                    M, C, K, F);
             elseif ratioSwitch == 1
                 % compute obj.phi.val;
-                obj.basisCompressionRvIterate(pmTrial, disTrial, ...
-                    [], u, M, C, K, F, redRatio, 1, errType, damSwitch);
+                obj.basisCompressionRvIterate(disTrial, ...
+                    [], u, M, C, K, F, redRatio, 1, errType);
             end
             
             reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
@@ -484,22 +495,18 @@ classdef beam < handle
             obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
+            
         end
         %%
         function obj = basisCompressionFixNoRedRatio(obj, ...
-                pmInpt, disInpt, phiInpt, M, C, K, F, damSwitch)
+                disInpt, phiInpt, M, C, K, F)
             % this method compute the error reduction ratio at the magic point
             % when a fixed number of basis vectors is used.
             disQoiInpt = disInpt(obj.qoi.dof, obj.qoi.t);
             
             m = phiInpt' * M * phiInpt;
-            k = phiInpt' * (K{1} * pmInpt + K{2} * obj.pmVal.s.fix) * phiInpt;
-            if damSwitch == 0
-                c = phiInpt' * C * phiInpt;
-            elseif damSwitch == 1
-                % here C is the damping coefficient, not matrix.
-                c = C * k;
-            end
+            k = phiInpt' * K * phiInpt;
+            c = phiInpt' * C * phiInpt;
             f = phiInpt' * F;
             dT = obj.time.step;
             maxT = obj.time.max;
@@ -515,8 +522,8 @@ classdef beam < handle
         
         %%
         function obj = basisCompressionRvIterate...
-                (obj, pmInpt, disInpt, phiInpt, phiEnrich, M, C, K, F, ...
-                redRatio, initSwitch, errType, damSwitch)
+                (obj, disInpt, phiInpt, phiEnrich, M, C, K, F, ...
+                redRatio, initSwitch, errType)
             % this method generates reduced basis iteratively with
             % evaluating RB errorat the magic point. Output is obj.phi.val and
             % obj.err.rbRedRemain.
@@ -544,14 +551,8 @@ classdef beam < handle
                     end
                 end
                 m = phiOtpt' * M * phiOtpt;
-                k = phiOtpt' * (K{1} * pmInpt + K{2} * obj.pmVal.s.fix) * ...
-                    phiOtpt;
-                if damSwitch == 0
-                    c = phiOtpt' * C * phiOtpt;
-                elseif damSwitch == 1
-                    % here C is the damping coefficient, not matrix.
-                    c = C * k;
-                end
+                k = phiOtpt' * K * phiOtpt;
+                c = phiOtpt' * C * phiOtpt;
                 f = phiOtpt' * F;
                 dT = obj.time.step;
                 maxT = obj.time.max;
@@ -597,34 +598,35 @@ classdef beam < handle
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
-                    pmValcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
+                    pmValInp = obj.pmVal.i.trial;
                 case 'Greedy'
-                    pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
+                    pmValInp = obj.pmVal.max;
                 case 'verify'
-                    pmValcell = cell2mat(obj.pmVal.iter);
+                    pmValInp = cell2mat(obj.pmVal.iter);
             end
+            
             if AbaqusSwitch == 0
                 % use MATLAB Newmark code to obtain exact solutions.
-                stiPre = sparse(obj.no.dof, obj.no.dof);
-                for iSti = 1:obj.no.inc + 1
-                    stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValcell(iSti);
-                end
-                % compute trial solution
                 M = obj.mas.mtx;
+                stiPre = sparse(obj.no.dof, obj.no.dof);
                 if damSwitch == 0
+                    % no damping, pmI and pmS.
+                    for iSti = 1:obj.no.inc + 1
+                        stiPre = stiPre + obj.sti.mtxCell{1} * ...
+                            pmValInp(2) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                    end
                     C = obj.dam.mtx;
                 elseif damSwitch == 1
-                    switch type
-                        case 'initial'
-                            dcInp = obj.pmVal.damp.space(obj.pmVal.comb.trial);
-                        case 'Greedy'
-                            dcInp = obj.pmVal.damp.space(obj.pmLoc.max);
-                    end
+                    stiPre = stiPre + obj.sti.mtxCell{1} * ...
+                        pmValInp(4) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                    dcInp = pmValInp(5);
                     C = dcInp * stiPre;
                 end
                 K = stiPre;
                 F = obj.fce.val;
+                % compute trial solution
                 obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
+                
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
                 obj.abaqusStrInfo(trialName);
@@ -680,28 +682,21 @@ classdef beam < handle
         %%
         function obj = pmTrial(obj)
             % extract parameter information for trial point.
-            pmPointCombIdx = obj.pmVal.comb.space(:, 1:obj.no.inc);
-            for i = 1:length(pmPointCombIdx)
-                pmCombComp = isequal(obj.pmVal.comb.trial, pmPointCombIdx(i, :));
+            pmCombIdx = obj.pmVal.comb.space(:, 1:obj.no.inc);
+            for i = 1:length(pmCombIdx)
+                pmCombComp = isequal(obj.pmVal.comb.trial, pmCombIdx(i, :));
                 if pmCombComp == 1
                     pmIdx = i;
                 end
             end
             
-            pmCombRow = obj.pmVal.comb.space(pmIdx, :);
-            obj.pmVal.i.trial = pmCombRow(obj.no.inc + 1 : end);
+            obj.pmVal.i.trial = obj.pmVal.comb.space(pmIdx, :);
+            
             if obj.no.inc == 1
                 obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
             else
                 obj.err.setZ.mInc = zeros(obj.domLeng.i);
             end
-        end
-        
-        %%
-        function obj = trialSti(obj, pm1, pm2, pms)
-            % affinely sum stiffness matrix for trial point.
-            obj.sti.trial = obj.sti.mtxCell{1} * pm1 + ...
-                obj.sti.mtxCell{2} * pm2 + obj.sti.mtxCell{3} * pms;
             
         end
         
@@ -1075,6 +1070,7 @@ classdef beam < handle
                     C = obj.dam.mtx;
                     K = stiPre;
                     F = obj.fce.val;
+                    % NEED TO ADD DAMPIING HERE!!!!!!!
                     obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
                 elseif AbaqusSwitch == 1
                     % use Abaqus to obtain exact solutions.
@@ -1211,6 +1207,7 @@ classdef beam < handle
                                 C = obj.dam.mtx;
                                 K = stiPre;
                                 F = impPass;
+                                % NEED TO ADD DAMPING HERE!!!!!!!
                                 obj = NewmarkBetaReducedMethodOOP...
                                     (obj, M, C, K, F);
                                 
@@ -1607,12 +1604,14 @@ classdef beam < handle
         function obj = pmIter(obj, iIter)
             % this method extract the pm values, pm locations, pm
             % exponential values for iterations.
+            
             obj.pmVal.iter = mat2cell([obj.pmVal.comb.space(iIter, ...
-                obj.no.inc + 1 : end)'; ...
-                obj.pmVal.s.fix], ones(obj.no.inc + 1, 1));
+                obj.no.inc + 1 : end)'; obj.pmVal.s.fix], ...
+                ones(obj.no.inc + 1, 1));
             obj.pmLoc.iter = obj.pmVal.comb.space(iIter, (1:obj.no.inc));
             obj.pmExpo.iter = ...
                 cellfun(@(v) log10(v), obj.pmVal.iter(1:obj.no.inc), 'un', 0);
+            
         end
         
         %%
@@ -2245,14 +2244,10 @@ classdef beam < handle
             end
             obj.pmLoc.max = eMaxPmLoc;
             
-            pmValMax = [];
-            for i = 1:obj.no.inc
-                pmValMax = [pmValMax, obj.pmVal.i.space{i}(eMaxValLoc(i), 2)];
-            end
+            pmValMax = obj.pmVal.comb.space(eMaxPmLoc, :);
             
             obj.pmVal.max = pmValMax;
             obj.pmExpo.max = num2cell(log10(obj.pmVal.max));
-            
         end
         %%
         function obj = localHrefinement(obj)

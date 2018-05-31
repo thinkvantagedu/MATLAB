@@ -54,11 +54,13 @@ fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
 while fixie.err.max.val > fixie.err.lowBond
+    
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.
         disp('iterations reach maximum plot number')
         break
     end
+    
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
     
@@ -87,6 +89,12 @@ while fixie.err.max.val > fixie.err.lowBond
     
     figure(1)
     fixie.plotSurfGrid('original', '-.k');
+    
+    if fixie.countGreedy == drawRow * drawCol
+        % put here to stop any uncessary computations.
+        disp('iterations reach maximum plot number')
+        break
+    end
     
     fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
     % rbEnrichment set the indicators.

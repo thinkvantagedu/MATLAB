@@ -68,11 +68,3 @@ A = Phi*A_r;
 V = Phi*V_r;
 U = Phi*U_r;
 
-
-
-% x=[1:time_step_NO];
-% plot(x, U_r(2, :));
-% axis([1 16 -1 1.5]);
-% xlabel('time')
-% ylabel('displacement')
-% end
