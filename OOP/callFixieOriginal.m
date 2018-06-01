@@ -4,11 +4,12 @@ clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
 callPreliminary;
+noPm = 1;
 
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
-    INPname, domLengi, domBondi, domMid, trial, noIncl, noStruct, ...
+    INPname, domLengi, domBondi, domMid, trial, noIncl, noStruct, noPm, ...
     noMas, noDam, tMax, tStep, errLowBond, errMaxValInit, ...
     errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
     drawRow, drawCol, fNode, ftime, fRange, nConsEnd);
@@ -23,13 +24,13 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceMultiDim;
+fixie.generatePmSpaceSingleDim;
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
-fixie.pmTrial;
+fixie.pmTrial(0);
 
 % initialise damping, velocity, displacement input.
 fixie.damMtx;
@@ -66,13 +67,13 @@ while fixie.err.max.val > fixie.err.lowBond
     
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter);
+        fixie.pmIter(iIter, 0);
         
         fixie.reducedVar(0);
         
         fixie.residualfromForce('fro', AbaqusSwitch, trialName, 0);
         
-        fixie.errStoreSurfs('original');
+        fixie.errStoreSurfs('original', 0);
         
         CmdWinTool('statusText', ...
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));

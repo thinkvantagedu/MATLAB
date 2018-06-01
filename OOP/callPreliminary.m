@@ -16,8 +16,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 129;
-domLengs = 129;
+domLengi = 65;
+domLengs = 65;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -40,7 +40,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+trial = 2;
 
 %% error informations.
 errLowBond = 1e-10;

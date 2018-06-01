@@ -49,8 +49,8 @@ classdef beam < handle
         
         function obj = beam(abaInpFile, masFile, damFile, stiFile, ...
                 locStart, locEnd, INPname, domLengi, domBondi, ...
-                domMid, trial, noIncl, noStruct, noMas, noDam, tMax, tStep, ...
-                errLowBond, errMaxValInit, errRbCtrl, ...
+                domMid, trial, noIncl, noStruct, noPm, noMas, noDam, tMax, ...
+                tStep, errLowBond, errMaxValInit, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
                 drawRow, drawCol)
             obj.aba.file = abaInpFile;
@@ -74,6 +74,7 @@ classdef beam < handle
             obj.no.phy = noIncl + noStruct + noMas + noDam;
             obj.no.t_step = length((0:tStep:tMax));
             obj.no.Greedy = drawRow * drawCol;
+            obj.no.pm = noPm;
             
             obj.time.step = tStep;
             obj.time.max = tMax;
@@ -294,25 +295,18 @@ classdef beam < handle
             obj.node.dof.inc = sort(dofInc(:));
         end
         %%
-        function obj = generatePmSpaceMultiDim(obj)
+        function obj = generatePmSpaceSingleDim(obj)
             % generate n-D parameter space, n = number of inclusions.
-            
-            for ipm = 1:obj.no.inc
+            % sequence is: [index loc value].
                 
-                pmValIspace(ipm) = {logspace(obj.domBond.i{ipm}(1), ...
-                    obj.domBond.i{ipm}(2), obj.domLeng.i(ipm))};
-                pmValIspace{ipm} = ...
-                    [(1:length(pmValIspace{ipm})); pmValIspace{ipm}];
-                
-            end
+            pmValIspace(1) = {logspace(obj.domBond.i{1}(1), ...
+                obj.domBond.i{1}(2), obj.domLeng.i(1))};
+            pmValIspace{1} = ...
+                [(1:length(pmValIspace{1})); pmValIspace{1}];
             
             obj.pmVal.comb.space = combvec(pmValIspace{:});
             obj.pmVal.comb.space = obj.pmVal.comb.space';
             
-            if obj.no.inc > 1
-                obj.pmVal.comb.space(:, [2, 3]) = obj.pmVal.comb.space...
-                    (:, [3, 2]);
-            end
             pmValIspace = cellfun(@(v) v', pmValIspace, 'un', 0);
             
             obj.pmVal.i.space = pmValIspace;
@@ -324,20 +318,26 @@ classdef beam < handle
                 pmValIspace, 'un', 0);
             
             obj.no.dom.discretisation = cell2mat(obj.no.dom.discretisation);
+            obj.pmVal.comb.space = [(1:obj.domLeng.i(1))' obj.pmVal.comb.space];
+            
+            obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
             
         end
         %%
         function obj = generateDampingSpace(obj, damLeng)
             % this method add damping as a parameter. 
+            % sequence is: [index loc1 loc2 value1 value2].
             damVal = (logspace(obj.domBond.i{1}(1), obj.domBond.i{1}(2), ...
                 damLeng));
             damVal = [1:damLeng; damVal];
-            pmValInp = obj.pmVal.comb.space';
+            pmValInp = obj.pmVal.comb.space(:, 2:3)';
             damPm = combvec(pmValInp, damVal);
             damPm = damPm';
             damPm(:, [2 3]) = damPm(:, [3 2]);
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
             obj.pmVal.damp.space = [1:damLeng; damVal]';
+            
+            obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             
         end
         %%
@@ -391,15 +391,17 @@ classdef beam < handle
             disMax = obj.dis.rbEnrich;
             % import system inputs.
             M = obj.mas.mtx;
+            keyboard
             if damSwitch == 0
-                K = obj.sti.mtxCell{1} * pmValMax(2) + ...
+                K = obj.sti.mtxCell{1} * pmValMax(3) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
                 % here damping is the coefficient, not matrix.
-                C = obj.pmVal.damp.space(obj.pmLoc.max);
+                K = obj.sti.mtxCell{1} * pmValMax(4) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = pmValMax(5) * K;
             end
-            
             F = obj.fce.val;
             if ratioSwitch == 0
                 [leftVecAll, ~, ~] = svd(rbErrFull, 0);
@@ -457,19 +459,19 @@ classdef beam < handle
             obj.no.store.rbAdd = [];
             obj.no.store.rb = [];
             disTrial = obj.dis.trial;
-            pmTrial = obj.pmVal.i.trial;
+            pmTrial = obj.pmVal.trial;
             [u, ~, ~] = svd(disTrial, 0);
             
             % construct system inputs.
             M = obj.mas.mtx;
             if damSwitch == 0
-                K = obj.sti.mtxCell{1} * pmTrial(2) + ...
+                K = obj.sti.mtxCell{1} * pmTrial + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
-                K = obj.sti.mtxCell{1} * pmTrial(3) + ...
+                K = obj.sti.mtxCell{1} * pmTrial(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmTrial(4) * K;
+                C = pmTrial(2) * K;
             end
             F = obj.fce.val;
             
@@ -484,7 +486,7 @@ classdef beam < handle
                     [], u, M, C, K, F, redRatio, 1, errType);
             end
             
-            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
+            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.trial ...
                 size(obj.phi.val, 2) 1 - obj.err.rbRedRemain ...
                 1 obj.err.rbRedRemain};
             obj.err.store.redInfo(2, :) = reductionInfo;
@@ -598,31 +600,27 @@ classdef beam < handle
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
-                    pmValInp = obj.pmVal.i.trial;
+                    pmValInp = obj.pmVal.trial;
                 case 'Greedy'
                     pmValInp = obj.pmVal.max;
                 case 'verify'
-                    pmValInp = cell2mat(obj.pmVal.iter);
+                    pmValInp = obj.pmVal.iter;
             end
             
             if AbaqusSwitch == 0
                 % use MATLAB Newmark code to obtain exact solutions.
                 M = obj.mas.mtx;
-                stiPre = sparse(obj.no.dof, obj.no.dof);
+                K = sparse(obj.no.dof, obj.no.dof);
                 if damSwitch == 0
                     % no damping, pmI and pmS.
-                    for iSti = 1:obj.no.inc + 1
-                        stiPre = stiPre + obj.sti.mtxCell{1} * ...
-                            pmValInp(2) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                    end
+                    K = K + obj.sti.mtxCell{1} * ...
+                        pmValInp + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                     C = obj.dam.mtx;
                 elseif damSwitch == 1
-                    stiPre = stiPre + obj.sti.mtxCell{1} * ...
-                        pmValInp(4) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                    dcInp = pmValInp(5);
-                    C = dcInp * stiPre;
+                    K = K + obj.sti.mtxCell{1} * ...
+                        pmValInp(1) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                    C = pmValInp(2) * K;
                 end
-                K = stiPre;
                 F = obj.fce.val;
                 % compute trial solution
                 obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
@@ -680,23 +678,17 @@ classdef beam < handle
             
         end
         %%
-        function obj = pmTrial(obj)
+        function obj = pmTrial(obj, damSwitch)
             % extract parameter information for trial point.
-            pmCombIdx = obj.pmVal.comb.space(:, 1:obj.no.inc);
-            for i = 1:length(pmCombIdx)
-                pmCombComp = isequal(obj.pmVal.comb.trial, pmCombIdx(i, :));
-                if pmCombComp == 1
-                    pmIdx = i;
-                end
+            iTrial = obj.pmVal.comb.trial;
+            if damSwitch == 0
+                obj.pmVal.trial = obj.pmVal.comb.space(iTrial, 3);
+                obj.pmLoc.trial = obj.pmVal.comb.space(iTrial, 2);
+            elseif damSwitch == 1
+                obj.pmVal.trial = obj.pmVal.comb.space(iTrial, 4:5);
+                obj.pmLoc.trial = obj.pmVal.comb.space(iTrial, 2:3);
             end
-            
-            obj.pmVal.i.trial = obj.pmVal.comb.space(pmIdx, :);
-            
-            if obj.no.inc == 1
-                obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
-            else
-                obj.err.setZ.mInc = zeros(obj.domLeng.i);
-            end
+            obj.pmExpo.trial = log10(obj.pmVal.trial);
             
         end
         
@@ -795,7 +787,7 @@ classdef beam < handle
         end
         %%
         function obj = errPrepareSetZeroOriginal(obj)
-            if obj.no.inc == 1
+            if obj.no.pm == 1
                 obj.err.store.surf = obj.err.setZ.sInc;
             else
                 obj.err.store.surf = obj.err.setZ.mInc;
@@ -1601,16 +1593,18 @@ classdef beam < handle
         end
         
         %%
-        function obj = pmIter(obj, iIter)
+        function obj = pmIter(obj, iIter, damSwitch)
             % this method extract the pm values, pm locations, pm
             % exponential values for iterations.
             
-            obj.pmVal.iter = mat2cell([obj.pmVal.comb.space(iIter, ...
-                obj.no.inc + 1 : end)'; obj.pmVal.s.fix], ...
-                ones(obj.no.inc + 1, 1));
-            obj.pmLoc.iter = obj.pmVal.comb.space(iIter, (1:obj.no.inc));
-            obj.pmExpo.iter = ...
-                cellfun(@(v) log10(v), obj.pmVal.iter(1:obj.no.inc), 'un', 0);
+            if damSwitch == 0
+                obj.pmVal.iter = obj.pmVal.comb.space(iIter, 3);
+                obj.pmLoc.iter = obj.pmVal.comb.space(iIter, 2);
+            elseif damSwitch == 1
+                obj.pmVal.iter = obj.pmVal.comb.space(iIter, 4:5);
+                obj.pmLoc.iter = obj.pmVal.comb.space(iIter, 2:3);
+            end
+            obj.pmExpo.iter = log10(obj.pmVal.iter);
             
         end
         
@@ -1618,16 +1612,16 @@ classdef beam < handle
         function obj = reducedVar(obj, damSwitch)
             % compute reduced variables for each pm value.
             phiInpt = obj.phi.val;
+            pmIter = obj.pmVal.iter;
             m = obj.mas.re.mtx;
-            stiReIter = ...
-                cellfun(@(v, w) full(v) * w, ...
-                obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
-            k = sum(cat(3, stiReIter{:}), 3);
             if damSwitch == 0
+                k = obj.sti.re.mtxCell{1} * pmIter + ...
+                    obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
                 c = obj.dam.re.mtx;
             elseif damSwitch == 1
-                dcIter = obj.pmVal.damp.space(obj.pmLoc.iter);
-                c = k * dcIter;
+                k = obj.sti.re.mtxCell{1} * pmIter(1) + ...
+                    obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
+                c = k * pmIter(2);
             end
             f = phiInpt' * obj.fce.val;
             dT = obj.time.step;
@@ -2045,16 +2039,18 @@ classdef beam < handle
             end
         end
         %%
-        function obj = errStoreSurfs(obj, type)
+        function obj = errStoreSurfs(obj, type, damSwitch)
             % store all error response surfaces: 2 hats, 1 diff, 1 errwithRb.
             pmLocIter = num2cell(obj.pmLoc.iter);
-            if obj.no.inc == 1
+            if damSwitch == 0
                 surfSize = [obj.domLeng.i 1];
-            else
-                surfSize = obj.domLeng.i;
+            elseif damSwitch == 1
+                damLeng = size(obj.pmVal.damp.space, 1);
+                surfSize = [obj.domLeng.i damLeng];
             end
             % use idx here cause in 2d, subindices need to be transformed
             % into xy coords.
+            
             idx = sub2ind(surfSize, pmLocIter{:});
             switch type
                 case 'hhat'
@@ -2074,6 +2070,7 @@ classdef beam < handle
                     obj.err.store.surf(idx) = ...
                         obj.err.store.surf(idx) + obj.err.val;
             end
+            
         end
         %%
         function obj = errStoreAllSurfs(obj, type)
@@ -2204,7 +2201,7 @@ classdef beam < handle
                     end
                     
             end
-            
+            keyboard
             obj.countGreedy = obj.countGreedy + 1;
         end
         %%
@@ -2237,17 +2234,16 @@ classdef beam < handle
             switch type
                 case 'original'
                     eMaxPmLoc = obj.err.max.loc;
-                    eMaxValLoc = obj.err.max.loc;
                 case 'hhat'
                     eMaxPmLoc = obj.err.max.loc.hhat;
-                    eMaxValLoc = obj.err.max.loc.hhat;
             end
             obj.pmLoc.max = eMaxPmLoc;
             
             pmValMax = obj.pmVal.comb.space(eMaxPmLoc, :);
             
             obj.pmVal.max = pmValMax;
-            obj.pmExpo.max = num2cell(log10(obj.pmVal.max));
+            obj.pmExpo.max = log10(obj.pmVal.max(3));
+            keyboard
         end
         %%
         function obj = localHrefinement(obj)
@@ -2298,17 +2294,18 @@ classdef beam < handle
                     relativeErrSq = @(xNum, xInit) ...
                         (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
             end
-            pmValCell = obj.pmVal.iter;
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for iSti = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
-            end
+            pmIter = obj.pmVal.iter;
             M = obj.mas.mtx;
+            stiPre = sparse(obj.no.dof, obj.no.dof);
+            
             if damSwitch == 0
+                stiPre = stiPre + obj.sti.mtxCell{1} * pmIter + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
-                dcIter = obj.pmVal.damp.space(obj.pmLoc.iter);
-                C = stiPre * dcIter;
+                stiPre = stiPre + obj.sti.mtxCell{1} * pmIter(1) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = stiPre * pmIter(2);
             end
             K = stiPre;
             F = obj.fce.val - ...

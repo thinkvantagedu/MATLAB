@@ -8,7 +8,7 @@ callPreliminary;
 %% trial solution.
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
-    INPname, domLengi, domBondi, domMid, trial, noIncl, noStruct, ...
+    INPname, domLengi, domBondi, domMid, trial, noIncl, noStruct, noPm, ...
     noMas, noDam, tMax, tStep, errLowBond, errMaxValInit, ...
     errRbCtrl, errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
     drawRow, drawCol, fNode, ftime, fRange, nConsEnd);
@@ -23,7 +23,7 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceMultiDim;
+fixie.generatePmSpaceSingleDim;
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -147,8 +147,14 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         figure(1)
         fixie.plotSurfGrid('hhat', 'b-.');
-%         fixie.plotSurfGrid('hat', 'r--');
+        %         fixie.plotSurfGrid('hat', 'r--');
         
+        if fixie.countGreedy == drawRow * drawCol
+            % put here to stop any uncessary computations.
+            disp('iterations reach maximum plot number')
+            break
+        end
+    
         fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 0);

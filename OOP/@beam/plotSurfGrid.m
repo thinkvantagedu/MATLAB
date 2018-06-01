@@ -21,8 +21,9 @@ hAx = semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 3);
 
 txtCurrentMax = sprintf('[%d %.2g]', obj.pmLoc.max, errMax);
 % add text to figure location.
-errTxt = text(obj.pmExpo.max{:}, errMax, txtCurrentMax, ...
-    'color', '[0 0 0]', 'Fontsize', 20);
+
+errTxt = text(obj.pmExpo.max, errMax, txtCurrentMax, 'color', '[0 0 0]', ...
+    'Fontsize', 20);
 
 xlabel('Youngs Modulus')
 ylabel('Maximum relative error')
