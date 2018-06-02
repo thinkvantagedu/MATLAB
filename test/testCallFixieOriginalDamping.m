@@ -1,6 +1,6 @@
 % this script tests callFixieOriginalDamping, run after the main script is
 % finished. 
-ppick = 2;
+ppick = 15;
 M = fixie.mas.mtx;
 K = fixie.sti.mtxCell{1} * fixie.pmVal.comb.space(ppick, 4) + ...
     fixie.sti.mtxCell{2} * 1;

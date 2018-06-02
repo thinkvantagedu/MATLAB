@@ -16,8 +16,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 65;
-domLengs = 65;
+domLengi = 129;
+domLengs = 129;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -40,7 +40,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 2;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-10;
@@ -57,7 +57,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 3;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -90,7 +90,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 0;
+ratioSwitch = 1;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;
 AbaqusSwitch = 0;

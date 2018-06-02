@@ -80,16 +80,16 @@ while fixie.err.max.val > fixie.err.lowBond
         
     end
     
-    fixie.extractMaxErrorInfo('original', randomSwitch); % greedy + 1
+    fixie.extractMaxErrorInfo('original', randomSwitch, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
-    fixie.extractMaxPmInfo('original');
+    fixie.extractMaxPmInfo('original', 0);
     fixie.greedyInfoDisplay('original');
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
     figure(1)
-    fixie.plotSurfGrid('original', '-.k');
+    fixie.plotSurfGrid('original', '-.k', 0);
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.

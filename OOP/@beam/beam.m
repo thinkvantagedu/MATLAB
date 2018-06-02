@@ -338,6 +338,7 @@ classdef beam < handle
             obj.pmVal.damp.space = [1:damLeng; damVal]';
             
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
+            obj.domLeng.damp = damLeng;
             
         end
         %%
@@ -391,16 +392,16 @@ classdef beam < handle
             disMax = obj.dis.rbEnrich;
             % import system inputs.
             M = obj.mas.mtx;
-            keyboard
+            
             if damSwitch == 0
-                K = obj.sti.mtxCell{1} * pmValMax(3) + ...
+                K = obj.sti.mtxCell{1} * pmValMax + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
                 % here damping is the coefficient, not matrix.
-                K = obj.sti.mtxCell{1} * pmValMax(4) + ...
+                K = obj.sti.mtxCell{1} * pmValMax(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmValMax(5) * K;
+                C = pmValMax(2) * K;
             end
             F = obj.fce.val;
             if ratioSwitch == 0
@@ -2045,8 +2046,7 @@ classdef beam < handle
             if damSwitch == 0
                 surfSize = [obj.domLeng.i 1];
             elseif damSwitch == 1
-                damLeng = size(obj.pmVal.damp.space, 1);
-                surfSize = [obj.domLeng.i damLeng];
+                surfSize = [obj.domLeng.i obj.domLeng.damp];
             end
             % use idx here cause in 2d, subindices need to be transformed
             % into xy coords.
@@ -2090,6 +2090,7 @@ classdef beam < handle
                         [obj.err.store.allSurf.diff; ...
                         obj.err.store.surf.diff(:, 2)];
             end
+            
         end
         %%
         function obj = verifyPrepare(obj)
@@ -2164,7 +2165,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = extractMaxErrorInfo(obj, type, randomSwitch)
+        function obj = extractMaxErrorInfo(obj, type, randomSwitch, damSwitch)
             % extract error max and location from surfaces, greedy + 1.
             switch type
                 
@@ -2182,27 +2183,37 @@ classdef beam < handle
                     
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
-                    pmValRow = obj.pmVal.comb.space(eMaxLocIdx, :);
                     obj.err.max.val = eMaxVal;
                     
-                    if randomSwitch == 1
-                        if obj.countGreedy == 0
-                            obj.err.max.loc = pmValRow(:, 1:obj.no.inc);
-                        else
-                            eMlocRand = [];
-                            for i = 1:obj.no.inc
-                                eMlocRand = [eMlocRand ...
-                                    randi([1 obj.domLeng.i(i)], 1)];
+                    if damSwitch == 0
+                        pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2);
+                        if randomSwitch == 1
+                            if obj.countGreedy == 0
+                                obj.err.max.loc = pmMaxLoc;
+                            else
+                                obj.err.max.loc = randi([1 obj.domLeng.i], 1);
                             end
-                            obj.err.max.loc = eMlocRand;
+                        else
+                            obj.err.max.loc = pmMaxLoc;
                         end
-                    else
-                        obj.err.max.loc = pmValRow(:, 1:obj.no.inc);
+                    elseif damSwitch == 1
+                        pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2:3);
+                        if randomSwitch == 1
+                            if obj.countGreedy == 0
+                                obj.err.max.loc = pmMaxLoc;
+                            else
+                                obj.err.max.loc = ...
+                                    [randi([1 obj.domLeng.i], 1)... 
+                                    randi([1 obj.domLeng.damp], 1)];
+                            end
+                        else
+                            obj.err.max.loc = pmMaxLoc;
+                        end
                     end
-                    
             end
-            keyboard
+            
             obj.countGreedy = obj.countGreedy + 1;
+            
         end
         %%
         function obj = storeErrorInfo(obj)
@@ -2224,7 +2235,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = extractMaxPmInfo(obj, type)
+        function obj = extractMaxPmInfo(obj, type, damSwitch)
             % when extracting maximum error information, values and
             % locations of maximum error can be different, for example, use
             % eDiff to decide maximum error location (eMaxPmLoc =
@@ -2233,17 +2244,18 @@ classdef beam < handle
             
             switch type
                 case 'original'
-                    eMaxPmLoc = obj.err.max.loc;
+                    [~, eMaxLocIdx] = max(obj.err.store.surf(:));
                 case 'hhat'
-                    eMaxPmLoc = obj.err.max.loc.hhat;
+                    [~, eMaxLocIdx] = max(obj.err.store.surf.hhat(:));
             end
-            obj.pmLoc.max = eMaxPmLoc;
             
-            pmValMax = obj.pmVal.comb.space(eMaxPmLoc, :);
+            if damSwitch == 0
+                obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 3);
+            elseif damSwitch == 1
+                obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 4:5);
+            end
             
-            obj.pmVal.max = pmValMax;
-            obj.pmExpo.max = log10(obj.pmVal.max(3));
-            keyboard
+            obj.pmExpo.max = log10(obj.pmVal.max);
         end
         %%
         function obj = localHrefinement(obj)
