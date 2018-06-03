@@ -88,7 +88,6 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-    figure(1)
     fixie.plotSurfGrid('original', '-.k', 0);
     
     if fixie.countGreedy == drawRow * drawCol
@@ -113,7 +112,5 @@ elseif randomSwitch == 1
     lineColor = 'k--';
 end
 
-figure(2)
 fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
-figure(3)
-fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth);
+fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 0);

@@ -18,6 +18,7 @@ end
 
 
 if damSwitch == 0
+    figure(1)
     % for single inclusion case, plot error response curve.
     semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 3);
     txtMax = sprintf('[%d %.2g]', obj.err.max.loc, eMax);
@@ -42,24 +43,25 @@ if damSwitch == 0
     hold on
     axis square
 elseif damSwitch == 1
-    xpmDom = obj.pmVal.i.space{:}(:, 2);
-    ydamDom = obj.pmVal.damp.space(:, 3);
-    surf(xpmDom, ydamDom, eSurf');
+    figure
+    ex = obj.pmVal.i.space{:}(:, 2);
+    ey = obj.pmVal.damp.space(:, 3);
+    surf(ex, ey, eSurf');
     txtMax = sprintf('[%d %d %.2g]', obj.err.max.loc, eMax);
     text(obj.pmVal.max(1), obj.pmVal.max(2), eMax, ...
         txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
-        'dataaspectratio', [length(ydamDom) length(xpmDom) 1])
+        'dataaspectratio', [length(ey) length(ex) 1])
     shading interp
     view(2)
     
     colorbar
     ylabel('Damping coefficient')
+    zlabel('Maximum relative error')
     colormap(jet)
-
+    
 end
 xlabel('Youngs Modulus')
 
 grid on
 set(gca,'fontsize',20)
-

@@ -27,7 +27,7 @@ fixie.readINPgeoMultiInc;
 fixie.generatePmSpaceSingleDim;
 
 % generate damping coefficient space, the combination is stiffness then damping.
-damLeng = 17;
+damLeng = 4;
 fixie.generateDampingSpace(damLeng);
 
 % read stiffness matrices.
@@ -93,7 +93,6 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-    figure(1)
     fixie.plotSurfGrid('original', '-.k', 1);
     
     if fixie.countGreedy == drawRow * drawCol
@@ -118,7 +117,6 @@ elseif randomSwitch == 1
     lineColor = 'k--';
 end
 
-figure(2)
 fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
-figure(3)
-fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth);
+
+fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);

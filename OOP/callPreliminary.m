@@ -1,4 +1,3 @@
-clf;
 route = '/home/xiaohan/Desktop/Temp';
 figRoute = '/home/xiaohan/Desktop/Temp/numericalResults/';
 % route = '/Users/kevin/Documents/Temp';
@@ -16,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 129;
-domLengs = 129;
+domLengi = 5;
+domLengs = 5;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;

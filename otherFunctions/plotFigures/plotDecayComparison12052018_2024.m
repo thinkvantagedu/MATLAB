@@ -77,5 +77,5 @@ axis([10^-1 10^1 0 errOriMax(1)])
 grid on
 legend({'Classical', 'Implemented'}, 'FontSize', 20);
 set(gca,'fontsize',20)
-xlabel('Parametric Domain', 'FontSize', 20);
+xlabel('Young''s modulus', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);

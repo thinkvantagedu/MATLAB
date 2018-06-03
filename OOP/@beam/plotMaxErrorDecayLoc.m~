@@ -30,10 +30,10 @@ elseif damSwitch == 1
     eMx = ex(obj.err.store.loc(:, 1));
     eMy = ey(obj.err.store.loc(:, 2));
     eMz = obj.err.store.max;
-    scatter3(eMx, eMy, eMz, 'filled', 'k')
+    scatter3(eMx, eMy, eMz, 'filled')
     for iT = 1:length(eMx)
         
-        text(eMx(iT), eMy(iT), eMz(iT), {' ', num2str(iT)}, 'Fontsize', 20);
+        text(eMx(iT), eMy(iT), eMz(iT), )
         
     end
     exl = ex(1);
