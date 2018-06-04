@@ -399,9 +399,9 @@ classdef beam < handle
                 C = obj.dam.mtx;
             elseif damSwitch == 1
                 % here damping is the coefficient, not matrix.
-                K = obj.sti.mtxCell{1} * pmValMax(4) + ...
+                K = obj.sti.mtxCell{1} * pmValMax(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmValMax(5) * K;
+                C = pmValMax(2) * K;
             end
             F = obj.fce.val;
             if ratioSwitch == 0
@@ -2202,9 +2202,11 @@ classdef beam < handle
                             if obj.countGreedy == 0
                                 obj.err.max.loc = pmMaxLoc;
                             else
+                                obj.err.max.locIdx = randi([1 ...
+                                    obj.domLeng.i * obj.domLeng.damp], 1);
                                 obj.err.max.loc = ...
-                                    [randi([1 obj.domLeng.i], 1)... 
-                                    randi([1 obj.domLeng.damp], 1)];
+                                    obj.pmVal.comb.space...
+                                    (obj.err.max.locIdx, 2:3);
                             end
                         else
                             obj.err.max.loc = pmMaxLoc;
@@ -2213,7 +2215,7 @@ classdef beam < handle
             end
             
             obj.countGreedy = obj.countGreedy + 1;
-            
+            keyboard
         end
         %%
         function obj = storeErrorInfo(obj)
@@ -2241,17 +2243,18 @@ classdef beam < handle
             % eDiff to decide maximum error location (eMaxPmLoc =
             % obj.err.maxLoc.diff), and use ehat (obj.err.maxLoc.hat) to
             % decide parameter value regarding maximum error.
-            
+            keyboard
             switch type
                 case 'original'
-                    [~, eMaxLocIdx] = max(obj.err.store.surf(:));
+                    eMloc = obj.err.max.loc;
                 case 'hhat'
-                    [~, eMaxLocIdx] = max(obj.err.store.surf.hhat(:));
+                    eMloc = obj.err.max.loc.hhat;
             end
             
             if damSwitch == 0
-                obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 3);
+                obj.pmVal.max = obj.pmVal.comb.space(eMloc, 3);
             elseif damSwitch == 1
+                
                 obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 4:5);
             end
             

@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 5;
-domLengs = 5;
+domLengi = 33;
+domLengs = 33;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 8;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -91,7 +91,7 @@ respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
 ratioSwitch = 1;
 % randomSwtich randomly select magic points, works for original only.
-randomSwitch = 0;
+randomSwitch = 1;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;

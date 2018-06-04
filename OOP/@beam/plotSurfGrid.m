@@ -55,7 +55,7 @@ elseif damSwitch == 1
     shading interp
     view(2)
     
-    colorbar
+    colorbar('eastoutside')
     ylabel('Damping coefficient')
     zlabel('Maximum relative error')
     colormap(jet)

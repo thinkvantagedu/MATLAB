@@ -2200,13 +2200,17 @@ classdef beam < handle
                         pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2:3);
                         if randomSwitch == 1
                             if obj.countGreedy == 0
+                                obj.err.max.locIdx = eMaxLocIdx;
                                 obj.err.max.loc = pmMaxLoc;
                             else
+                                obj.err.max.locIdx = randi([1 ...
+                                    obj.domLeng.i * obj.domLeng.damp], 1);
                                 obj.err.max.loc = ...
-                                    [randi([1 obj.domLeng.i], 1)... 
-                                    randi([1 obj.domLeng.damp], 1)];
+                                    obj.pmVal.comb.space...
+                                    (obj.err.max.locIdx, 2:3);
                             end
                         else
+                            obj.err.max.locIdx = eMaxLocIdx;
                             obj.err.max.loc = pmMaxLoc;
                         end
                     end
@@ -2244,14 +2248,15 @@ classdef beam < handle
             
             switch type
                 case 'original'
-                    [~, eMaxLocIdx] = max(obj.err.store.surf(:));
+                    eMloc = obj.err.max.loc;
                 case 'hhat'
-                    [~, eMaxLocIdx] = max(obj.err.store.surf.hhat(:));
+                    eMloc = obj.err.max.loc.hhat;
             end
             
             if damSwitch == 0
-                obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 3);
+                obj.pmVal.max = obj.pmVal.comb.space(eMloc, 3);
             elseif damSwitch == 1
+                eMaxLocIdx = obj.err.max.locIdx;
                 obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 4:5);
             end
             

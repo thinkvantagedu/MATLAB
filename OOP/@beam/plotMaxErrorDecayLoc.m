@@ -10,7 +10,7 @@ switch errType
         erry = obj.err.store.max.verify;
         xLocText = obj.err.store.loc.verify;
 end
-
+%%
 figure
 if damSwitch == 0
     loglog(errx, erry, color, 'LineWidth', width);
@@ -21,19 +21,21 @@ if damSwitch == 0
         text(errx(i), erry(i), stri, 'HorizontalAlignment', 'left', ...
             'VerticalAlignment', 'bottom', 'FontSize', 20);
     end
-    xlabel('Youngs Modulus')
+    
     ylabel('Maximum Relative Error')
     
 elseif damSwitch == 1
+    
     ex = obj.pmVal.i.space{:}(:, 2);
     ey = obj.pmVal.damp.space(:, 3);
     eMx = ex(obj.err.store.loc(:, 1));
     eMy = ey(obj.err.store.loc(:, 2));
     eMz = obj.err.store.max;
-    scatter3(eMx, eMy, eMz, 'filled', 'k')
+    scatter3(eMx, eMy, eMz, 80, 'k', '+', 'LineWidth',2)
     for iT = 1:length(eMx)
         
-        text(eMx(iT), eMy(iT), eMz(iT), {' ', num2str(iT)}, 'Fontsize', 20);
+        text(eMx(iT), eMy(iT), eMz(iT), {' ', num2str(iT)}, 'Fontsize', 20, ...
+            'HorizontalAlignment','left', 'VerticalAlignment', 'bottom');
         
     end
     exl = ex(1);
@@ -43,10 +45,13 @@ elseif damSwitch == 1
     axis([exl exr eyl eyr]);
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
         'dataaspectratio', [length(ey) length(ex) 1])
+    ylabel('Damping coefficient')
+    zlabel('Maximum Relative Error')
+    view(2)
 end
-
+xlabel('Youngs Modulus')
 grid on
 set(gca,'fontsize',20)
 axis square
-keyboard
+
 end
