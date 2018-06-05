@@ -1678,8 +1678,9 @@ classdef beam < handle
             % responses.
             % if rvSVDswitch = 1, there is no need to find the nonzero
             % elements.
-            pmPass = cell2mat(obj.pmVal.iter);
-            pmSlct = repmat([1; 1; pmPass], obj.no.t_step * obj.no.rb, 1);
+            
+            pmPass = obj.pmVal.iter;
+            pmSlct = repmat([1; 1; pmPass; 1], obj.no.t_step * obj.no.rb, 1);
             pmSlct = [1; pmSlct];
             if rvSVDswitch == 0
                 pmNonZeroCol = pmSlct;
@@ -1766,7 +1767,7 @@ classdef beam < handle
             
             for i = 1:nBlk
                 % pmIter is the single expo pm value for current iteration.
-                pmIter = obj.pmExpo.iter{:};
+                pmIter = obj.pmExpo.iter;
                 % pmBlkCell is the cell block of itpl pm domain values.
                 pmBlkDom = pmBlk{i}(:, 2:obj.no.inc + 1);
                 pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
@@ -1872,8 +1873,8 @@ classdef beam < handle
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
                 obj.err.store.surf.hat(iIter) = 0;
-                obj.errStoreSurfs('hhat');
-                obj.errStoreSurfs('hat');
+                obj.errStoreSurfs('hhat', 0);
+                obj.errStoreSurfs('hat', 0);
                 
                 % if enrich, interpolate ehat. For ehhat, only interpolate
                 % the refined blocks, and modify ehat surface at new
@@ -1885,7 +1886,7 @@ classdef beam < handle
                 obj.inpolyItpl('hat');
                 
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
-                obj.errStoreSurfs('hat');
+                obj.errStoreSurfs('hat', 0);
                 % Determine whether point is in refined block.
                 obj.inAddBlockIndicator;
                 if any(obj.indicator.inBlock) == 0
@@ -1898,7 +1899,7 @@ classdef beam < handle
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('hhat');
                     obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
-                    obj.errStoreSurfs('hhat');
+                    obj.errStoreSurfs('hhat', 0);
                 end
                 
             elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
@@ -1919,7 +1920,7 @@ classdef beam < handle
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('add');
                     obj.rvPmErrProdSum('add', rvSVDswitch, iIter);
-                    obj.errStoreSurfs('hhat');
+                    obj.errStoreSurfs('hhat', 0);
                 end
             end
         end
@@ -2124,7 +2125,7 @@ classdef beam < handle
         function obj = verifyPlotSurf(obj, iGre, plotColor)
             % this method plots the response surface for verification
             % purpose.
-            xVal = obj.pmExpo.i{:};
+            xVal = obj.pmVal.i.space{:}(:, 2);
             yVal = obj.err.store.allSurf.verify(iGre, :);
             semilogy(xVal, yVal, plotColor);
             hold on

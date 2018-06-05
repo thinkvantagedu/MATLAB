@@ -4,6 +4,7 @@ clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 1;
 callPreliminary;
+noPm = 1;
 
 %% trial solution.
 % use subclass: fixbeam to create beam.
@@ -29,7 +30,7 @@ fixie.generatePmSpaceSingleDim;
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
 
 % extract parameter infomation for trial point.
-fixie.pmTrial;
+fixie.pmTrial(0);
 
 % initialise damping, velocity, displacement input.
 fixie.damMtx;
@@ -78,7 +79,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % collect all reduced variables to perform POD.
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter);
+        fixie.pmIter(iIter, 0);
         
         fixie.reducedVar(0);
         
@@ -117,7 +118,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % multiply the output with pm and interpolate.
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter);
+        fixie.pmIter(iIter, 0);
         
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
@@ -128,7 +129,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % disp('online end')
     
     %% extract error information.
-    fixie.errStoreSurfs('diff');
+    fixie.errStoreSurfs('diff', 0);
     fixie.extractMaxErrorInfo('hats'); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
@@ -137,7 +138,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    fixie.extractMaxPmInfo('hhat');
+    fixie.extractMaxPmInfo('hhat', 0);
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
@@ -145,9 +146,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         
-        figure(1)
-        fixie.plotSurfGrid('hhat', 'b-.');
-        %         fixie.plotSurfGrid('hat', 'r--');
+        %         fixie.plotSurfGrid('hhat', 'b-.', 0);
+        %         fixie.plotSurfGrid('hat', 'r--', 0);
         
         if fixie.countGreedy == drawRow * drawCol
             % put here to stop any uncessary computations.
@@ -176,12 +176,11 @@ end
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % All Greedy iterations are included here.
 fixie.verifyPrepare;
-% figure(1)
-for iGre = 1:fixie.countGreedy - 1
+for iGre = 1:fixie.countGreedy
     fixie.verifyExtractBasis(iGre);
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter);
+        fixie.pmIter(iIter, 0);
         fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 0);
         fixie.verifyExactError(iGre, iIter);
         CmdWinTool('statusText', ...
@@ -189,11 +188,9 @@ for iGre = 1:fixie.countGreedy - 1
         
     end
     fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'r-^');
+    fixie.verifyPlotSurf(iGre, 'r-^');
 end
 
 %%
-figure(2)
 fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
-figure(3)
-fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2);
+fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);

@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 1025;
-domLengs = 1025;
+domLengi = 9;
+domLengs = 9;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 20;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
