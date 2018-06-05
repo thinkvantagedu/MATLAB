@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 33;
-domLengs = 33;
+domLengi = 1025;
+domLengs = 1025;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -42,7 +42,7 @@ fRange = 10;
 trial = 1;
 
 %% error informations.
-errLowBond = 1e-10;
+errLowBond = 1e-20;
 errMaxValInit = 1;
 errRbCtrl = 1;
 errRbCtrlThres = 0.01;
@@ -56,9 +56,9 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 8;
-nPhiInitial = 10;
-nPhiEnrich = 4;
+drawCol = 20;
+nPhiInitial = 1;
+nPhiEnrich = 1;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -89,7 +89,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 1;
 AbaqusSwitch = 0;

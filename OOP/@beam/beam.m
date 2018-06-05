@@ -343,7 +343,6 @@ classdef beam < handle
         end
         %%
         function obj = rbEnrichmentStatic(obj)
-            obj.countGreedy = obj.countGreedy + 1;
             % this method add a new basis vector to current basis. New basis
             % vector = current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
@@ -358,11 +357,9 @@ classdef beam < handle
             obj.GramSchmidt(phi_);
             obj.phi.val = obj.phi.otpt;
             
-            eMaxPre = obj.err.store.max(obj.countGreedy);
             eMaxLoc = obj.err.max.loc;
             
-            redInfo = {eMaxLoc obj.pmVal.max ...
-                size(obj.phi.val, 2)};
+            redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
             obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             
             obj.no.rb = size(obj.phi.val, 2);
@@ -501,6 +498,22 @@ classdef beam < handle
             
         end
         %%
+        function obj = rbInitialStatic(obj)
+            % initialize reduced basis, take the entire displacement vector
+            % as the basis vector.
+            obj.no.store.rbAdd = [];
+            obj.no.store.rb = [];
+            obj.phi.val = obj.dis.trial;
+            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.trial ...
+                size(obj.phi.val, 2)};
+            obj.err.store.redInfo(2, :) = reductionInfo;
+            
+            obj.no.rb = size(obj.phi.val, 2);
+            obj.no.rbAdd = obj.no.rb;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
+        end
+        %%
         function obj = basisCompressionFixNoRedRatio(obj, ...
                 disInpt, phiInpt, M, C, K, F)
             % this method compute the error reduction ratio at the magic point
@@ -578,23 +591,6 @@ classdef beam < handle
             obj.phi.val = phiOtpt;
             obj.err.rbRedRemain = errRb;
         end
-        
-        %%
-        function obj = rbInitialStatic(obj)
-            % initialize reduced basis, take the entire displacement vector
-            % as the basis vector.
-            obj.no.store.rbAdd = [];
-            obj.no.store.rb = [];
-            obj.phi.val = obj.dis.trial;
-            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
-                size(obj.phi.val, 2)};
-            obj.err.store.redInfo(2, :) = reductionInfo;
-            
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.no.rbAdd = obj.no.rb;
-            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
-            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
-        end
         %%
         function obj = exactSolutionDynamic(obj, type, AbaqusSwitch, ...
                 trialName, damSwitch)
@@ -654,20 +650,16 @@ classdef beam < handle
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
-                    pmValcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
+                    pmValInp = obj.pmVal.trial;
                 case 'Greedy'
-                    pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
+                    pmValInp = obj.pmVal.max;
             end
             % use MATLAB Newmark code to obtain exact solutions.
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for iSti = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValcell(iSti);
-            end
+            K = sparse(obj.no.dof, obj.no.dof);
+            K = K + obj.sti.mtxCell{1} * ...
+                pmValInp + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
             % compute trial solution
-            obj.sti.full = stiPre;
-            obj.fce.pass = obj.fce.val;
-            obj.dis.full = obj.sti.full \ obj.fce.val;
-            
+            obj.dis.full = K \ obj.fce.val;
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
@@ -1639,12 +1631,9 @@ classdef beam < handle
         %%
         function obj = reducedVarStatic(obj)
             % compute reduced variables for each pm value.
-            phiInpt = obj.phi.val;
-            stiReIter = ...
-                cellfun(@(v, w) full(v) * w, ...
-                obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
-            k = sum(cat(3, stiReIter{:}), 3);
-            f = phiInpt' * obj.fce.val;
+            k = obj.sti.re.mtxCell{1} * obj.pmVal.iter + ...
+                obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
+            f = obj.phi.val' * obj.fce.val;
             obj.dis.re.reVar = k \ f;
             
         end
@@ -2301,34 +2290,30 @@ classdef beam < handle
             obj.no.itplAdd = size(obj.pmVal.add, 1);
         end
         %%
-        function obj = residualfromForce(obj, normType, AbaqusSwitch, ...
+        function obj = residualfromForce(obj, AbaqusSwitch, ...
                 trialName, damSwitch)
-            switch normType
-                case 'l1'
-                    relativeErrSq = @(xNum, xInit) ...
-                        (norm(xNum, 1)) / (norm(xInit, 1));
-                case 'fro'
-                    relativeErrSq = @(xNum, xInit) ...
-                        (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
-            end
+            
+            relativeErrSq = @(xNum, xInit) (norm(xNum, 'fro')) / ...
+                (norm(xInit, 'fro'));
+            
             pmIter = obj.pmVal.iter;
             M = obj.mas.mtx;
-            stiPre = sparse(obj.no.dof, obj.no.dof);
+            K = sparse(obj.no.dof, obj.no.dof);
             
             if damSwitch == 0
-                stiPre = stiPre + obj.sti.mtxCell{1} * pmIter + ...
+                K = K + obj.sti.mtxCell{1} * pmIter + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
-                stiPre = stiPre + obj.sti.mtxCell{1} * pmIter(1) + ...
+                K = K + obj.sti.mtxCell{1} * pmIter(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = stiPre * pmIter(2);
+                C = K * pmIter(2);
             end
-            K = stiPre;
+            K = K;
             F = obj.fce.val - ...
-                obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
+                M * obj.phi.val * obj.acc.re.reVar - ...
                 C * obj.phi.val * obj.vel.re.reVar - ...
-                stiPre * obj.phi.val * obj.dis.re.reVar;
+                K * obj.phi.val * obj.dis.re.reVar;
             if AbaqusSwitch == 0
                 obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
             elseif AbaqusSwitch == 1
@@ -2349,18 +2334,18 @@ classdef beam < handle
         end
         %%
         function obj = residualfromForceStatic(obj)
+            
             relativeErrSq = @(xNum, xInit) ...
                 (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
             
-            pmValCell = obj.pmVal.iter;
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for iSti = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
-            end
-            obj.fce.pass = obj.fce.val - ...
-                stiPre * obj.phi.val * obj.dis.re.reVar;
+            pmIter = obj.pmVal.iter;
+            K = sparse(obj.no.dof, obj.no.dof);
+            K = K + obj.sti.mtxCell{1} * pmIter + ...
+                obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+            F = obj.fce.val - ...
+                K * obj.phi.val * obj.dis.re.reVar;
             
-            obj.dis.resi = obj.sti.full \ obj.fce.pass;
+            obj.dis.resi = K \ F;
             
             obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof);
             

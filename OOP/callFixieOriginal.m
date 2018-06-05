@@ -45,7 +45,6 @@ fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 
 % compute initial exact solution.
 fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 0);
-
 fixie.errPrepareRemainOriginal;
 
 % compute initial reduced basis from trial solution. There are different
@@ -71,7 +70,7 @@ while fixie.err.max.val > fixie.err.lowBond
         
         fixie.reducedVar(0);
         
-        fixie.residualfromForce('fro', AbaqusSwitch, trialName, 0);
+        fixie.residualfromForce(AbaqusSwitch, trialName, 0);
         
         fixie.errStoreSurfs('original', 0);
         

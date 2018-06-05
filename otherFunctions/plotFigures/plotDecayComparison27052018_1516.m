@@ -9,7 +9,7 @@ load('errRandom4.mat', 'errRandom4')
 load('errRandom5.mat', 'errRandom5')
 
     
-errx = 1:5;
+errx = 1:6;
 errOriMax = errGreedy.store.max;
 errRanMax1 = errRandom1.store.max;
 errRanMax2 = errRandom2.store.max;

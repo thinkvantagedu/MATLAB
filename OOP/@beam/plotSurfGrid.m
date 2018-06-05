@@ -20,9 +20,9 @@ end
 if damSwitch == 0
     figure(1)
     % for single inclusion case, plot error response curve.
-    semilogy(obj.pmExpo.i{:}, eSurf, lineColor, 'LineWidth', 3);
+    loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 3);
     txtMax = sprintf('[%d %.2g]', obj.err.max.loc, eMax);
-    text(obj.pmExpo.max, eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
+    text(obj.pmVal.max, eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     if obj.countGreedy > 1
         
         % location of previous maximum error.
@@ -31,10 +31,9 @@ if damSwitch == 0
         eLocIdx = sub2ind(size(eSurf), eLocPrev{:});
         % value of previous maximum error location on current response surface.
         eValPrevMaxCurrent = eSurf(eLocIdx);
-        pmExpoPrev = obj.pmExpo.i{:}(eLocPrev{:});
-        txtPrevMax = sprintf('[%d %.2g]', eLocPrev{1}, ...
-            eValPrevMaxCurrent);
-        text(pmExpoPrev, eValPrevMaxCurrent, txtPrevMax, ...
+        pmValPrev = obj.pmVal.i.space{:}(eLocPrev{:}, 2);
+        txtPrevMax = sprintf('[%d %.2g]', eLocPrev{1}, eValPrevMaxCurrent);
+        text(pmValPrev, eValPrevMaxCurrent, txtPrevMax, ...
             'color', '[1 0 1]', 'Fontsize', 20);
         axis tight
     end
@@ -42,6 +41,7 @@ if damSwitch == 0
     ylabel('Maximum relative error')
     hold on
     axis square
+    
 elseif damSwitch == 1
     figure
     ex = obj.pmVal.i.space{:}(:, 2);
@@ -55,7 +55,7 @@ elseif damSwitch == 1
     shading interp
     view(2)
     
-    colorbar('eastoutside')
+    colorbar
     ylabel('Damping coefficient')
     zlabel('Maximum relative error')
     colormap(jet)

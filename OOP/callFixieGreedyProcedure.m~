@@ -37,55 +37,51 @@ fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 
 % compute initial exact solution.
 fixie.exactSolutionStatic('initial');
-fixie.errPrepareRemainStatic;
 
 % compute initial reduced basis from trial solution. 
+fixie.errPrepareRemainStatic;
 fixie.rbInitialStatic;
+disp(fixie.countGreedy)
 fixie.reducedMatricesStatic;
 while fixie.err.max.val > fixie.err.lowBond
-    
-    if fixie.countGreedy == drawRow * drawCol
-        % put here to stop any uncessary computations.
-        disp('iterations reach maximum plot number')
-        break
-    end
-    
     %% ONLINE
     fixie.errPrepareSetZeroOriginal;
     
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter, 0);
+        fixie.pmIter(iIter);
         
         fixie.reducedVarStatic;
         
         fixie.residualfromForceStatic;
         
-        fixie.errStoreSurfs('original', 0);
+        fixie.errStoreSurfs(typeSwitch);
         
         CmdWinTool('statusText', ...
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
        
-    fixie.extractMaxErrorInfo('original', randomSwitch, 0); % greedy + 1
-    disp({'Greedy iteration no' fixie.countGreedy})
+    fixie.extractMaxErrorInfo(typeSwitch, randomSwitch);
+    fixie.extractMaxPmInfo(typeSwitch);
     
-    fixie.extractMaxPmInfo('original', 0);
     fixie.greedyInfoDisplay('original');
     fixie.storeErrorInfoOriginal;
+    
     fixie.errStoreAllSurfs('original');
     
-%     fixie.plotSurfGrid('original', 'b', 0);
-    
-    if fixie.countGreedy == drawRow * drawCol
-        disp('iterations reach maximum plot number')
-        break
-    end
+    figure(1)
+    fixie.plotSurfGrid(drawRow, drawCol, 1, typeSwitch, 'b');
     
     fixie.exactSolutionStatic('Greedy');
     % rbEnrichment set the indicators.
     fixie.rbEnrichmentStatic;
     fixie.reducedMatricesStatic;
+    
+    if fixie.countGreedy > drawRow * drawCol
+        disp('iterations reach maximum plot number')
+        break
+    end
+    disp(fixie.countGreedy)
     
 end
