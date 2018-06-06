@@ -24,7 +24,7 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim;
+fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -42,10 +42,10 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
 fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.errPrepareRemainOriginal;
 
 % compute initial exact solution.
 fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 0);
-fixie.errPrepareRemainOriginal;
 
 % compute initial reduced basis from trial solution. There are different
 % approaches.

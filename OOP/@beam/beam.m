@@ -295,7 +295,8 @@ classdef beam < handle
             obj.node.dof.inc = sort(dofInc(:));
         end
         %%
-        function obj = generatePmSpaceSingleDim(obj)
+        function obj = generatePmSpaceSingleDim(obj, structSwitch, ...
+                drawRow, drawCol)
             % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
                 
@@ -322,6 +323,18 @@ classdef beam < handle
             
             obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
             
+            if structSwitch == 1
+                pmStruct = {};
+                for iS = 1:drawRow * drawCol
+                    pmStruct{iS} = linspace(-1, 1, iS);
+                end
+                pmStruct{1} = 0;
+                pmStruct = pmStruct';
+                obj.pmVal.struct.i = cellfun(@(v) 10 .^ v, pmStruct, 'un', 0);
+                obj.pmExpo.struct.i = pmStruct;
+                
+            end
+            
         end
         %%
         function obj = generateDampingSpace(obj, damLeng)
@@ -342,6 +355,33 @@ classdef beam < handle
             
         end
         %%
+        function obj = rbEnrichmentStructStatic(obj)
+            % this method add a new basis vector to current basis. New basis
+            % vector = current exact solution -  previous approximation).
+            % GramSchmidt is applied to the basis to ensure orthogonality.
+            
+            % new basis from error (phi * phi' * response).
+            phi_ = obj.dis.rbEnrich;
+            nRbOld = obj.no.rb;
+            % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
+            % happens when enrich.
+            obj.GramSchmidtOOP(phi_);
+            obj.phi.val = obj.phi.otpt;
+            
+            % Gram Schmidt 3 times to ensure orthogonality?????
+            eMaxLoc = obj.err.max.loc;
+            
+            redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
+            obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
+            
+            obj.no.rb = size(obj.phi.val, 2);
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
+            obj.no.rbAdd = obj.no.rb - nRbOld;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
+            
+            obj.indicator.enrich = 1;
+        end
+        %%
         function obj = rbEnrichmentStatic(obj)
             % this method add a new basis vector to current basis. New basis
             % vector = current exact solution -  previous approximation).
@@ -354,7 +394,7 @@ classdef beam < handle
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
             phi_ = [obj.phi.val rbErrFull];
-            obj.GramSchmidt(phi_);
+            obj.GramSchmidtOOP(phi_);
             obj.phi.val = obj.phi.otpt;
             
             eMaxLoc = obj.err.max.loc;
@@ -368,9 +408,7 @@ classdef beam < handle
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
             obj.indicator.enrich = 1;
-            
         end
-        
         %%
         function obj = rbEnrichment(obj, nEnrich, redRatio, ratioSwitch, ...
                 errType, damSwitch)
@@ -405,7 +443,7 @@ classdef beam < handle
                 [leftVecAll, ~, ~] = svd(rbErrFull, 0);
                 phiEnrich = leftVecAll(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
-                obj.GramSchmidt(phi_);
+                obj.GramSchmidtOOP(phi_);
                 obj.phi.val = obj.phi.otpt;
                 obj.basisCompressionFixNoRedRatio(disMax, obj.phi.val, ...
                     M, C, K, F);
@@ -556,7 +594,7 @@ classdef beam < handle
                     phiOtpt = [phiInpt phiEnrich(:, 1:nEnrich)];
                     % if not initial iteration, the enriched basis needs to
                     % be orthogonalized.
-                    obj.GramSchmidt(phiOtpt);
+                    obj.GramSchmidtOOP(phiOtpt);
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
@@ -646,6 +684,35 @@ classdef beam < handle
             
         end
         %%
+        function obj = exactSolutionStructStatic(obj, type)
+            % this method computes exact solutions at structurally 
+            % distributed samples.
+            switch type
+                case 'initial'
+                    pmValInp = obj.pmVal.struct.i{1};
+                case 'Greedy'
+                    pmValInp = obj.pmVal.struct.i{obj.countGreedy + 1};
+            end
+            % use MATLAB Newmark code to obtain exact solutions.
+            disStore = zeros(obj.no.dof, length(pmValInp));
+            K = sparse(obj.no.dof, obj.no.dof);
+            for iS = 1:length(pmValInp)
+                K = K + obj.sti.mtxCell{1} * ...
+                    pmValInp(iS) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                % compute trial solution
+                U = K \ obj.fce.val;
+                disStore(:, iS) = disStore(:, iS) + U;
+            end
+            switch type
+                case 'initial'
+                    obj.dis.trial = U;
+                    obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
+                case 'Greedy'
+                    obj.dis.rbEnrich = disStore;
+            end
+            
+        end
+        %%
         function obj = exactSolutionStatic(obj, type)
             % this method computes exact solution at maximum error points.
             switch type
@@ -659,13 +726,13 @@ classdef beam < handle
             K = K + obj.sti.mtxCell{1} * ...
                 pmValInp + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
             % compute trial solution
-            obj.dis.full = K \ obj.fce.val;
+            U = K \ obj.fce.val;
             switch type
                 case 'initial'
-                    obj.dis.trial = obj.dis.full;
+                    obj.dis.trial = U;
                     obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
                 case 'Greedy'
-                    obj.dis.rbEnrich = obj.dis.full;
+                    obj.dis.rbEnrich = U;
                     
             end
             
@@ -753,6 +820,7 @@ classdef beam < handle
             
             obj.err.store.max = [];
             obj.err.store.loc = [];
+            obj.err.store.magicLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 6);
             reductionText = {'magic point' 'parameter value' ...
@@ -764,6 +832,7 @@ classdef beam < handle
             
             obj.err.store.max = [];
             obj.err.store.loc = [];
+            obj.err.store.magicLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 3);
             reductionText = {'magic point' 'parameter value' 'no of vectors'};
@@ -2177,6 +2246,7 @@ classdef beam < handle
                     
                     if damSwitch == 0
                         pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2);
+                        obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0
                                 obj.err.max.loc = pmMaxLoc;
@@ -2188,6 +2258,7 @@ classdef beam < handle
                         end
                     elseif damSwitch == 1
                         pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2:3);
+                        obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0
                                 obj.err.max.locIdx = eMaxLocIdx;
@@ -2226,6 +2297,8 @@ classdef beam < handle
             
             obj.err.store.max = [obj.err.store.max; obj.err.max.val];
             obj.err.store.loc = [obj.err.store.loc; obj.err.max.loc];
+            obj.err.store.magicLoc = [obj.err.store.magicLoc; ...
+                obj.err.max.magicLoc];
             
         end
         %%
@@ -2565,7 +2638,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = GramSchmidt(obj, inpt)
+        function obj = GramSchmidtOOP(obj, inpt)
             
             [m, n] = size(inpt);
             otpt = zeros(m, n);
@@ -2586,7 +2659,7 @@ classdef beam < handle
                     
                 end
                 
-                otpt(:, iOtpt)=otpt(:, iOtpt)/norm(otpt(:, iOtpt));
+                otpt(:, iOtpt)=otpt(:, iOtpt) / norm(otpt(:, iOtpt));
                 
             end
             

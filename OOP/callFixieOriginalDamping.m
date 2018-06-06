@@ -24,7 +24,7 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim;
+fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
 
 % generate damping coefficient space, the combination is stiffness then damping.
 damLeng = 4;

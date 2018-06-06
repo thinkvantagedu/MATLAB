@@ -295,7 +295,8 @@ classdef beam < handle
             obj.node.dof.inc = sort(dofInc(:));
         end
         %%
-        function obj = generatePmSpaceSingleDim(obj)
+        function obj = generatePmSpaceSingleDim(obj, structSwitch, ...
+                drawRow, drawCol)
             % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
                 
@@ -322,6 +323,18 @@ classdef beam < handle
             
             obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
             
+            if structSwitch == 1
+                pmStruct = {};
+                for iS = 1:drawRow * drawCol
+                    pmStruct{iS} = linspace(-1, 1, iS);
+                end
+                pmStruct{1} = 0;
+                pmStruct = pmStruct';
+                obj.pmVal.struct.i = cellfun(@(v) 10 .^ v, pmStruct, 'un', 0);
+                obj.pmExpo.struct.i = pmStruct;
+                
+            end
+            
         end
         %%
         function obj = generateDampingSpace(obj, damLeng)
@@ -342,8 +355,35 @@ classdef beam < handle
             
         end
         %%
+        function obj = rbEnrichmentStructStatic(obj)
+            % this method add a new basis vector to current basis. New basis
+            % vector = current exact solution -  previous approximation).
+            % GramSchmidt is applied to the basis to ensure orthogonality.
+            
+            % new basis from error (phi * phi' * response).
+            phi_ = obj.dis.rbEnrich;
+            nRbOld = obj.no.rb;
+            % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
+            % happens when enrich.
+            obj.GramSchmidt(phi_);
+            obj.GramSchmidt(obj.phi.otpt);
+            obj.GramSchmidt(obj.phi.otpt);
+            obj.phi.val = obj.phi.otpt;
+            % Gram Schmidt 3 times to ensur 
+            eMaxLoc = obj.err.max.loc;
+            
+            redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
+            obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
+            
+            obj.no.rb = size(obj.phi.val, 2);
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
+            obj.no.rbAdd = obj.no.rb - nRbOld;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
+            
+            obj.indicator.enrich = 1;
+        end
+        %%
         function obj = rbEnrichmentStatic(obj)
-            obj.countGreedy = obj.countGreedy + 1;
             % this method add a new basis vector to current basis. New basis
             % vector = current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
@@ -358,11 +398,9 @@ classdef beam < handle
             obj.GramSchmidt(phi_);
             obj.phi.val = obj.phi.otpt;
             
-            eMaxPre = obj.err.store.max(obj.countGreedy);
             eMaxLoc = obj.err.max.loc;
             
-            redInfo = {eMaxLoc obj.pmVal.max ...
-                size(obj.phi.val, 2)};
+            redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
             obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             
             obj.no.rb = size(obj.phi.val, 2);
@@ -371,9 +409,7 @@ classdef beam < handle
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
             obj.indicator.enrich = 1;
-            
         end
-        
         %%
         function obj = rbEnrichment(obj, nEnrich, redRatio, ratioSwitch, ...
                 errType, damSwitch)
@@ -501,6 +537,22 @@ classdef beam < handle
             
         end
         %%
+        function obj = rbInitialStatic(obj)
+            % initialize reduced basis, take the entire displacement vector
+            % as the basis vector.
+            obj.no.store.rbAdd = [];
+            obj.no.store.rb = [];
+            obj.phi.val = obj.dis.trial;
+            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.trial ...
+                size(obj.phi.val, 2)};
+            obj.err.store.redInfo(2, :) = reductionInfo;
+            
+            obj.no.rb = size(obj.phi.val, 2);
+            obj.no.rbAdd = obj.no.rb;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
+        end
+        %%
         function obj = basisCompressionFixNoRedRatio(obj, ...
                 disInpt, phiInpt, M, C, K, F)
             % this method compute the error reduction ratio at the magic point
@@ -578,23 +630,6 @@ classdef beam < handle
             obj.phi.val = phiOtpt;
             obj.err.rbRedRemain = errRb;
         end
-        
-        %%
-        function obj = rbInitialStatic(obj)
-            % initialize reduced basis, take the entire displacement vector
-            % as the basis vector.
-            obj.no.store.rbAdd = [];
-            obj.no.store.rb = [];
-            obj.phi.val = obj.dis.trial;
-            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.i.trial ...
-                size(obj.phi.val, 2)};
-            obj.err.store.redInfo(2, :) = reductionInfo;
-            
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.no.rbAdd = obj.no.rb;
-            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rb];
-            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
-        end
         %%
         function obj = exactSolutionDynamic(obj, type, AbaqusSwitch, ...
                 trialName, damSwitch)
@@ -650,30 +685,54 @@ classdef beam < handle
             
         end
         %%
+        function obj = exactSolutionStructStatic(obj, type)
+            % this method computes exact solutions at structurally 
+            % distributed samples.
+            switch type
+                case 'initial'
+                    pmValInp = obj.pmVal.struct.i{1};
+                case 'Greedy'
+                    pmValInp = obj.pmVal.struct.i{obj.countGreedy + 1};
+            end
+            % use MATLAB Newmark code to obtain exact solutions.
+            disStore = zeros(obj.no.dof, length(pmValInp));
+            K = sparse(obj.no.dof, obj.no.dof);
+            for iS = 1:length(pmValInp)
+                K = K + obj.sti.mtxCell{1} * ...
+                    pmValInp(iS) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                % compute trial solution
+                U = K \ obj.fce.val;
+                disStore(:, iS) = disStore(:, iS) + U;
+            end
+            switch type
+                case 'initial'
+                    obj.dis.trial = U;
+                    obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
+                case 'Greedy'
+                    obj.dis.rbEnrich = disStore;
+            end
+        end
+        %%
         function obj = exactSolutionStatic(obj, type)
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
-                    pmValcell = [obj.pmVal.i.trial'; obj.pmVal.s.fix];
+                    pmValInp = obj.pmVal.trial;
                 case 'Greedy'
-                    pmValcell = [obj.pmVal.max'; obj.pmVal.s.fix];
+                    pmValInp = obj.pmVal.max;
             end
             % use MATLAB Newmark code to obtain exact solutions.
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for iSti = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValcell(iSti);
-            end
+            K = sparse(obj.no.dof, obj.no.dof);
+            K = K + obj.sti.mtxCell{1} * ...
+                pmValInp + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
             % compute trial solution
-            obj.sti.full = stiPre;
-            obj.fce.pass = obj.fce.val;
-            obj.dis.full = obj.sti.full \ obj.fce.val;
-            
+            U = K \ obj.fce.val;
             switch type
                 case 'initial'
-                    obj.dis.trial = obj.dis.full;
+                    obj.dis.trial = U;
                     obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
                 case 'Greedy'
-                    obj.dis.rbEnrich = obj.dis.full;
+                    obj.dis.rbEnrich = U;
                     
             end
             
@@ -761,6 +820,7 @@ classdef beam < handle
             
             obj.err.store.max = [];
             obj.err.store.loc = [];
+            obj.err.store.magicLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 6);
             reductionText = {'magic point' 'parameter value' ...
@@ -772,6 +832,7 @@ classdef beam < handle
             
             obj.err.store.max = [];
             obj.err.store.loc = [];
+            obj.err.store.magicLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 3);
             reductionText = {'magic point' 'parameter value' 'no of vectors'};
@@ -1639,12 +1700,9 @@ classdef beam < handle
         %%
         function obj = reducedVarStatic(obj)
             % compute reduced variables for each pm value.
-            phiInpt = obj.phi.val;
-            stiReIter = ...
-                cellfun(@(v, w) full(v) * w, ...
-                obj.sti.re.mtxCell, obj.pmVal.iter, 'un', 0);
-            k = sum(cat(3, stiReIter{:}), 3);
-            f = phiInpt' * obj.fce.val;
+            k = obj.sti.re.mtxCell{1} * obj.pmVal.iter + ...
+                obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
+            f = obj.phi.val' * obj.fce.val;
             obj.dis.re.reVar = k \ f;
             
         end
@@ -1689,8 +1747,9 @@ classdef beam < handle
             % responses.
             % if rvSVDswitch = 1, there is no need to find the nonzero
             % elements.
-            pmPass = cell2mat(obj.pmVal.iter);
-            pmSlct = repmat([1; 1; pmPass], obj.no.t_step * obj.no.rb, 1);
+            
+            pmPass = obj.pmVal.iter;
+            pmSlct = repmat([1; 1; pmPass; 1], obj.no.t_step * obj.no.rb, 1);
             pmSlct = [1; pmSlct];
             if rvSVDswitch == 0
                 pmNonZeroCol = pmSlct;
@@ -1777,7 +1836,7 @@ classdef beam < handle
             
             for i = 1:nBlk
                 % pmIter is the single expo pm value for current iteration.
-                pmIter = obj.pmExpo.iter{:};
+                pmIter = obj.pmExpo.iter;
                 % pmBlkCell is the cell block of itpl pm domain values.
                 pmBlkDom = pmBlk{i}(:, 2:obj.no.inc + 1);
                 pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
@@ -1883,8 +1942,8 @@ classdef beam < handle
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
                 obj.err.store.surf.hat(iIter) = 0;
-                obj.errStoreSurfs('hhat');
-                obj.errStoreSurfs('hat');
+                obj.errStoreSurfs('hhat', 0);
+                obj.errStoreSurfs('hat', 0);
                 
                 % if enrich, interpolate ehat. For ehhat, only interpolate
                 % the refined blocks, and modify ehat surface at new
@@ -1896,7 +1955,7 @@ classdef beam < handle
                 obj.inpolyItpl('hat');
                 
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
-                obj.errStoreSurfs('hat');
+                obj.errStoreSurfs('hat', 0);
                 % Determine whether point is in refined block.
                 obj.inAddBlockIndicator;
                 if any(obj.indicator.inBlock) == 0
@@ -1909,7 +1968,7 @@ classdef beam < handle
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('hhat');
                     obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
-                    obj.errStoreSurfs('hhat');
+                    obj.errStoreSurfs('hhat', 0);
                 end
                 
             elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
@@ -1930,7 +1989,7 @@ classdef beam < handle
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItpl('add');
                     obj.rvPmErrProdSum('add', rvSVDswitch, iIter);
-                    obj.errStoreSurfs('hhat');
+                    obj.errStoreSurfs('hhat', 0);
                 end
             end
         end
@@ -2135,7 +2194,7 @@ classdef beam < handle
         function obj = verifyPlotSurf(obj, iGre, plotColor)
             % this method plots the response surface for verification
             % purpose.
-            xVal = obj.pmExpo.i{:};
+            xVal = obj.pmVal.i.space{:}(:, 2);
             yVal = obj.err.store.allSurf.verify(iGre, :);
             semilogy(xVal, yVal, plotColor);
             hold on
@@ -2187,6 +2246,7 @@ classdef beam < handle
                     
                     if damSwitch == 0
                         pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2);
+                        obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0
                                 obj.err.max.loc = pmMaxLoc;
@@ -2198,8 +2258,10 @@ classdef beam < handle
                         end
                     elseif damSwitch == 1
                         pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2:3);
+                        obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0
+                                obj.err.max.locIdx = eMaxLocIdx;
                                 obj.err.max.loc = pmMaxLoc;
                             else
                                 obj.err.max.locIdx = randi([1 ...
@@ -2209,13 +2271,14 @@ classdef beam < handle
                                     (obj.err.max.locIdx, 2:3);
                             end
                         else
+                            obj.err.max.locIdx = eMaxLocIdx;
                             obj.err.max.loc = pmMaxLoc;
                         end
                     end
             end
             
             obj.countGreedy = obj.countGreedy + 1;
-            keyboard
+            
         end
         %%
         function obj = storeErrorInfo(obj)
@@ -2234,6 +2297,8 @@ classdef beam < handle
             
             obj.err.store.max = [obj.err.store.max; obj.err.max.val];
             obj.err.store.loc = [obj.err.store.loc; obj.err.max.loc];
+            obj.err.store.magicLoc = [obj.err.store.magicLoc; ...
+                obj.err.max.magicLoc];
             
         end
         %%
@@ -2243,7 +2308,7 @@ classdef beam < handle
             % eDiff to decide maximum error location (eMaxPmLoc =
             % obj.err.maxLoc.diff), and use ehat (obj.err.maxLoc.hat) to
             % decide parameter value regarding maximum error.
-            keyboard
+            
             switch type
                 case 'original'
                     eMloc = obj.err.max.loc;
@@ -2254,7 +2319,7 @@ classdef beam < handle
             if damSwitch == 0
                 obj.pmVal.max = obj.pmVal.comb.space(eMloc, 3);
             elseif damSwitch == 1
-                
+                eMaxLocIdx = obj.err.max.locIdx;
                 obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 4:5);
             end
             
@@ -2299,34 +2364,30 @@ classdef beam < handle
             obj.no.itplAdd = size(obj.pmVal.add, 1);
         end
         %%
-        function obj = residualfromForce(obj, normType, AbaqusSwitch, ...
+        function obj = residualfromForce(obj, AbaqusSwitch, ...
                 trialName, damSwitch)
-            switch normType
-                case 'l1'
-                    relativeErrSq = @(xNum, xInit) ...
-                        (norm(xNum, 1)) / (norm(xInit, 1));
-                case 'fro'
-                    relativeErrSq = @(xNum, xInit) ...
-                        (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
-            end
+            
+            relativeErrSq = @(xNum, xInit) (norm(xNum, 'fro')) / ...
+                (norm(xInit, 'fro'));
+            
             pmIter = obj.pmVal.iter;
             M = obj.mas.mtx;
-            stiPre = sparse(obj.no.dof, obj.no.dof);
+            K = sparse(obj.no.dof, obj.no.dof);
             
             if damSwitch == 0
-                stiPre = stiPre + obj.sti.mtxCell{1} * pmIter + ...
+                K = K + obj.sti.mtxCell{1} * pmIter + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
-                stiPre = stiPre + obj.sti.mtxCell{1} * pmIter(1) + ...
+                K = K + obj.sti.mtxCell{1} * pmIter(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = stiPre * pmIter(2);
+                C = K * pmIter(2);
             end
-            K = stiPre;
+            K = K;
             F = obj.fce.val - ...
-                obj.mas.mtx * obj.phi.val * obj.acc.re.reVar - ...
+                M * obj.phi.val * obj.acc.re.reVar - ...
                 C * obj.phi.val * obj.vel.re.reVar - ...
-                stiPre * obj.phi.val * obj.dis.re.reVar;
+                K * obj.phi.val * obj.dis.re.reVar;
             if AbaqusSwitch == 0
                 obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
             elseif AbaqusSwitch == 1
@@ -2347,18 +2408,18 @@ classdef beam < handle
         end
         %%
         function obj = residualfromForceStatic(obj)
+            
             relativeErrSq = @(xNum, xInit) ...
                 (norm(xNum, 'fro')) / (norm(xInit, 'fro'));
             
-            pmValCell = obj.pmVal.iter;
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for iSti = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{iSti} * pmValCell{iSti};
-            end
-            obj.fce.pass = obj.fce.val - ...
-                stiPre * obj.phi.val * obj.dis.re.reVar;
+            pmIter = obj.pmVal.iter;
+            K = sparse(obj.no.dof, obj.no.dof);
+            K = K + obj.sti.mtxCell{1} * pmIter + ...
+                obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+            F = obj.fce.val - ...
+                K * obj.phi.val * obj.dis.re.reVar;
             
-            obj.dis.resi = obj.sti.full \ obj.fce.pass;
+            obj.dis.resi = K \ F;
             
             obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof);
             
@@ -2598,7 +2659,7 @@ classdef beam < handle
                     
                 end
                 
-                otpt(:, iOtpt)=otpt(:, iOtpt)/norm(otpt(:, iOtpt));
+                otpt(:, iOtpt)=otpt(:, iOtpt) / norm(otpt(:, iOtpt));
                 
             end
             
