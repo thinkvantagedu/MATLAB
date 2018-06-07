@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 129;
-domLengs = 129;
+domLengi = 5;
+domLengs = 5;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -39,7 +39,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 65;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 12;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -92,7 +92,7 @@ respSVDswitch = 1;
 ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;
-structSwitch = 1;
+structSwitch = 0;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;

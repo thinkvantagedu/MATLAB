@@ -315,10 +315,6 @@ classdef beam < handle
             obj.pmExpo.i = cellfun(@(v) log10(v(:, 2)), obj.pmVal.i.space, ...
                 'un', 0);
             
-            obj.no.dom.discretisation = cellfun(@(v) size(v, 1), ...
-                pmValIspace, 'un', 0);
-            
-            obj.no.dom.discretisation = cell2mat(obj.no.dom.discretisation);
             obj.pmVal.comb.space = [(1:obj.domLeng.i(1))' obj.pmVal.comb.space];
             
             obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
@@ -337,10 +333,11 @@ classdef beam < handle
             
         end
         %%
-        function obj = generateDampingSpace(obj, damLeng)
+        function obj = generateDampingSpace(obj, damLeng, damBond)
             % this method add damping as a parameter. 
             % sequence is: [index loc1 loc2 value1 value2].
-            damVal = (logspace(obj.domBond.i{1}(1), obj.domBond.i{1}(2), ...
+            obj.domBond.damp = damBond;
+            damVal = (logspace(obj.domBond.damp(1), obj.domBond.damp(2), ...
                 damLeng));
             damVal = [1:damLeng; damVal];
             pmValInp = obj.pmVal.comb.space(:, 2:3)';
@@ -352,6 +349,9 @@ classdef beam < handle
             
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
+            % set up for the implemented algorithm.
+            obj.pmExpo.mid = {sum(obj.domBond.i{:}) / 2 ...
+                sum(obj.domBond.damp) / 2};
             
         end
         %%
@@ -681,7 +681,7 @@ classdef beam < handle
                 case 'verify'
                     obj.dis.verify = obj.dis.full;
             end
-            
+            keyboard
         end
         %%
         function obj = exactSolutionStructStatic(obj, type)
@@ -755,13 +755,16 @@ classdef beam < handle
         %%
         function obj = initHatPm(obj)
             % initialize exponential itpl parameter domain.
-            pmIdx = (1:2 ^ obj.no.inc)';
-            pmDom = cell(obj.no.inc, 1);
-            if obj.no.inc == 1
-                pmDom = {(obj.domBond.i{:})'};
+            
+            if obj.no.pm == 2
+                pmIdx = (1:2 ^ obj.no.pm)';
+                pmDom = cell(2, 1);
+                [pmDom{1:2}] = ndgrid(obj.domBond.i{1}, obj.domBond.damp);
             else
-                [pmDom{1:obj.no.inc}] = ndgrid(obj.domBond.i{:});
+                pmIdx = (1:2 ^ obj.no.inc)';
+                pmDom = {ndgrid(obj.domBond.i{:})};
             end
+            
             pmCoord = cellfun(@(v) v(:), pmDom, 'un', 0);
             pmCoord = [pmCoord{:}];
             obj.pmExpo.hat = [pmIdx pmCoord];
@@ -772,6 +775,7 @@ classdef beam < handle
             obj.gridtoBlockwithIndx;
             obj.pmExpo.block.hat = obj.pmExpo.temp.otpt;
             obj.no.block.hat = 1;
+            
         end
         %%
         function obj = otherPrepare(obj, nSVD)
@@ -779,7 +783,12 @@ classdef beam < handle
             obj.no.respSVD = nSVD;
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
-            obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+            if obj.no.pm == 1
+                obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+            elseif obj.no.pm == 2
+                obj.resp.rv.store = cell(1, prod([obj.domLeng.i; ...
+                    obj.domLeng.damp]));
+            end
             obj.resp.rv.dis.store = cell(1);
             
         end
@@ -794,16 +803,17 @@ classdef beam < handle
             obj.err.store.allSurf.hhat = {};
             obj.err.store.allSurf.hat = {};
             obj.err.store.allSurf.diff = {};
+            % if 1 pm, nhhat = 3, if 2 pms, nhhat = 9.
             obj.err.pre.hhat = cell(obj.no.pre.hhat, 4); % 4 cols in total,
             % when POD on RV is applied, will add 2 columns to store full
             % eTe informations.
             obj.err.norm = zeros(1, 2);
-            if obj.no.inc == 1
-                obj.err.store.surf.hhat = zeros(obj.no.dom.discretisation, 1);
-                obj.err.store.surf.hat = zeros(obj.no.dom.discretisation, 1);
+            if obj.no.pm == 1
+                obj.err.store.surf.hhat = obj.err.setZ.sInc;
+                obj.err.store.surf.hat = obj.err.setZ.sInc;
             else
-                obj.err.store.surf.hhat = zeros(obj.no.dom.discretisation);
-                obj.err.store.surf.hat = zeros(obj.no.dom.discretisation);
+                obj.err.store.surf.hhat = obj.err.setZ.mInc;
+                obj.err.store.surf.hat = obj.err.setZ.mInc;
             end
             % initialise maximum error
             obj.err.max = rmfield(obj.err.max, 'val');
@@ -841,7 +851,7 @@ classdef beam < handle
         end
         %%
         function obj = errPrepareSetZero(obj)
-            if obj.no.inc == 1
+            if obj.no.pm == 1
                 obj.err.store.surf.diff = obj.err.setZ.sInc;
             else
                 obj.err.store.surf.diff = obj.err.setZ.mInc;
@@ -2818,22 +2828,22 @@ classdef beam < handle
             end
             
             pmExpInpPm_ = cell2mat(obj.pmExpo.block.hat);
-            pmExpInpPm = pmExpInpPm_(:, 2:obj.no.inc + 1);
+            pmExpInpPm = pmExpInpPm_(:, 2:obj.no.pm + 1);
             pmExpInpRaw = unique(pmExpInpPm, 'rows');
             nBlk = length(obj.pmExpo.block.hat);
             % find which block max pm point is in, refine.
             for iBlk = 1:nBlk
                 
-                if obj.no.inc == 1
-                    if inBetweenTwoPoints(pmExptoTest{:}, ...
+                if obj.no.pm == 2
+                    if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
+                            obj.pmExpo.block.hat{iBlk}(:, obj.no.pm), ...
                             obj.pmExpo.block.hat{iBlk}...
-                            (:, obj.no.inc + 1)) == 1
+                            (:, obj.no.pm + 1)) == 1
                         obj = refineGrid(obj, iBlk);
                         iRec = iBlk;
                     end
-                elseif obj.no.inc == 2
-                    if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
-                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc), ...
+                elseif obj.no.inc == 1
+                    if inBetweenTwoPoints(pmExptoTest{:}, ...
                             obj.pmExpo.block.hat{iBlk}...
                             (:, obj.no.inc + 1)) == 1
                         obj = refineGrid(obj, iBlk);
@@ -2847,11 +2857,11 @@ classdef beam < handle
             
             % delete repeated point with the chosen block.
             jRec = [];
-            for iDel = 1:2 ^ obj.no.inc
+            for iDel = 1:2 ^ obj.no.pm
                 for jDel = 1:length(obj.pmExpo.block.hhat)
                     
                     if isequal(obj.pmExpo.block.hat{iRec}...
-                            (iDel, 2:obj.no.inc + 1), ...
+                            (iDel, 2:obj.no.pm + 1), ...
                             obj.pmExpo.block.hhat(jDel, :)) == 1
                         
                         jRec = [jRec; jDel];
@@ -2863,11 +2873,7 @@ classdef beam < handle
             obj.pmExpo.block.hhat(jRec, :) = [];
             pmExpOtpt_ = obj.pmExpo.block.hhat;
             
-            if obj.no.inc == 1
-                % if dimension = 1, always add 1 itpl point each refinement;
-                obj.pmExpo.block.hhat = [length(obj.pmExpo.hat) + 1 ...
-                    obj.pmExpo.block.hhat];
-            elseif obj.no.inc == 2
+            if obj.no.pm == 2
                 % compare pmExpOtpt_ with pmEXP_inptRaw, only to find
                 % whether there is a repeated pm point.
                 % elseif dimension = 2, may add 4 or 5 itpl points each
@@ -2891,6 +2897,7 @@ classdef beam < handle
                     pmExpOtpt_(pmIdx, :) = [];
                     
                     for iComp1 = 1:length(pmExpInpPm_)
+                        keyboard
                         b = ismember(pmExpOtptSpecVal, ...
                             pmExpInpPm_(iComp1, 2:3), 'rows');
                         if b == 1
@@ -2909,6 +2916,11 @@ classdef beam < handle
                         [(1:idxToAdd)' + length(pmExpInpRaw) ...
                         obj.pmExpo.block.hhat];
                 end
+                
+            elseif obj.no.inc == 1
+                % if dimension = 1, always add 1 itpl point each refinement;
+                obj.pmExpo.block.hhat = [length(obj.pmExpo.hat) + 1 ...
+                    obj.pmExpo.block.hhat];
             end
             
             % equip index, find refined block and perform grid to block.

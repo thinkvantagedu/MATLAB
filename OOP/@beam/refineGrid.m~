@@ -6,9 +6,9 @@ function [obj] = refineGrid(obj, iBlk)
 % all given blocks will be refined, nOtptBlk = 4 * nInptBlk.
 % inpt is a matrix, otpt is also a matrix, not suitable for cell.
 
-pmInp = obj.pmExpo.block.hat{iBlk}(:, 2:obj.no.pm + 1);
+pmInp = obj.pmExpo.block.hat{iBlk}(:, 2:obj.no.inc + 1);
 pmExpoHhat = [];
-if obj.no.pm == 2
+if obj.no.inc == 2
     % add rows of pmInp in a sequential way.
     
     for i1 = 1:length(pmInp)-1
@@ -66,8 +66,9 @@ if obj.no.pm == 2
     end
     
     pmExpoHhat(kInt, :) = [];
+elseif 
     
-elseif obj.no.inc == 1
+    obj.no.inc == 1
     pmInpUni = unique(pmInp);
     nPmUni = length(pmInpUni);
     pmCell = cell(nPmUni - 1, 1);

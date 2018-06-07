@@ -337,10 +337,11 @@ classdef beam < handle
             
         end
         %%
-        function obj = generateDampingSpace(obj, damLeng)
+        function obj = generateDampingSpace(obj, damLeng, damBond)
             % this method add damping as a parameter. 
             % sequence is: [index loc1 loc2 value1 value2].
-            damVal = (logspace(obj.domBond.i{1}(1), obj.domBond.i{1}(2), ...
+            obj.domBond.damp = damBond;
+            damVal = (logspace(obj.domBond.damp(1), obj.domBond.damp(2), ...
                 damLeng));
             damVal = [1:damLeng; damVal];
             pmValInp = obj.pmVal.comb.space(:, 2:3)';
@@ -352,6 +353,9 @@ classdef beam < handle
             
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
+            % set up for the implemented algorithm.
+            obj.pmExpo.mid = {sum(obj.domBond.i{:}) / 2 ...
+                sum(obj.domBond.damp) / 2};
             
         end
         %%
@@ -365,11 +369,10 @@ classdef beam < handle
             nRbOld = obj.no.rb;
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
-            obj.GramSchmidt(phi_);
-            obj.GramSchmidt(obj.phi.otpt);
-            obj.GramSchmidt(obj.phi.otpt);
+            obj.GramSchmidtOOP(phi_);
             obj.phi.val = obj.phi.otpt;
-            % Gram Schmidt 3 times to ensur 
+            
+            % Gram Schmidt 3 times to ensure orthogonality?????
             eMaxLoc = obj.err.max.loc;
             
             redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
@@ -395,7 +398,7 @@ classdef beam < handle
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
             phi_ = [obj.phi.val rbErrFull];
-            obj.GramSchmidt(phi_);
+            obj.GramSchmidtOOP(phi_);
             obj.phi.val = obj.phi.otpt;
             
             eMaxLoc = obj.err.max.loc;
@@ -444,7 +447,7 @@ classdef beam < handle
                 [leftVecAll, ~, ~] = svd(rbErrFull, 0);
                 phiEnrich = leftVecAll(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
-                obj.GramSchmidt(phi_);
+                obj.GramSchmidtOOP(phi_);
                 obj.phi.val = obj.phi.otpt;
                 obj.basisCompressionFixNoRedRatio(disMax, obj.phi.val, ...
                     M, C, K, F);
@@ -595,7 +598,7 @@ classdef beam < handle
                     phiOtpt = [phiInpt phiEnrich(:, 1:nEnrich)];
                     % if not initial iteration, the enriched basis needs to
                     % be orthogonalized.
-                    obj.GramSchmidt(phiOtpt);
+                    obj.GramSchmidtOOP(phiOtpt);
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
@@ -711,6 +714,7 @@ classdef beam < handle
                 case 'Greedy'
                     obj.dis.rbEnrich = disStore;
             end
+            
         end
         %%
         function obj = exactSolutionStatic(obj, type)
@@ -755,12 +759,15 @@ classdef beam < handle
         %%
         function obj = initHatPm(obj)
             % initialize exponential itpl parameter domain.
-            pmIdx = (1:2 ^ obj.no.inc)';
-            pmDom = cell(obj.no.inc, 1);
-            if obj.no.inc == 1
+            
+            if obj.no.pm == 2
+                pmIdx = (1:2 ^ obj.no.pm)';
+                pmDom = cell(2, 1);
+                [pmDom{1:2}] = ndgrid(obj.domBond.i{1}, obj.domBond.damp);
+            elseif obj.no.inc == 1
+                pmIdx = (1:2 ^ obj.no.inc)';
                 pmDom = {(obj.domBond.i{:})'};
-            else
-                [pmDom{1:obj.no.inc}] = ndgrid(obj.domBond.i{:});
+                
             end
             pmCoord = cellfun(@(v) v(:), pmDom, 'un', 0);
             pmCoord = [pmCoord{:}];
@@ -772,6 +779,7 @@ classdef beam < handle
             obj.gridtoBlockwithIndx;
             obj.pmExpo.block.hat = obj.pmExpo.temp.otpt;
             obj.no.block.hat = 1;
+            
         end
         %%
         function obj = otherPrepare(obj, nSVD)
@@ -779,7 +787,12 @@ classdef beam < handle
             obj.no.respSVD = nSVD;
             obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
-            obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+            if obj.no.pm == 1
+                obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+            elseif obj.no.pm == 2
+                obj.resp.rv.store = cell(1, prod([obj.domLeng.i; ...
+                    obj.domLeng.damp]));
+            end
             obj.resp.rv.dis.store = cell(1);
             
         end
@@ -794,6 +807,7 @@ classdef beam < handle
             obj.err.store.allSurf.hhat = {};
             obj.err.store.allSurf.hat = {};
             obj.err.store.allSurf.diff = {};
+            % if 1 pm, nhhat = 3, if 2 pms, nhhat = 9.
             obj.err.pre.hhat = cell(obj.no.pre.hhat, 4); % 4 cols in total,
             % when POD on RV is applied, will add 2 columns to store full
             % eTe informations.
@@ -2638,7 +2652,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = GramSchmidt(obj, inpt)
+        function obj = GramSchmidtOOP(obj, inpt)
             
             [m, n] = size(inpt);
             otpt = zeros(m, n);
@@ -2824,16 +2838,16 @@ classdef beam < handle
             % find which block max pm point is in, refine.
             for iBlk = 1:nBlk
                 
-                if obj.no.inc == 1
-                    if inBetweenTwoPoints(pmExptoTest{:}, ...
+                if obj.no.inc == 2 || obj.no.pm == 2
+                    if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
+                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc), ...
                             obj.pmExpo.block.hat{iBlk}...
                             (:, obj.no.inc + 1)) == 1
                         obj = refineGrid(obj, iBlk);
                         iRec = iBlk;
                     end
-                elseif obj.no.inc == 2
-                    if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
-                            obj.pmExpo.block.hat{iBlk}(:, obj.no.inc), ...
+                elseif obj.no.inc == 1
+                    if inBetweenTwoPoints(pmExptoTest{:}, ...
                             obj.pmExpo.block.hat{iBlk}...
                             (:, obj.no.inc + 1)) == 1
                         obj = refineGrid(obj, iBlk);
@@ -2867,7 +2881,7 @@ classdef beam < handle
                 % if dimension = 1, always add 1 itpl point each refinement;
                 obj.pmExpo.block.hhat = [length(obj.pmExpo.hat) + 1 ...
                     obj.pmExpo.block.hhat];
-            elseif obj.no.inc == 2
+            elseif obj.no.inc == 2 || obj.no.pm == 2
                 % compare pmExpOtpt_ with pmEXP_inptRaw, only to find
                 % whether there is a repeated pm point.
                 % elseif dimension = 2, may add 4 or 5 itpl points each
