@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 12;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -92,7 +92,7 @@ respSVDswitch = 1;
 ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;
-structSwitch = 0;
+structSwitch = 1;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
