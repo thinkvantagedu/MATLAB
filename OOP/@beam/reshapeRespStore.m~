@@ -15,13 +15,13 @@ end
 obj.no.newVec = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 
 for iPre = 1:nPre
+    keyboard
     % define index and pm values for pre-computed eTe and stored responses.
     obj.err.pre.hhat(nEx + iPre, 1) = {nEx + iPre};
-    obj.err.pre.hhat{nEx + iPre, 2} = ...
-        num2str((obj.pmExpo.hhat(nEx + iPre, 2:obj.no.pm + 1)));
+    obj.err.pre.hhat(nEx + iPre, 2) = ...
+        {obj.pmExpo.hhat(nEx + iPre, 2:obj.no.pm + 1)};
     obj.resp.store.all(nEx + iPre, 1) = {nEx + iPre};
-    obj.resp.store.all{nEx + iPre, 2} = ...
-        num2str((obj.pmExpo.hhat(nEx + iPre, 2:obj.no.pm + 1)));
+    obj.resp.store.all(nEx + iPre, 2) = {obj.pmExpo.hhat(nEx + iPre, 2:obj.no.pm + 1)};
     % pass needed responses in to be processed.
     respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, nRb - nAdd + 1:end);
     respCol = reshape(respPmPass, [1, numel(respPmPass)]);

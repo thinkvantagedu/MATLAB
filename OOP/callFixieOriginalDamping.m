@@ -27,7 +27,7 @@ fixie.readINPgeoMultiInc;
 fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
 
 % generate damping coefficient space, the combination is stiffness then damping.
-damLeng = 4;
+damLeng = 17;
 damBond = [-1 1];
 fixie.generateDampingSpace(damLeng, damBond);
 

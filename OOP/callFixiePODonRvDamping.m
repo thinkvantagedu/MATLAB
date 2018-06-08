@@ -59,7 +59,7 @@ fixie.errPrepareRemainProp;
 fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 1);
 
 % compute initial reduced basis from trial solution.
-fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'hhat', 0);
+fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'hhat', 1);
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
@@ -67,7 +67,7 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
+fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName, 1);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
@@ -80,17 +80,18 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % disp('offline start')
     fixie.errPrepareSetZero;
     
+    nIter = domLengi * damLeng;
     % OFFLINE POD.
     % collect all reduced variables to perform POD.
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter, 0);
+        fixie.pmIter(iIter, 1);
         
-        fixie.reducedVar(0);
+        fixie.reducedVar(1);
         
         fixie.rvDisStore(iIter);
         
-        fixie.pmPrepare(rvSVDswitch);
+        fixie.pmPrepare(rvSVDswitch, 1);
         
         fixie.rvPrepare(rvSVDswitch);
         
@@ -103,9 +104,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % SVD on the collected reduced variables.
     fixie.rvSVD(rvSVDreRatio);
     
-    fixie.impGenerate;
+    fixie.impGenerate(1);
     
-    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName);
+    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName, 1);
     
     fixie.respTimeShift(respSVDswitch);
     
@@ -115,7 +116,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     fixie.uiTui;
     
     fixie.uiTuj;
-    
+    keyboard
     % disp('offline end')
     
     %% Greedy ONLINE.
@@ -123,7 +124,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % multiply the output with pm and interpolate.
     for iIter = 1:nIter
         
-        fixie.pmIter(iIter, 0);
+        fixie.pmIter(iIter, 1);
         
         fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
         
@@ -134,7 +135,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % disp('online end')
     
     %% extract error information.
-    fixie.errStoreSurfs('diff', 0);
+    fixie.errStoreSurfs('diff', 1);
     fixie.extractMaxErrorInfo('hats'); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
@@ -143,7 +144,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % corresponding location. Change input accordingly.
     % pm1 decides location of maximum error; pm2 decides PM value of maximum
     % error, not value of maximum error.
-    fixie.extractMaxPmInfo('hhat', 0);
+    fixie.extractMaxPmInfo('hhat', 1);
     
     if fixie.refinement.condition <= fixie.refinement.thres
         %% NO local h-refinement.
@@ -160,9 +161,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             break
         end
     
-        fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
+        fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
         % rbEnrichment set the indicators.
-        fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 0);
+        fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 1);
         fixie.reducedMatricesStatic;
         fixie.reducedMatricesDynamic;
         

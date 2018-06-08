@@ -299,7 +299,7 @@ classdef beam < handle
                 drawRow, drawCol)
             % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
-                
+            
             pmValIspace(1) = {logspace(obj.domBond.i{1}(1), ...
                 obj.domBond.i{1}(2), obj.domLeng.i(1))};
             pmValIspace{1} = ...
@@ -334,7 +334,7 @@ classdef beam < handle
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond)
-            % this method add damping as a parameter. 
+            % this method add damping as a parameter.
             % sequence is: [index loc1 loc2 value1 value2].
             obj.domBond.damp = damBond;
             damVal = (logspace(obj.domBond.damp(1), obj.domBond.damp(2), ...
@@ -507,7 +507,7 @@ classdef beam < handle
             elseif damSwitch == 1
                 K = obj.sti.mtxCell{1} * pmTrial(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmTrial(2) * K;
+                C = pmTrial(2) * obj.sti.mtxCell{1} * pmTrial(1);
             end
             F = obj.fce.val;
             
@@ -635,11 +635,11 @@ classdef beam < handle
             % this method computes exact solution at maximum error points.
             switch type
                 case 'initial'
-                    pmValInp = obj.pmVal.trial;
+                    pmInp = obj.pmVal.trial;
                 case 'Greedy'
-                    pmValInp = obj.pmVal.max;
+                    pmInp = obj.pmVal.max;
                 case 'verify'
-                    pmValInp = obj.pmVal.iter;
+                    pmInp = obj.pmVal.iter;
             end
             
             if AbaqusSwitch == 0
@@ -648,13 +648,13 @@ classdef beam < handle
                 K = sparse(obj.no.dof, obj.no.dof);
                 if damSwitch == 0
                     % no damping, pmI and pmS.
-                    K = K + obj.sti.mtxCell{1} * ...
-                        pmValInp + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                    K = K + obj.sti.mtxCell{1} * pmInp + ...
+                        obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                     C = obj.dam.mtx;
                 elseif damSwitch == 1
-                    K = K + obj.sti.mtxCell{1} * ...
-                        pmValInp(1) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                    C = pmValInp(2) * K;
+                    K = K + obj.sti.mtxCell{1} * pmInp(1) + ...
+                        obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                    C = pmInp(2) * obj.sti.mtxCell{1} * pmInp(1);
                 end
                 F = obj.fce.val;
                 % compute trial solution
@@ -681,24 +681,24 @@ classdef beam < handle
                 case 'verify'
                     obj.dis.verify = obj.dis.full;
             end
-            keyboard
+            
         end
         %%
         function obj = exactSolutionStructStatic(obj, type)
-            % this method computes exact solutions at structurally 
+            % this method computes exact solutions at structurally
             % distributed samples.
             switch type
                 case 'initial'
-                    pmValInp = obj.pmVal.struct.i{1};
+                    pmInp = obj.pmVal.struct.i{1};
                 case 'Greedy'
-                    pmValInp = obj.pmVal.struct.i{obj.countGreedy + 1};
+                    pmInp = obj.pmVal.struct.i{obj.countGreedy + 1};
             end
             % use MATLAB Newmark code to obtain exact solutions.
-            disStore = zeros(obj.no.dof, length(pmValInp));
+            disStore = zeros(obj.no.dof, length(pmInp));
             K = sparse(obj.no.dof, obj.no.dof);
-            for iS = 1:length(pmValInp)
+            for iS = 1:length(pmInp)
                 K = K + obj.sti.mtxCell{1} * ...
-                    pmValInp(iS) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                    pmInp(iS) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 % compute trial solution
                 U = K \ obj.fce.val;
                 disStore(:, iS) = disStore(:, iS) + U;
@@ -853,7 +853,7 @@ classdef beam < handle
         function obj = errPrepareSetZero(obj)
             if obj.no.pm == 1
                 obj.err.store.surf.diff = obj.err.setZ.sInc;
-            else
+            elseif obj.no.pm == 2
                 obj.err.store.surf.diff = obj.err.setZ.mInc;
             end
         end
@@ -1063,7 +1063,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = impGenerate(obj)
+        function obj = impGenerate(obj, damSwitch)
             % first obtain responses from physical domains + mas, dam, sti
             % matrices + rb vectors + force for OFFLINE stage.
             % this method is irrelevant to interpolation.
@@ -1078,7 +1078,11 @@ classdef beam < handle
             % total number of impulses are nf * 2 * nrb.
             mtxAsemb = cell(obj.no.phy, 1);
             mtxAsemb(1) = {obj.mas.mtx};
-            mtxAsemb(2) = {obj.dam.mtx};
+            if damSwitch == 0
+                mtxAsemb(2) = {obj.dam.mtx};
+            elseif damSwitch == 1
+                mtxAsemb(2) = {obj.sti.mtxCell{1}};
+            end
             mtxAsemb(3:3 + obj.no.inc) = obj.sti.mtxCell;
             obj.asemb.imp.cel = cell(obj.no.phy, 1);
             
@@ -1094,7 +1098,7 @@ classdef beam < handle
                         % only generate responses regarding the newly added
                         % basis vectors.
                         for iRb = obj.no.rb - obj.no.rbAdd + 1:obj.no.rb
-                            impMtx = sparse(obj.no.dof, obj.no.t_step);
+                            impMtx = zeros(obj.no.dof, obj.no.t_step);
                             impMtx(:, iTdiff) = impMtx(:, iTdiff) + ...
                                 mtxAsemb{iPhy} * obj.phi.val(:, iRb);
                             obj.imp.store.mtx{iPhy, iTdiff, iRb} = impMtx;
@@ -1104,41 +1108,43 @@ classdef beam < handle
             end
         end
         %%
-        function obj = respfromFce(obj, respSVDswitch, AbaqusSwitch, trialName)
+        function obj = respfromFce(obj, respSVDswitch, AbaqusSwitch, ...
+                trialName, damSwitch)
             % this method compute exact solutions regarding external force.
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % if no refinement, only enrich, force related responses does
                 % not change since it's not related to new basis vectors.
                 nPre = obj.no.pre.hhat;
-                pmIval = obj.pmVal.hhat;
+                pmValInp = obj.pmVal.hhat;
                 nEx = 0;
             elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
                 % if refine, no enrichment, only compute force related
                 % responses regarding the new interpolation samples.
                 nPre = obj.no.itplAdd;
-                pmIval = obj.pmVal.add;
+                pmValInp = obj.pmVal.add;
                 nEx = obj.no.itplEx;
             end
             
             for iPre = 1:nPre
-                
-                pmValCell = [pmIval(iPre, 2:obj.no.inc + 1) obj.pmVal.s.fix];
                 if AbaqusSwitch == 0
-                    % use MATLAB Newmark code to obtain exact solutions.
-                    stiPre = sparse(obj.no.dof, obj.no.dof);
-                    for iSti = 1:obj.no.inc + 1
-                        stiPre = stiPre + obj.sti.mtxCell{iSti} * ...
-                            pmValCell(iSti);
-                    end
                     M = obj.mas.mtx;
-                    C = obj.dam.mtx;
-                    K = stiPre;
+                    K = sparse(obj.no.dof, obj.no.dof);
+                    if damSwitch == 0
+                        K = K + obj.sti.mtxCell{1} * pmValInp(iPre, 2) + ...
+                            obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                        C = obj.dam.mtx;
+                    elseif damSwitch == 1
+                        K = K + obj.sti.mtxCell{1} * pmValInp(iPre, 2) + ...
+                            obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                        C = pmValInp(iPre, 3) * K;
+                    end
+                    
                     F = obj.fce.val;
                     % NEED TO ADD DAMPIING HERE!!!!!!!
                     obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
                 elseif AbaqusSwitch == 1
                     % use Abaqus to obtain exact solutions.
-                    pmI = pmIval(iPre, 2:obj.no.inc + 1);
+                    pmI = pmValInp(iPre, 2:obj.no.inc + 1);
                     pmS = obj.pmVal.s.fix;
                     % input parameter 0 indicates the force is not modified
                     % thus stick to original external force (if not
@@ -1161,6 +1167,7 @@ classdef beam < handle
                         [{uFcel}; {uFceSig}; {uFcer}];
                 end
             end
+            
         end
         %%
         function obj = impInitStep(obj, nrb, i_phy)
@@ -1227,7 +1234,7 @@ classdef beam < handle
         end
         %%
         function obj = respTdiffComputation(obj, respSVDswitch, ...
-                AbaqusSwitch, trialName)
+                AbaqusSwitch, trialName, damSwitch)
             % this method compute 2 responses for each interpolation
             % sample, each affine term, each basis vector.
             % only compute responses regarding newly added basis vectors,
@@ -1248,11 +1255,9 @@ classdef beam < handle
             nRb = obj.no.rb;
             for iPre = 1:nPre
                 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
-                    pmValCell = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1)...
-                        obj.pmVal.s.fix];
+                    pmInp = obj.pmVal.hhat;
                 elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
-                    pmValCell = [obj.pmVal.add(iPre, 2:obj.no.inc + 1)...
-                        obj.pmVal.s.fix];
+                    pmInp = obj.pmVal.add;
                 end
                 for iPhy = 1:nPhy
                     for iTdiff = 1:2
@@ -1261,17 +1266,23 @@ classdef beam < handle
                         for iRb = nRbInit:nRb
                             impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
                             if AbaqusSwitch == 0
-                                stiPre = sparse(obj.no.dof, obj.no.dof);
-                                for iSti = 1:obj.no.inc + 1
-                                    stiPre = stiPre + ...
-                                        obj.sti.mtxCell{iSti} * ...
-                                        pmValCell(iSti);
-                                end
                                 M = obj.mas.mtx;
-                                C = obj.dam.mtx;
-                                K = stiPre;
+                                K = sparse(obj.no.dof, obj.no.dof);
+                                if damSwitch == 0
+                                    K = K + obj.sti.mtxCell{1} * ...
+                                        pmInp(iPre, 2) + ...
+                                        obj.sti.mtxCell{2} * ...
+                                        obj.pmVal.s.fix;
+                                    C = obj.dam.mtx;
+                                elseif damSwitch == 1
+                                    K = K + obj.sti.mtxCell{1} * ...
+                                        pmInp(iPre, 2) + ...
+                                        obj.sti.mtxCell{2} * ...
+                                        obj.pmVal.s.fix;
+                                    C = obj.sti.mtxCell{1} * ...
+                                        pmInp(iPre, 2) * pmInp(iPre, 3);
+                                end
                                 F = impPass;
-                                % NEED TO ADD DAMPING HERE!!!!!!!
                                 obj = NewmarkBetaReducedMethodOOP...
                                     (obj, M, C, K, F);
                                 
@@ -1693,7 +1704,7 @@ classdef beam < handle
             elseif damSwitch == 1
                 k = obj.sti.re.mtxCell{1} * pmIter(1) + ...
                     obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
-                c = k * pmIter(2);
+                c = pmIter(2) * obj.sti.re.mtxCell{1} * pmIter(1);
             end
             f = phiInpt' * obj.fce.val;
             dT = obj.time.step;
@@ -1722,7 +1733,6 @@ classdef beam < handle
             % verification purpose.
             obj.resp.rv.dis.store{iIter, obj.countGreedy + 1} = ...
                 obj.dis.re.reVar;
-            
         end
         %%
         function obj = rvSVD(obj, rvSVDreRatio)
@@ -1745,9 +1755,10 @@ classdef beam < handle
             obj.resp.rv.L = rvL;
             obj.resp.rv.R = rvR;
             obj.no.nRvSVD = nRvSVD;
+            
         end
         %%
-        function obj = pmPrepare(obj, rvSVDswitch)
+        function obj = pmPrepare(obj, rvSVDswitch, damSwitch)
             % This method prepares parameter values to fit and multiply
             % related reduced variables.
             % The interpolated responses need to be saved for each
@@ -1759,7 +1770,13 @@ classdef beam < handle
             % elements.
             
             pmPass = obj.pmVal.iter;
-            pmSlct = repmat([1; 1; pmPass; 1], obj.no.t_step * obj.no.rb, 1);
+            if damSwitch == 0
+                pmSlct = repmat([1; 1; pmPass; 1], ...
+                    obj.no.t_step * obj.no.rb, 1);
+            elseif damSwitch == 1
+                pmSlct = repmat([1; pmPass(2); pmPass(1); 1], ...
+                    obj.no.t_step * obj.no.rb, 1);
+            end
             pmSlct = [1; pmSlct];
             if rvSVDswitch == 0
                 pmNonZeroCol = pmSlct;
@@ -2391,9 +2408,9 @@ classdef beam < handle
             elseif damSwitch == 1
                 K = K + obj.sti.mtxCell{1} * pmIter(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = K * pmIter(2);
+                C = pmIter(2) * obj.sti.mtxCell{1} * pmIter(1);
             end
-            K = K;
+            
             F = obj.fce.val - ...
                 M * obj.phi.val * obj.acc.re.reVar - ...
                 C * obj.phi.val * obj.vel.re.reVar - ...
@@ -2947,9 +2964,9 @@ classdef beam < handle
             pmExpOtptPm = cell2mat(obj.pmExpo.block.hhat);
             pmExpOtpt_ = sortrows(pmExpOtptPm);
             obj.pmExpo.hhat = unique(pmExpOtpt_, 'rows');
-            obj.pmVal.hhat = 10 .^ obj.pmExpo.hhat(:, 2:obj.no.inc + 1);
+            obj.pmVal.hhat = 10 .^ obj.pmExpo.hhat(:, 2:obj.no.pm + 1);
             obj.pmVal.hhat = [obj.pmExpo.hhat(:, 1) obj.pmVal.hhat];
-            obj.pmVal.hat = 10 .^ obj.pmExpo.hat(:, 2:obj.no.inc + 1);
+            obj.pmVal.hat = 10 .^ obj.pmExpo.hat(:, 2:obj.no.pm + 1);
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);

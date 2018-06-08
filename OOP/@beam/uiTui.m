@@ -25,7 +25,7 @@ else
     % number of newly added response vectors.
     nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 end
-
+keyboard
 for iPre = 1:nPointPre
     % separate the newly added and old vectors.
     respExt = obj.resp.store.all{nPointEx + iPre, 3};

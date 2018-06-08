@@ -62,7 +62,7 @@ fixie.impPrepareRemain;
 fixie.respStorePrepareRemain(timeType);
 
 % initial computation of force responses.
-fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
+fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName, 0);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
@@ -85,7 +85,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.rvDisStore(iIter);
         
-        fixie.pmPrepare(rvSVDswitch);
+        fixie.pmPrepare(rvSVDswitch, 0);
         
         fixie.rvPrepare(rvSVDswitch);
         
@@ -98,9 +98,9 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     % SVD on the collected reduced variables.
     fixie.rvSVD(rvSVDreRatio);
     
-    fixie.impGenerate;
+    fixie.impGenerate(0);
     
-    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName);
+    fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName, 0);
     
     fixie.respTimeShift(respSVDswitch);
     

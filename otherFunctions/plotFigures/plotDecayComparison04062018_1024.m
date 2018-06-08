@@ -30,11 +30,11 @@ axis([0 nRb + 2 0 eyP(1)]);
 axis normal
 grid on
 legend({'Classical', 'Random'}, 'FontSize', 20);
-set(gca,'fontsize',20)
+set(gca,'fontsize',20);
 xlabel('N', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
 %% error location.
-openfig('errDecayLoc.fig', 'new')
+openfig('errDecayLoc.fig', 'new');
 % view(2) % E-b: Young-damp
-view([0 -90 0]) % E-e: Young-error
+view([0 -90 0]); % E-e: Young-error
 % view([90 0 0]) % b-e: damp-error
