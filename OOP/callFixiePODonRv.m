@@ -167,7 +167,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         % this method displays refinement informations.
         fixie.localHrefinement;
         
-        fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName);
+        fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName, 0);
         
     end
     

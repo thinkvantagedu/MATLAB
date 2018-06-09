@@ -1,5 +1,5 @@
-function [otpt] = LagrangeInterpolation2D...
-    (inptx, inpty, gridx, gridy, gridz, type)
+function [coeff1, coeff2, otpt] = LagrangeInterpolation2D...
+    (inptx, inpty, gridx, gridy, gridz)
 % this function performs Lagrange interpolation with matrix inputs. inptx,
 % inpty are input x-y coordinate (the point to compute). gridx, gridy are n
 % by n matrices denotes x-y coordinates of sample points (generated from
@@ -15,13 +15,10 @@ for i=1:size(gridx,1)
     z = gridz(i,:)';
     
     p=[];
-    switch type
-        case 'matrix'
-            % interpolate for every parameter value j and add it to p
-            p = [p, lagrange(x,z,inptx, 'matrix')];
-        case 'scalar'
-            p = [p, lagrange(x,z,inptx, 'scalar')];
-    end
+    
+    % interpolate for every parameter value j and add it to p
+    [coeff1, otpt] = lagrange(inptx, num2cell(x), z);
+    p = [p, otpt];
     % save curves in x direction
     xstore{i} = p;
     
@@ -31,28 +28,14 @@ y = gridy(:,1);
 
 % interpolate in y-direction
 for i=1:length(xstore{1})
-    switch type
-        case 'matrix'
-            
-            z = cell(2, 1);
-            
-            for l=1:length(y)
-                z(l) = xstore(l);
-            end
-            
-            % interpolate for every parameter value j and add it to p
-            otpt =lagrange(y, z, inpty, 'matrix');
-            
-        case 'scalar'
-            
-            z = zeros(2, 1);
-            
-            for l=1:length(y)
-                z(l) = z(l) + xstore{l}(i);
-            end
-            
-            % interpolate for every parameter value j and add it to p
-            otpt = lagrange(y, z, inpty, 'scalar');
-            
+    
+    z = cell(2, 1);
+    
+    for l=1:length(y)
+        z(l) = xstore(l);
     end
+    
+    % interpolate for every parameter value j and add it to p
+    [coeff2, otpt] = lagrange(inpty, num2cell(y), z);
+    
 end

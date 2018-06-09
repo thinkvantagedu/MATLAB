@@ -48,12 +48,12 @@ x = 1.35;
 y = 1.77;
 [gridx, gridy] = meshgrid([xl, xr], [yl, yr]);
 gridz = {m1 m2; m3 m4};
-[otpt] = LagrangeInterpolation2Dmatrix(x, y, gridx, gridy, gridz);
+[otpt] = LagrangeInterpolation2D(x, y, gridx, gridy, gridz, 'matrix');
 
 % interpolate in and out separately
 gridzi = {m1i m2i; m3i m4i};
-[otpti] = LagrangeInterpolation2Dmatrix(x, y, gridx, gridy, gridzi);
+[otpti] = LagrangeInterpolation2D(x, y, gridx, gridy, gridzi, 'matrix');
 gridzo = {m1o m2o; m3o m4o};
-[otpto] = LagrangeInterpolation2Dmatrix(x, y, gridx, gridy, gridzo);
+[otpto] = LagrangeInterpolation2D(x, y, gridx, gridy, gridzo, 'matrix');
 
 

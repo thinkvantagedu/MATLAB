@@ -25,7 +25,7 @@ else
     % number of newly added response vectors.
     nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
 end
-keyboard
+
 for iPre = 1:nPointPre
     % separate the newly added and old vectors.
     respExt = obj.resp.store.all{nPointEx + iPre, 3};
@@ -33,6 +33,7 @@ for iPre = 1:nPointPre
     nVecOld = nVecTot - nVecNew;
     respOld = respExt(1:nVecOld);
     respNew = respExt(end - nVecNew + 1:end);
+    
     % part 1: left upper block, right upper triangle, symmetric.
     if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1

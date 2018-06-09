@@ -1,0 +1,2 @@
+clear; clc;
+% this script tests note 68 for 2d Lagrange interpolation.

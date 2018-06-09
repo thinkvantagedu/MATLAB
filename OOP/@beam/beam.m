@@ -359,6 +359,7 @@ classdef beam < handle
             % this method add a new basis vector to current basis. New basis
             % vector = current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
+            % this method is applied to structured magic points.
             
             % new basis from error (phi * phi' * response).
             phi_ = obj.dis.rbEnrich;
@@ -380,6 +381,7 @@ classdef beam < handle
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
             obj.indicator.enrich = 1;
+            obj.indicator.refine = 0;
         end
         %%
         function obj = rbEnrichmentStatic(obj)
@@ -408,6 +410,7 @@ classdef beam < handle
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
             obj.indicator.enrich = 1;
+            obj.indicator.refine = 0;
         end
         %%
         function obj = rbEnrichment(obj, nEnrich, redRatio, ratioSwitch, ...
@@ -464,6 +467,7 @@ classdef beam < handle
                     eMaxPre = obj.err.store.max(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc;
                 case 'hhat'
+                    
                     eMaxPre = obj.err.store.max.hhat(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc.hhat;
             end
@@ -480,9 +484,8 @@ classdef beam < handle
             obj.no.rbAdd = obj.no.rb - nRbOld;
             obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
             
-            obj.indicator.refine = 0;
             obj.indicator.enrich = 1;
-            
+            obj.indicator.refine = 0;
             
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
@@ -534,6 +537,8 @@ classdef beam < handle
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
             
+            obj.indicator.enrich = 1;
+            obj.indicator.refine = 0;
         end
         %%
         function obj = rbInitialStatic(obj)
@@ -781,8 +786,7 @@ classdef beam < handle
         function obj = otherPrepare(obj, nSVD)
             % prepare other essential storages.
             obj.no.respSVD = nSVD;
-            obj.indicator.refine = 0;
-            obj.indicator.enrich = 1;
+                        
             if obj.no.pm == 1
                 obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
             elseif obj.no.pm == 2
@@ -2115,12 +2119,11 @@ classdef beam < handle
             
             if obj.no.inc == 1
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
-                    inBetweenTwoPoints(pmIterCell{:}, pmExpoAdd(:, 2)), ...
+                    inBetweenTwoPoints(pmIterCell, pmExpoAdd(:, 2)), ...
                     pmExpoAdd);
             elseif obj.no.inc == 2
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
-                    (pmIterCell{:}, pmExpoAdd(:, 2), ...
-                    pmExpoAdd(:, 3)), pmExpoAdd);
+                    (pmIterCell, pmExpoAdd(:, 2), pmExpoAdd(:, 3)), pmExpoAdd);
             else
                 disp('dimension > 2')
             end
@@ -2303,9 +2306,9 @@ classdef beam < handle
                         end
                     end
             end
-            
-            obj.countGreedy = obj.countGreedy + 1;
-            
+            if obj.indicator.refine == 0 && obj.indicator.enrich == 1
+                obj.countGreedy = obj.countGreedy + 1;
+            end
         end
         %%
         function obj = storeErrorInfo(obj)

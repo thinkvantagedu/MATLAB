@@ -5,29 +5,6 @@ function [coeff, otpty] = lagrange(inptx, xcoord, ycoord)
 % scalar arrays for scalar case and matrix cells for matrix case. 
 % inptx is the input x value to be computed. 
 % see the Wikipedia page for the following tests:
-% clear; clc;
-% scalar case
-% x1 = 1;
-% x2 = 2;
-% x3 = 3;
-% y1 = 1;
-% y2 = 8; 
-% y3 = 27;
-% xcoord = [x1 x2 x3]';
-% ycoord = {y1 y2 y3}';
-% inptx = 1;
-% type = 'scalar';
-% matrix case
-% x1 = 1;
-% x2 = 2;
-% x3 = 3;
-% y1 = [1 2; 3 4];
-% y2 = [3 4; 1 2]; 
-% y3 = [2 4; 5 6];
-% xcoord = [x1 x2 x3]';
-% ycoord = {y1 y2 y3}';
-% inptx = 2;
-% type = 'matrix';
 
 otpty = sparse(0);
 coeff = zeros(length(xcoord), 1);
