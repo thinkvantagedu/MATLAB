@@ -24,12 +24,12 @@ uTu2 = y1Ty1 * cfcfT(1, 1) + y1Ty2 * cfcfT(1, 2) + ...
     y1Ty2' * cfcfT(2, 1) + y2Ty2 * cfcfT(2, 2);
 
 %% case 3: project afterwards.
-al = [1 2 3; 4 5 6];
-proj1 = al' * uTu1 * al;
+rv = [1 2 3; 4 5 6];
+uTu1p = rv' * uTu1 * rv;
 
 %% case 4: project first then interpolate.
-y1Ty1proj = al' * y1Ty1 * al;
-y2Ty2proj = al' * y2Ty2 * al;
-y1Ty2proj = al' * y1Ty2 * al;
-proj2 = y1Ty1proj * cfcfT(1, 1) + y1Ty2proj * cfcfT(1, 2) + ...
+y1Ty1proj = rv' * y1Ty1 * rv;
+y2Ty2proj = rv' * y2Ty2 * rv;
+y1Ty2proj = rv' * y1Ty2 * rv;
+uTu2p = y1Ty1proj * cfcfT(1, 1) + y1Ty2proj * cfcfT(1, 2) + ...
     y1Ty2proj' * cfcfT(2, 1) +  + y2Ty2proj * cfcfT(2, 2);

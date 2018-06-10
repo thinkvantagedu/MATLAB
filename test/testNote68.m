@@ -24,18 +24,20 @@ yco2d = {-1 1}; % 2d = y direction.
 zco2d = {otpt1d12; otpt1d34};
 [cf2d, otpt2d] = lagrange(inpty, yco2d, zco2d);
 
-%% interpolate uTu.
-% case 3: interpolate then take uTu.
-uTu1 = otpt' * otpt;
-
-% case 4: uTu then interpolate.
+% case 3: use coeffs to directly perform 2d interpolation. 
+% (get the intersected coeffs (cfcf12), then multiply with each matrix).
 cfcf12 = cf1d * cf2d';
 
 otpt_ = z1 * cfcf12(1, 1) + z2 * cfcf12(2, 1) + ...
     z3 * cfcf12(1, 2) + z4 * cfcf12(2, 2);
+%% interpolate uTu.
+% case 4: interpolate then take uTu.
+uTu1 = otpt' * otpt;
 
-cfcf1212 = cfcf12(:) * (cfcf12(:))';
-
+% case 5: uTu then interpolate.
+cfcf1212_ = cfcf12(:) * (cfcf12(:))';
+% always 10 components when there are 4 itpl samples. 
+% dimension of each components = no of columns.
 z11 = z1' * z1;
 z22 = z2' * z2;
 z33 = z3' * z3;
@@ -46,34 +48,47 @@ z14 = z1' * z4;
 z23 = z2' * z3;
 z24 = z2' * z4;
 z34 = z3' * z4;
+z0 = zeros(length(z11));
 
-zcell = {z11 z12 z13 z14; z12' z22 z23 z24; ...
-    z13' z23' z33 z34; z14' z24' z34' z44};
+zcell = {z11 z12 z13 z14; z0 z22 z23 z24; ...
+    z0 z0 z33 z34; z0 z0 z0 z44};
+% process cfcf1212, make the non-diagonal elements double. 
+cfcf1212 = zeros(4);
+
+for i = 1:4
+    for j = i:4
+        if i == j
+            cfcf1212(i, j) = cfcf1212(i, j) + cfcf1212_(i, j);
+        else
+            cfcf1212(i, j) = cfcf1212(i, j) + 2 * cfcf1212_(i, j);
+        end
+    end
+end
+
 cfcell = num2cell(cfcf1212);
 
-uTu2 = cellfun(@(u, v) u * v, zcell, cfcell, 'un', 0);
-uTu2 = sum(cat(3,uTu2{:}),3);
+uTu2_ = cellfun(@(u, v) u * v, zcell, cfcell, 'un', 0);
+uTu2 = sum(cat(3,uTu2_{:}),3);
+uTu2 = (uTu2 + uTu2') / 2;
 
-% %% case 1:
-% % compute Lagrange interpolation of displacements.
-% [coeff, disp1] = lagrange(inptxy, xco, yco);
-% uTu1 = disp1' * disp1;
-% 
-% %% case 2 = case 1:
-% y1Ty1 = y1' * y1;
-% y2Ty2 = y2' * y2;
-% y1Ty2 = y1' * y2;
-% cfcfT = coeff * coeff';
-% uTu2 = y1Ty1 * cfcfT(1, 1) + y1Ty2 * cfcfT(1, 2) + ...
-%     y1Ty2' * cfcfT(2, 1) +  + y2Ty2 * cfcfT(2, 2);
-% 
-% %% case 3: project afterwards.
-% al = [1 2 3; 4 5 6];
-% proj1 = al' * uTu1 * al;
-% 
-% %% case 4: project first then interpolate.
-% y1Ty1proj = al' * y1Ty1 * al;
-% y2Ty2proj = al' * y2Ty2 * al;
-% y1Ty2proj = al' * y1Ty2 * al;
-% proj2 = y1Ty1proj * cfcfT(1, 1) + y1Ty2proj * cfcfT(1, 2) + ...
-%     y1Ty2proj' * cfcfT(2, 1) +  + y2Ty2proj * cfcfT(2, 2);
+%% include projection on rvs.
+rv = [1 2; 4 5];
+% case 6: interpolate then project.
+uTu1p = rv' * uTu1 * rv;
+% case 7: project then interpolate.
+z11p = rv' * z11 * rv;
+z12p = rv' * z12 * rv;
+z13p = rv' * z13 * rv;
+z14p = rv' * z14 * rv;
+z22p = rv' * z22 * rv;
+z23p = rv' * z23 * rv;
+z24p = rv' * z24 * rv;
+z33p = rv' * z33 * rv;
+z34p = rv' * z34 * rv;
+z44p = rv' * z44 * rv;
+z0p = rv' * z0 * rv;
+zpcell = {z11p z12p z13p z14p; z0p z22p z23p z24p; ...
+    z0p z0p z33p z34p; z0p z0p z0p z44p};
+uTu2p_ = cellfun(@(u, v) u * v, zpcell, cfcell, 'un', 0);
+uTu2p = sum(cat(3,uTu2p_{:}),3);
+uTu2p = (uTu2p + uTu2p') / 2;
