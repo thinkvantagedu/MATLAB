@@ -1,6 +1,6 @@
 function obj = uiTuj(obj)
 % an IMPORTANT difference from uiTui: no of calculations relates to no of
-% blocks, not no of sample points.
+% blocks, not no of sample points. Results are stored in obj.err.pre.hhat.
 disp('uiTuj starts')
 tic
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
@@ -59,7 +59,8 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
         respExtpNew = respSorthat{iPre + 1, 3}(end - nVecNew + 1:end);
         if obj.countGreedy == 0
             % if initial, re-compute eTe part 1.
-            lu11 = eTePart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
+            lu11 = uTuPart(nVecOld, nVecOld, ...
+                respExtOld, respExtpOld, 'rectangle');
             
         else
             % if enrich, inherit eTe part 1.
@@ -67,11 +68,11 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
             
         end
         % part 2: right upper block, full rectangle, unsymmetric (j from 1).
-        ru12 = eTePart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
+        ru12 = uTuPart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
         % part 3: right lower block, right upper triangle, symmetric.
-        rd22 = eTePart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
+        rd22 = uTuPart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
         % part 4: left lower block, rectangle all-zeros.
-        ld21 = eTePart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
+        ld21 = uTuPart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
         
         % put part 1 2 3 4 together to form a triangular matrix.
         respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
@@ -82,11 +83,12 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
         respCell_(iPre, 3) = {respTrans};
         respCell_(iPre, 4) = {respTrans_};
     end
-    keyboard
+    
     respCell_(nBlkComp, 1:2) = respSorthat(nBlkComp, 1:2);
     respCell_(nBlkComp, 3:4) = {[]};
     respCellSort = sortrows(respCell_, 1);
     obj.err.pre.hat(:, [4 6]) = respCellSort(:, 3:4);
+    
 elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     % if refine (initial or not), inherit from previous ehhat.
     obj.err.pre.hat = obj.err.pre.hhat(1:obj.no.pre.hat, :);
@@ -111,7 +113,7 @@ for iPre = 1:nBlkComp
     if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
-        lu11 = eTePart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
+        lu11 = uTuPart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
         
     elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
         % if enrich, inherit eTe part 1.
@@ -119,11 +121,11 @@ for iPre = 1:nBlkComp
         
     end
     % part 2: right upper block, unsymmetric.
-    ru12 = eTePart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
+    ru12 = uTuPart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
     % part 3: right lower block, unsymmetric.
-    rd22 = eTePart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
+    rd22 = uTuPart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
     % part 4: left lower block, unsymmetric.
-    ld21 = eTePart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
+    ld21 = uTuPart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
     
     % put part 1 2 3 4 together to form a full rectangular matrix.
     respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
@@ -143,4 +145,5 @@ respModIdx = [respCell_{:, 1}];
 obj.err.pre.hhat(respModIdx(1:end - 1), [4 6]) = respCell_((1:end - 1), 3:4);
 toc
 disp('uiTuj ends')
+keyboard
 end

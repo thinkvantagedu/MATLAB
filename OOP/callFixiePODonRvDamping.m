@@ -115,8 +115,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.uiTui;
     
-    fixie.uiTuj;
-    keyboard
+    fixie.uiTujDamping;
+    
     % disp('offline end')
     
     %% Greedy ONLINE.

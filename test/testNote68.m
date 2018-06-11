@@ -37,7 +37,7 @@ uTu1 = otpt' * otpt;
 % case 5: uTu then interpolate.
 cfcf1212_ = cfcf12(:) * (cfcf12(:))';
 % always 10 components when there are 4 itpl samples. 
-% dimension of each components = no of columns.
+% dimension of each components = no of columns of pre-computed displacements.
 z11 = z1' * z1;
 z22 = z2' * z2;
 z33 = z3' * z3;

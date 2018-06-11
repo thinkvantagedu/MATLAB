@@ -28,17 +28,17 @@ end
 
 for iPre = 1:nPointPre
     % separate the newly added and old vectors.
-    respExt = obj.resp.store.all{nPointEx + iPre, 3};
-    nVecTot = numel(respExt);
+    uExt = obj.resp.store.all{nPointEx + iPre, 3};
+    nVecTot = numel(uExt);
     nVecOld = nVecTot - nVecNew;
-    respOld = respExt(1:nVecOld);
-    respNew = respExt(end - nVecNew + 1:end);
+    uOld = uExt(1:nVecOld);
+    uNew = uExt(end - nVecNew + 1:end);
     
     % part 1: left upper block, right upper triangle, symmetric.
     if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
-        lu11 = eTePart(nVecOld, nVecOld, respOld, respOld, 'triangle');
+        lu11 = uTuPart(nVecOld, nVecOld, uOld, uOld, 'triangle');
         
     elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
         % if enrich, inherit eTe part 1.
@@ -48,22 +48,22 @@ for iPre = 1:nPointPre
         
     end
     % part 2: right upper block, full rectangle, unsymmetric (j from 1).
-    ru12 = eTePart(nVecOld, nVecNew, respOld, respNew, 'rectangle');
+    ru12 = uTuPart(nVecOld, nVecNew, uOld, uNew, 'rectangle');
     % part 3: right lower block, right upper triangle, symmetric.
-    rd22 = eTePart(nVecNew, nVecNew, respNew, respNew, 'triangle');
+    rd22 = uTuPart(nVecNew, nVecNew, uNew, uNew, 'triangle');
     % part 4: left lower block, rectangle all-zeros.
     ld21 = zeros(size(ru12, 2), size(ru12, 1));
     
     % put part 1 2 3 4 together to form a triangular matrix.
-    respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
+    uTrans_ = cell2mat({lu11 ru12; ld21 rd22});
     % store [upper triangle transforms into vector] vecTrans_ for 
     % next iteration. bool is the boolean vector for reTriangularise. 
-    [bool, vecTrans_] = upperTriangleIntoVector(respTrans_);
+    [bool, vecTrans_] = upperTriangleIntoVector(uTrans_);
     obj.err.pre.hhat(nPointEx + iPre, 5) = {vecTrans_};
     
     % project full eTe.
-    respTrans = obj.resp.rv.L' * reConstruct(respTrans_) * obj.resp.rv.L;
-    obj.err.pre.hhat(nPointEx + iPre, 3) = {respTrans};
+    uTrans = obj.resp.rv.L' * reConstruct(uTrans_) * obj.resp.rv.L;
+    obj.err.pre.hhat(nPointEx + iPre, 3) = {uTrans};
     
 end
 obj.indicator.bool = bool;

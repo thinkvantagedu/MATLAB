@@ -1,4 +1,4 @@
-function otpt = eTePart(nVeci, nVecj, respi, respj, shape)
+function otpt = uTuPart(nVeci, nVecj, respi, respj, shape)
 % this function compute the part of eTe, either square and rectangular, or
 % triangular, change in input 'shape'. 
 
