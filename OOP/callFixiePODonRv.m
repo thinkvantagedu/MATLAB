@@ -146,7 +146,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         
-        %         fixie.plotSurfGrid('hhat', 'b-.', 0);
+                fixie.plotSurfGrid('hhat', 'g->', 0);
         %         fixie.plotSurfGrid('hat', 'r--', 0);
         
         if fixie.countGreedy == drawRow * drawCol
@@ -160,7 +160,6 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 0);
         fixie.reducedMatricesStatic;
         fixie.reducedMatricesDynamic;
-        
         
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
@@ -188,7 +187,7 @@ for iGre = 1:fixie.countGreedy
         
     end
     fixie.verifyExtractMaxErr(iGre);
-    fixie.verifyPlotSurf(iGre, 'r-^');
+%     fixie.verifyPlotSurf(iGre, 'r-^');
 end
 
 %%

@@ -779,6 +779,15 @@ classdef beam < handle
             % from obj.pmExpo.hat to obj.pmExpo.block.hat.
             obj.gridtoBlockwithIndx;
             obj.pmExpo.block.hat = obj.pmExpo.temp.otpt;
+            pmValhat = cell(length(obj.pmExpo.block.hat), 1);
+            for ip = 1:length(pmValhat)
+                
+                pmValhat{ip}(:, 1) = obj.pmExpo.block.hat{ip}(:, 1);
+                pmValhat{ip}(:, 2:obj.no.pm + 1) = ...
+                    10 .^ obj.pmExpo.block.hat{ip}(:, 2:obj.no.pm + 1);
+                
+            end
+            obj.pmVal.block.hat = pmValhat;
             obj.no.block.hat = 1;
             
         end
@@ -1845,11 +1854,11 @@ classdef beam < handle
             obj.resp.rv.store(iIter) = {rvpmCol};
         end
         %%
-        function obj = inpolyItpl(obj, type)
-            % this method interpolates within 2 points (1D) or 1 polygon
-            % (2D).
+        function obj = inpolyItplExpo(obj, type)
+            % this method interpolates within 2 points (1D) or 1 polygon (2D).
             % nBlk is the number of pm blocks in current iteration.
             % pmBlk is the pm blocks.
+            % this is for the exponential case [-1 1].
             switch type
                 case 'hhat'
                     nBlk = length(obj.pmExpo.block.hhat);
@@ -1877,10 +1886,7 @@ classdef beam < handle
                 if obj.no.pm == 1
                     if inBetweenTwoPoints(pmIter, pmBlkCell{:}) == 1
                         switch type
-                            case 'hhat'
-                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
-                                uiTuj = ehats(pmBlk{iB}(1, 1), 4);
-                            case 'hat'
+                            case {'hhat', 'hat'}
                                 uiTui = ehats(pmBlk{iB}(:, 1), 3);
                                 uiTuj = ehats(pmBlk{iB}(1, 1), 4);
                             case 'add'
@@ -1924,17 +1930,129 @@ classdef beam < handle
                         [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
                         gridx = 10 .^ gridxVal;
                         gridy = 10 .^ gridyVal;
-                        keyboard
+                        
                         switch type
                             case 'hhat'
-                                gridzVal = ehats(pmBlk{iB}(:, 1), 3);
+                                uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
+                                uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 1:5);
                             case 'hat'
-                                gridzVal = ehats(pmBlk{iB}(:, 1), 3);
+                                uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
+                                uiTuj = obj.err.pre.uiTuj.hat{iB}(:, 1:5);
                             case 'add'
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{iB};
-                                gridzVal = ehats(pmAdd(:, 1), 3);
                         end
+                        keyboard
+                        gridz = [gridzVal(1) gridzVal(2); ...
+                            gridzVal(4) gridzVal(3)];
+                        % interpolate in 2D.
+                        obj.LagItpl2Dmtx(gridx, gridy, gridz);
+                    end
+                else
+                    disp('dimension > 2')
+                end
+                
+            end
+            switch type
+                case 'hhat'
+                    obj.err.itpl.hhat = obj.err.itpl.otpt;
+                case 'hat'
+                    obj.err.itpl.hat = obj.err.itpl.otpt;
+                case 'add'
+                    obj.err.itpl.add = obj.err.itpl.otpt;
+            end
+            
+        end
+        %%
+        function obj = inpolyItplVal(obj, type)
+            % this method interpolates within 2 points (1D) or 1 polygon (2D).
+            % nBlk is the number of pm blocks in current iteration.
+            % pmBlk is the pm blocks.
+            % this is for the real values case [10^-1, 10^1].
+            switch type
+                case 'hhat'
+                    nBlk = length(obj.pmVal.block.hhat);
+                    pmBlk = obj.pmVal.block.hhat;
+                    ehats = obj.err.pre.hhat;
+                case 'hat'
+                    nBlk = length(obj.pmVal.block.hat);
+                    pmBlk = obj.pmVal.block.hat;
+                    ehats = obj.err.pre.hat;
+                case 'add' % this is the number of the newly divided blocks.
+                    nBlk = 2 ^ obj.no.inc;
+                    pmBlk = obj.pmVal.block.add;
+                    ehats = obj.err.pre.hhat;
+            end
+            
+            for iB = 1:nBlk
+                % pmIter is the single expo pm value for current iteration.
+                pmIter = obj.pmVal.iter;
+                % pmBlkCell is the cell block of itpl pm domain values.
+                pmBlkDom = pmBlk{iB}(:, 2:obj.no.pm + 1);
+                pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
+                    ones(size(pmBlkDom, 2), 1));
+                
+                % generate x-y (1 inclusion) or x-y-z (2 inclusions) domain.
+                if obj.no.pm == 1
+                    if inBetweenTwoPoints(pmIter, pmBlkCell{:}) == 1
+                        switch type
+                            case {'hhat', 'hat'}
+                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
+                                uiTuj = ehats(pmBlk{iB}(1, 1), 4);
+                            case 'add'
+                                % pmBlk is the added block now, there are 2
+                                % blocks in 1D case.
+                                pmAdd = pmBlk{iB};
+                                uiTui = ehats(pmAdd(:, 1), 3);
+                                uiTuj = ehats(pmAdd(1, 1), 4);
+                        end
+                        pmCell = num2cell(cell2mat(pmBlkCell));
+                        % this is the Lagrange coefficient matrix, 2 by 2
+                        % for linear interpolations.
+                        coefOtpt = lagrange(pmIter, pmCell);
+                        cfcfT = coefOtpt * coefOtpt';
+                        
+                        uiCell = cell(2, 2);
+                        for iut = 1:2
+                            uiCell{iut, iut} = uiTui{iut};
+                        end
+                        uiCell{1, 2} = uiTuj{:};
+                        uiCell{2, 1} = uiTuj{:}';
+                        
+                        uTuOtpt = zeros(size(uiCell{2}));
+                        for iut = 1:4
+                            uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
+                        end
+                        % non-diag entries of uiCell are not symmetric, but
+                        % once sum all cells of uiCell becomes symmetric.
+                        obj.err.itpl.otpt = uTuOtpt;
+                    end
+                    
+                elseif obj.no.pm == 2
+                    
+                    if inpolygon(pmIter(1), pmIter(2), pmBlkCell{:}) == 1
+                        
+                        xl = min(pmBlk{iB}(:, 2));
+                        xr = max(pmBlk{iB}(:, 2));
+                        yl = min(pmBlk{iB}(:, 3));
+                        yr = max(pmBlk{iB}(:, 3));
+                        
+                        [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
+                        gridx = 10 .^ gridxVal;
+                        gridy = 10 .^ gridyVal;
+                        
+                        switch type
+                            case 'hhat'
+                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
+                                uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 3:5);
+                            case 'hat'
+                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
+                                uiTuj = obj.err.pre.uiTuj.hat{iB}(:, 3:5);
+                            case 'add'
+                                % pmBlk is the added block now.
+                                pmAdd = pmBlk{iB};
+                        end
+                        keyboard
                         gridz = [gridzVal(1) gridzVal(2); ...
                             gridzVal(4) gridzVal(3)];
                         % interpolate in 2D.
@@ -1968,9 +2086,13 @@ classdef beam < handle
             
             % if there is no refinement at all, both hhat and hat domain
             % need to perform interpolation.
+            
+            % the interpolation uses exponentional values (inpolyItplExpo), 
+            % not real values (inpolyItplVal), somehow this performs
+            % better (tested). 
             if obj.no.block.hat == 1
-                obj.inpolyItpl('hhat');
-                obj.inpolyItpl('hat');
+                obj.inpolyItplExpo('hhat');
+                obj.inpolyItplExpo('hat');
                 obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
@@ -1985,7 +2107,7 @@ classdef beam < handle
             elseif obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % hat surface needs to be interpolated everywhere.
                 obj.err.store.surf.hat(iIter) = 0;
-                obj.inpolyItpl('hat');
+                obj.inpolyItplExpo('hat');
                 
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.errStoreSurfs('hat', 0);
@@ -1999,7 +2121,7 @@ classdef beam < handle
                     % to obtain hhat at refined points.
                 elseif any(obj.indicator.inBlock) == 1
                     obj.err.store.surf.hhat(iIter) = 0;
-                    obj.inpolyItpl('hhat');
+                    obj.inpolyItplExpo('hhat');
                     obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
                     obj.errStoreSurfs('hhat', 0);
                 end
@@ -2020,7 +2142,7 @@ classdef beam < handle
                     % only interpolate and modify the refined part of hhat
                     % block, should be very fast.
                     obj.err.store.surf.hhat(iIter) = 0;
-                    obj.inpolyItpl('add');
+                    obj.inpolyItplExpo('add');
                     obj.rvPmErrProdSum('add', rvSVDswitch, iIter);
                     obj.errStoreSurfs('hhat', 0);
                 end
@@ -2067,37 +2189,6 @@ classdef beam < handle
                 end
                 
             end
-        end
-        %%
-        function obj = inBlockItpl(obj)
-            % this method decides interpolation for hat. there are 3
-            % conditions:
-            % 1. hat block == 1, then every points in hat needs to be
-            % interpolated;
-            % 2. hat block > 1, meaning there is at least 1 refinement,
-            % find whether the point is in the refined block, if in, only
-            % interpolate the refined blocks;
-            % 3. if not in, hat = hhat.
-            if obj.no.block.hat == 1
-                % no refinement at all, ehat needs to be interpolated.
-                obj.inpolyItpl('hat');
-                
-            elseif obj.no.block.hat > 1
-                % when there is a refinement, only itpl the refined block.
-                obj.inAddBlockIndicator;
-                
-                if any(obj.indicator.inBlock) == 1
-                    % if pm point is in refined block, interpolate.
-                    obj.inpolyItpl('add');
-                    obj.inpolyItpl('hat');
-                    
-                elseif any(obj.indicator.inBlock) == 0
-                    % if pm point is not in refined block, hat = hhat.
-                    obj.err.itpl.hat = obj.err.itpl.hhat;
-                    
-                end
-            end
-            
         end
         %%
         function obj = rvpmSlct(obj)
@@ -2385,7 +2476,8 @@ classdef beam < handle
             % the newly added blocks.
             obj.pmExpo.block.add = obj.pmExpo.block.hhat...
                 (end - obj.no.block.add : end);
-            
+            obj.pmVal.block.add = obj.pmVal.block.hhat...
+                (end - obj.no.block.add : end);
             % indices of newly added samples.
             pmIdxhhat = obj.pmExpo.hhat(:, 1);
             pmIdxhat = obj.pmExpo.hat(:, 1);
@@ -2598,7 +2690,8 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-            qoiT = [10 20 30 40 50]';
+%             qoiT = [10 20 30 40 50]';
+            qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -2975,7 +3068,26 @@ classdef beam < handle
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
+            % generate same cell blocks for pmVal (hhat and hat). 
+            pmValhat = cell(length(obj.pmExpo.block.hat), 1);
+            for ip = 1:length(pmValhat)
+                
+                pmValhat{ip}(:, 1) = obj.pmExpo.block.hat{ip}(:, 1);
+                pmValhat{ip}(:, 2:obj.no.pm + 1) = ...
+                    10 .^ obj.pmExpo.block.hat{ip}(:, 2:obj.no.pm + 1);
+                
+            end
+            obj.pmVal.block.hat = pmValhat;
             
+            pmValhhat = cell(length(obj.pmExpo.block.hhat), 1);
+            for ip = 1:length(pmValhhat)
+                
+                pmValhhat{ip}(:, 1) = obj.pmExpo.block.hhat{ip}(:, 1);
+                pmValhhat{ip}(:, 2:obj.no.pm + 1) = ...
+                    10 .^ obj.pmExpo.block.hhat{ip}(:, 2:obj.no.pm + 1);
+                
+            end
+            obj.pmVal.block.hhat = pmValhhat;
         end
         %%
         function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)
@@ -3268,7 +3380,6 @@ classdef beam < handle
         obj = refineGrid(obj, i_block);
         obj = lagItplCoeff(obj);
         obj = lagItplOtptSingle(obj, type);
-        obj = inpolyItplOtpt(obj, type);
         obj = plotSurfGrid...
             (obj, type, drawRow, drawCol, viewX, viewY, gridSwitch, axisLim);
         obj = plotGrid(obj, type);

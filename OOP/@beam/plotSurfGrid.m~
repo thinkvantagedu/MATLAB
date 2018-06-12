@@ -11,12 +11,10 @@ switch typeSwitch
         eMax = obj.err.max.val.hhat;
         eLoc = obj.err.store.loc.hhat;
         eSurf = obj.err.store.surf.hhat;
-        eMloc = obj.err.max.loc.hhat;
     case 'hat'
         eMax = obj.err.max.val.hat;
         eLoc = obj.err.store.loc.hat;
         eSurf = obj.err.store.surf.hat;
-        eMloc = obj.err.max.loc.hat;
 end
 
 
@@ -24,7 +22,7 @@ if damSwitch == 0
     figure(1)
     % for single inclusion case, plot error response curve.
     loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 3);
-    txtMax = sprintf('[%d %.2g]', eMloc, eMax);
+    txtMax = sprintf('[%d %.2g]', obj.err.max.loc, eMax);
     text(obj.pmVal.max, eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     if obj.countGreedy > 1
         
