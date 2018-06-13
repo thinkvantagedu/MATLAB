@@ -27,7 +27,7 @@ fixie.readINPgeoMultiInc;
 fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
 
 % generate damping coefficient space, the combination is stiffness then damping.
-damLeng = 4;
+damLeng = 3;
 damBond = [-1 1];
 fixie.generateDampingSpace(damLeng, damBond);
 
@@ -126,7 +126,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.pmIter(iIter, 1);
         
-        fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
+        fixie.conditionalItplProdRvPm(iIter, rvSVDswitch, 1);
         
         CmdWinTool('statusText', ...
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
@@ -136,7 +136,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     %% extract error information.
     fixie.errStoreSurfs('diff', 1);
-    fixie.extractMaxErrorInfo('hats'); % greedy + 1
+    fixie.extractMaxErrorInfo('hats', 0, 1); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.refiCondition('maxSurf', refCeaseSwitch);
@@ -152,8 +152,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         
-        %         fixie.plotSurfGrid('hhat', 'b-.', 0);
-        %         fixie.plotSurfGrid('hat', 'r--', 0);
+        fixie.plotSurfGrid('hhat', 'b-.', 1);
+        %         fixie.plotSurfGrid('hat', 'r--', 1);
         
         if fixie.countGreedy == drawRow * drawCol
             % put here to stop any uncessary computations.

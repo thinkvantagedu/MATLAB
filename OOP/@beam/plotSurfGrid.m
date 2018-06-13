@@ -50,7 +50,7 @@ elseif damSwitch == 1
     ex = obj.pmVal.i.space{:}(:, 2);
     ey = obj.pmVal.damp.space(:, 3);
     surf(ex, ey, eSurf');
-    txtMax = sprintf('[%d %d %.2g]', obj.err.max.loc, eMax);
+    txtMax = sprintf('[%d %d %.2g]', eMloc, eMax);
     text(obj.pmVal.max(1), obj.pmVal.max(2), eMax, ...
         txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...

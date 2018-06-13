@@ -7,8 +7,11 @@ z4 = [5 6; 8 9; 4 7];
 
 inptx = 0.5;
 inpty = -0.5;
-gridx = [-1 1; -1 1];
-gridy = [-1 -1; 1 1];
+xl = -1;
+xr = 1;
+yl = -1;
+yr = 1;
+[gridx, gridy] = meshgrid([xl xr], [yl yr]);
 gridz = {z1 z2; z3 z4};
 %% interpolate u.
 % case 1: interpolate in 2d.

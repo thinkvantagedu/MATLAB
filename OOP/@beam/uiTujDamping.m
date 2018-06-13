@@ -27,18 +27,12 @@ if obj.countGreedy == 0
 else
     % number of nre response vectors.
     nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
-    uTuImporthhat = sortrows(obj.err.pre.hhat, 2);
-    uTuImporthhat = uTuImporthhat(:, 6);
-    uTuImporthat = sortrows(obj.err.pre.hat, 2);
-    uTuImporthat = uTuImporthat(:, 6);
 end
 
 % for hhat, responses need to be chosen based on enrich or refine.
 uStorehhat = obj.resp.store.all(idxCompute, :);
-uSorthhat = sortrows(uStorehhat, 2);
 % for hat, responses are all hat ones,
 uStorehat = obj.resp.store.all(1:obj.no.pre.hat, :);
-uSorthat = sortrows(uStorehat, 2);
 
 nVecTot = numel(uStorehhat{1, 3});
 nVecOld = nVecTot - nVecNew;

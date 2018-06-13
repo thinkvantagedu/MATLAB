@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 9;
-domLengs = 9;
+domLengi = 5;
+domLengs = 5;
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -56,7 +56,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -77,7 +77,7 @@ reductionRatio = 0.6;
 % number of vectors taking when applying SVD to pre-computed resps.
 nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
-rvSVDreRatio = 1;
+rvSVDreRatio = 0.99;
 
 %% set types
 timeType = 'allTime';

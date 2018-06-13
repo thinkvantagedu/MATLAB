@@ -65,7 +65,6 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
         else
             % if enrich, inherit eTe part 1.
             lu11 = eTeImporthat{iPre};
-            
         end
         % part 2: right upper block, full rectangle, unsymmetric (j from 1).
         ru12 = uTuPart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');

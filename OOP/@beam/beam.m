@@ -1873,14 +1873,13 @@ classdef beam < handle
                     pmBlk = obj.pmExpo.block.add;
                     ehats = obj.err.pre.hhat;
             end
-            
             for iB = 1:nBlk
                 % pmIter is the single expo pm value for current iteration.
                 pmIter = obj.pmExpo.iter;
                 % pmBlkCell is the cell block of itpl pm domain values.
                 pmBlkDom = pmBlk{iB}(:, 2:obj.no.pm + 1);
-                pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
-                    ones(size(pmBlkDom, 2), 1));
+                pmBlkCell = mat2cell(pmBlkDom, ...
+                    size(pmBlkDom, 1), ones(size(pmBlkDom, 2), 1));
                 
                 % generate x-y (1 inclusion) or x-y-z (2 inclusions) domain.
                 if obj.no.pm == 1
@@ -1892,15 +1891,15 @@ classdef beam < handle
                             case 'add'
                                 % pmBlk is the added block now, there are 2
                                 % blocks in 1D case.
-                                pmAdd = pmBlk{iB};
-                                uiTui = ehats(pmAdd(:, 1), 3);
-                                uiTuj = ehats(pmAdd(1, 1), 4);
+                                pmAddExpo = pmBlk{iB};
+                                uiTui = ehats(pmAddExpo(:, 1), 3);
+                                uiTuj = ehats(pmAddExpo(1, 1), 4);
                         end
                         pmCell = num2cell(cell2mat(pmBlkCell));
                         % this is the Lagrange coefficient matrix, 2 by 2
                         % for linear interpolations.
                         coefOtpt = lagrange(pmIter, pmCell);
-                        cfcfT = coefOtpt * coefOtpt';
+                        cfcfT_ = coefOtpt * coefOtpt';
                         
                         uiCell = cell(2, 2);
                         for iut = 1:2
@@ -1909,13 +1908,11 @@ classdef beam < handle
                         uiCell{1, 2} = uiTuj{:};
                         uiCell{2, 1} = uiTuj{:}';
                         
-                        uTuOtpt = zeros(size(uiCell{2}));
+                        uTu = zeros(size(uiCell{2}));
                         for iut = 1:4
-                            uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
+                            uTu = uTu + uiCell{iut} * cfcfT_(iut);
                         end
-                        % non-diag entries of uiCell are not symmetric, but
-                        % once sum all cells of uiCell becomes symmetric.
-                        obj.err.itpl.otpt = uTuOtpt;
+                        obj.err.itpl.otpt = uTu;
                     end
                     
                 elseif obj.no.pm == 2
@@ -1927,9 +1924,7 @@ classdef beam < handle
                         yl = min(pmBlk{iB}(:, 3));
                         yr = max(pmBlk{iB}(:, 3));
                         
-                        [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
-                        gridx = 10 .^ gridxVal;
-                        gridy = 10 .^ gridyVal;
+                        [gridx, gridy] = meshgrid([xl xr], [yl yr]);
                         
                         switch type
                             case 'hhat'
@@ -1940,17 +1935,41 @@ classdef beam < handle
                                 uiTuj = obj.err.pre.uiTuj.hat{iB}(:, 1:5);
                             case 'add'
                                 % pmBlk is the added block now.
-                                pmAdd = pmBlk{iB};
+                                pmAddExpo = pmBlk{iB};
                         end
-                        keyboard
-                        gridz = [gridzVal(1) gridzVal(2); ...
-                            gridzVal(4) gridzVal(3)];
-                        % interpolate in 2D.
-                        obj.LagItpl2Dmtx(gridx, gridy, gridz);
+                        
+                        cf1d = lagrange(pmIter(1), {gridx(1) gridx(3)});
+                        cf2d = lagrange(pmIter(2), {gridy(1) gridy(2)});
+                        cf12 = cf1d * cf2d';
+                        cfcf = cf12(:) * cf12(:)';
+                        
+                        cfcfT_ = zeros(4, 4);
+                        uiCell = cell(4, 4);
+                        for iu = 1:4
+                            for ju = iu:4
+                                if iu == ju
+                                    cfcfT_(iu, ju) = cfcfT_(iu, ju) + ...
+                                        cfcf(iu, ju);
+                                    uiCell{iu, ju} = uiTui{iu, 3};
+                                else
+                                    cfcfT_(iu, ju) = cfcfT_(iu, ju) + ...
+                                        2 * cfcf(iu, ju);
+                                    uiCell{iu, ju} = uiTuj{iu, ju + 1};
+                                end
+                            end
+                        end
+                        cfcfT = num2cell(cfcfT_);
+                        uTu_ = cellfun(@(u, v) u * v, cfcfT, uiCell, 'un', 0);
+                        uTu = sum(cat(3,uTu_{:}),3);
+                        uTu = (uTu + uTu') / 2;
+                        obj.err.itpl.otpt = uTu;
                     end
                 else
                     disp('dimension > 2')
                 end
+                % non-diag entries of uiCell are not symmetric, but
+                % once sum all cells of uiCell becomes symmetric.
+                % output is full symmetric matrix.
                 
             end
             switch type
@@ -2074,7 +2093,8 @@ classdef beam < handle
             
         end
         %%
-        function obj = conditionalItplProdRvPm(obj, iIter, rvSVDswitch)
+        function obj = conditionalItplProdRvPm(obj, iIter, ...
+                rvSVDswitch, damSwitch)
             % this method considers the interpolation condition and enrichment
             % condition to efficiently perform interpolation.
             
@@ -2097,8 +2117,8 @@ classdef beam < handle
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
                 obj.err.store.surf.hat(iIter) = 0;
-                obj.errStoreSurfs('hhat', 0);
-                obj.errStoreSurfs('hat', 0);
+                obj.errStoreSurfs('hhat', damSwitch);
+                obj.errStoreSurfs('hat', damSwitch);
                 
                 % if enrich, interpolate ehat. For ehhat, only interpolate
                 % the refined blocks, and modify ehat surface at new
@@ -2110,7 +2130,7 @@ classdef beam < handle
                 obj.inpolyItplExpo('hat');
                 
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
-                obj.errStoreSurfs('hat', 0);
+                obj.errStoreSurfs('hat', damSwitch);
                 % Determine whether point is in refined block.
                 obj.inAddBlockIndicator;
                 if any(obj.indicator.inBlock) == 0
@@ -2123,7 +2143,7 @@ classdef beam < handle
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItplExpo('hhat');
                     obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
-                    obj.errStoreSurfs('hhat', 0);
+                    obj.errStoreSurfs('hhat', damSwitch);
                 end
                 
             elseif obj.indicator.refine == 1 && obj.indicator.enrich == 0
@@ -2144,7 +2164,7 @@ classdef beam < handle
                     obj.err.store.surf.hhat(iIter) = 0;
                     obj.inpolyItplExpo('add');
                     obj.rvPmErrProdSum('add', rvSVDswitch, iIter);
-                    obj.errStoreSurfs('hhat', 0);
+                    obj.errStoreSurfs('hhat', damSwitch);
                 end
             end
         end
@@ -2354,21 +2374,28 @@ classdef beam < handle
                 case 'hats'
                     [eMaxValhhat, eMaxLocIdxhhat] = ...
                         max(obj.err.store.surf.hhat(:));
-                    pmValRowhhat = obj.pmVal.comb.space(eMaxLocIdxhhat, :);
-                    obj.err.max.loc.hhat = pmValRowhhat(:, 1:obj.no.inc);
                     obj.err.max.val.hhat = eMaxValhhat;
+                    pmMaxLochhat = obj.pmVal.comb.space...
+                        (eMaxLocIdxhhat, 2:obj.no.pm + 1);
+                    
                     [eMaxValhat, eMaxLocIdxhat] = ...
                         max(obj.err.store.surf.hat(:));
-                    pmValRowhat = obj.pmVal.comb.space(eMaxLocIdxhat, :);
-                    obj.err.max.loc.hat = pmValRowhat(:, 1:obj.no.inc);
                     obj.err.max.val.hat = eMaxValhat;
+                    pmMaxLochat = obj.pmVal.comb.space...
+                        (eMaxLocIdxhat, 2:obj.no.pm + 1);
+                    
+                    if damSwitch == 1
+                        obj.err.max.locIdx = eMaxLocIdxhhat;
+                    end
+                    obj.err.max.loc.hhat = pmMaxLochhat;
+                    obj.err.max.loc.hat = pmMaxLochat;
                     
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
                     obj.err.max.val = eMaxVal;
-                    
+                    pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, ...
+                        2:obj.no.pm + 1);
                     if damSwitch == 0
-                        pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2);
                         obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0
@@ -2380,7 +2407,6 @@ classdef beam < handle
                             obj.err.max.loc = pmMaxLoc;
                         end
                     elseif damSwitch == 1
-                        pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, 2:3);
                         obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0

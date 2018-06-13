@@ -120,7 +120,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         
         fixie.pmIter(iIter, 0);
         
-        fixie.conditionalItplProdRvPm(iIter, rvSVDswitch);
+        fixie.conditionalItplProdRvPm(iIter, rvSVDswitch, 0);
         
         CmdWinTool('statusText', ...
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
@@ -130,7 +130,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     %% extract error information.
     fixie.errStoreSurfs('diff', 0);
-    fixie.extractMaxErrorInfo('hats'); % greedy + 1
+    fixie.extractMaxErrorInfo('hats', 0, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.refiCondition('maxSurf', refCeaseSwitch);
