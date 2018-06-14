@@ -27,8 +27,6 @@ fixie.readINPgeoMultiInc;
 fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
 
 % generate damping coefficient space, the combination is stiffness then damping.
-damLeng = 3;
-damBond = [-1 1];
 fixie.generateDampingSpace(damLeng, damBond);
 
 % read stiffness matrices.
@@ -51,6 +49,7 @@ fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 % initialise interpolation samples.
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
+
 % prepare essential storage for error and responses.
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainProp;
@@ -94,9 +93,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.pmPrepare(rvSVDswitch, 1);
         
         fixie.rvPrepare(rvSVDswitch);
-        
-        fixie.pmMultiRv;
-        
+                
         fixie.rvpmColStore(iIter);
         
     end
@@ -181,22 +178,22 @@ end
 
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % All Greedy iterations are included here.
-fixie.verifyPrepare;
-for iGre = 1:fixie.countGreedy
-    fixie.verifyExtractBasis(iGre);
-    for iIter = 1:nIter
-        
-        fixie.pmIter(iIter, 0);
-        fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 0);
-        fixie.verifyExactError(iGre, iIter);
-        CmdWinTool('statusText', ...
-            sprintf('verification stage progress: %d of %d', iIter, nIter));
-        
-    end
-    fixie.verifyExtractMaxErr(iGre);
-    fixie.verifyPlotSurf(iGre, 'r-^');
-end
-
-%%
-fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
-fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
+% fixie.verifyPrepare;
+% for iGre = 1:fixie.countGreedy
+%     fixie.verifyExtractBasis(iGre);
+%     for iIter = 1:nIter
+%         
+%         fixie.pmIter(iIter, 0);
+%         fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 0);
+%         fixie.verifyExactError(iGre, iIter);
+%         CmdWinTool('statusText', ...
+%             sprintf('verification stage progress: %d of %d', iIter, nIter));
+%         
+%     end
+%     fixie.verifyExtractMaxErr(iGre);
+%     fixie.verifyPlotSurf(iGre, 'r-^');
+% end
+% 
+% %%
+% fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
+% fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);

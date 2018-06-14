@@ -346,7 +346,8 @@ classdef beam < handle
             damPm(:, [2 3]) = damPm(:, [3 2]);
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
             obj.pmVal.damp.space = [1:damLeng; damVal]';
-            
+                        
+            obj.pmVal.comb.space(:, 5) = zeros();
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
             % set up for the implemented algorithm.
@@ -2375,21 +2376,21 @@ classdef beam < handle
                     [eMaxValhhat, eMaxLocIdxhhat] = ...
                         max(obj.err.store.surf.hhat(:));
                     obj.err.max.val.hhat = eMaxValhhat;
-                    pmValRowhhat = obj.pmVal.comb.space(eMaxLocIdxhhat, :);
-                     = pmValRowhhat(:, 2:obj.no.pm + 1);
+                    pmMaxLochhat = obj.pmVal.comb.space...
+                        (eMaxLocIdxhhat, 2:obj.no.pm + 1);
                     
                     [eMaxValhat, eMaxLocIdxhat] = ...
                         max(obj.err.store.surf.hat(:));
                     obj.err.max.val.hat = eMaxValhat;
-                    pmValRowhat = obj.pmVal.comb.space(eMaxLocIdxhat, :);
-                    obj.err.max.loc.hat = pmValRowhat(:, 2:obj.no.pm + 1);
+                    pmMaxLochat = obj.pmVal.comb.space...
+                        (eMaxLocIdxhat, 2:obj.no.pm + 1);
                     
-                    if damSwitch == 0
-                        obj.err.max.loc.hhat = pmMaxLochhat;
-                    elseif damSwitch == 1
-                        
+                    if damSwitch == 1
+                        obj.err.max.locIdx = eMaxLocIdxhhat;
                     end
-                    keyboard
+                    obj.err.max.loc.hhat = pmMaxLochhat;
+                    obj.err.max.loc.hat = pmMaxLochat;
+                    
                 case 'original'
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
                     obj.err.max.val = eMaxVal;

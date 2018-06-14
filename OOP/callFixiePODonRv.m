@@ -88,9 +88,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.pmPrepare(rvSVDswitch, 0);
         
         fixie.rvPrepare(rvSVDswitch);
-        
-        fixie.pmMultiRv;
-        
+                
         fixie.rvpmColStore(iIter);
         
     end

@@ -347,6 +347,9 @@ classdef beam < handle
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
             obj.pmVal.damp.space = [1:damLeng; damVal]';
             
+%             obj.pmVal.damp.space(:, 3) = zeros(3, 1);
+%             obj.pmVal.comb.space(:, 5) = zeros(15, 1);
+            
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
             % set up for the implemented algorithm.
@@ -797,9 +800,9 @@ classdef beam < handle
             obj.no.respSVD = nSVD;
                         
             if obj.no.pm == 1
-                obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+                obj.resp.rvpmStore = cell(1, prod(obj.domLeng.i));
             elseif obj.no.pm == 2
-                obj.resp.rv.store = cell(1, prod([obj.domLeng.i; ...
+                obj.resp.rvpmStore = cell(1, prod([obj.domLeng.i; ...
                     obj.domLeng.damp]));
             end
             obj.resp.rv.dis.store = cell(1);
@@ -1055,7 +1058,6 @@ classdef beam < handle
         function obj = respStorePrepareRemain(obj, timeType)
             obj.resp.store.fce.hhat = cell(obj.no.pre.hhat, 1);
             obj.resp.store.all = cell(obj.no.pre.hhat, 3);
-            obj.resp.surfStore.hhat = cell([obj.no.incNode obj.no.Greedy]);
             obj.resp.store.tDiff = ...
                 cell(obj.no.pre.hhat, obj.no.phy, 2, obj.no.rb);
             
@@ -1750,10 +1752,10 @@ classdef beam < handle
         %%
         function obj = rvSVD(obj, rvSVDreRatio)
             % this method performs SVD on the stored reduced variables.
-            rvStore = cell2mat(obj.resp.rv.store);
-            [rvL, rvSig, rvR] = svd(rvStore, 0);
+            rvpmStore = cell2mat(obj.resp.rvpmStore);
+            [rvL, rvSig, rvR] = svd(rvpmStore, 0);
             
-            [~, ~, nRvSVD] = basisCompressionSingularRatio(rvStore, ...
+            [~, ~, nRvSVD] = basisCompressionSingularRatio(rvpmStore, ...
                 rvSVDreRatio);
             
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
@@ -1787,7 +1789,7 @@ classdef beam < handle
                 pmSlct = repmat([1; 1; pmPass; 1], ...
                     obj.no.t_step * obj.no.rb, 1);
             elseif damSwitch == 1
-                pmSlct = repmat([1; pmPass(2); pmPass(1); 1], ...
+                pmSlct = repmat([1; pmPass(2) * pmPass(1); pmPass(1); 1], ...
                     obj.no.t_step * obj.no.rb, 1);
             end
             pmSlct = [1; pmSlct];
@@ -1842,16 +1844,16 @@ classdef beam < handle
         function obj = pmMultiRv(obj)
             % this method multiplies the same dim rv vector with pm vector,
             % ready for the POD on rv.
-            pmVec = obj.pmVal.pmCol;
-            rvVec = obj.pmVal.rvCol;
-            obj.pmVal.pmrv = pmVec .* rvVec;
+            
             
         end
         %%
         function obj = rvpmColStore(obj, iIter)
-            % this method stores reduced variables to perform SVD.
-            rvpmCol = obj.pmVal.pmrv;
-            obj.resp.rv.store(iIter) = {rvpmCol};
+            % this method stores pm multiplies rv to perform SVD.
+            pmVec = obj.pmVal.pmCol;
+            rvVec = obj.pmVal.rvCol;
+            rvpmCol = pmVec .* rvVec;
+            obj.resp.rvpmStore(iIter) = {rvpmCol};
         end
         %%
         function obj = inpolyItplExpo(obj, type)
@@ -3114,6 +3116,8 @@ classdef beam < handle
                 
             end
             obj.pmVal.block.hhat = pmValhhat;
+%             obj.pmVal.hat(:, 3) = zeros(4, 1);
+%             obj.pmVal.hhat(:, 3) = zeros(9, 1);
         end
         %%
         function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)
