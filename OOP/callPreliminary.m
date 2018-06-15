@@ -15,9 +15,9 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 9;
-domLengs = 9;
-damLeng = 5;
+domLengi = 5;
+domLengs = 5;
+damLeng = 3;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -32,7 +32,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 1.9;
+tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -78,7 +78,7 @@ reductionRatio = 0.6;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 20; 
+nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 

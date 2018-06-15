@@ -8,7 +8,7 @@ U0 = zeros(nd, 1);
 V0 = zeros(nd, 1);
 
 phi = fixie.phi.val;
-ntest = 1;
+ntest = 45;
 pmIter = fixie.pmVal.comb.space(ntest, 4);
 Cf = fixie.pmVal.comb.space(ntest, 5);
 
@@ -58,10 +58,42 @@ phiI = eye(nd);
 [~, ~, ~, UC2, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
     (phiI, M, C, K, impC2, 'average', dt, mt, U0, V0);
 [~, ~, ~, UKi1, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-    (phiI, M, C, K, impC1, 'average', dt, mt, U0, V0);
+    (phiI, M, C, K, impKi1, 'average', dt, mt, U0, V0);
 [~, ~, ~, UKi2, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-    (phiI, M, C, K, impC2, 'average', dt, mt, U0, V0);
+    (phiI, M, C, K, impKi2, 'average', dt, mt, U0, V0);
 [~, ~, ~, UKs1, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-    (phiI, M, C, K, impC1, 'average', dt, mt, U0, V0);
-[~, ~, ~, UKs1, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-    (phiI, M, C, K, impC2, 'average', dt, mt, U0, V0);
+    (phiI, M, C, K, impKs1, 'average', dt, mt, U0, V0);
+[~, ~, ~, UKs2, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+    (phiI, M, C, K, impKs2, 'average', dt, mt, U0, V0);
+
+m = phi' * M * phi;
+c = phi' * C * phi;
+k = phi' * K * phi;
+f = phi' * F;
+u0 = zeros(1);
+v0 = zeros(1);
+
+[km, cm, am, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+    (phi, m, c, k, f, 'average', dt, mt, u0, v0);
+usStore = cell(4, nt);
+for it = 1:nt
+    if it == 1
+        usStore{1, it} = UM1;
+        usStore{2, it} = UC1;
+        usStore{3, it} = UKi1;
+        usStore{4, it} = UKs1;
+    else
+        usz = zeros(nd, it - 2);
+        usm = [usz UM2(:, 1:nt - it + 2)];
+        usc = [usz UC2(:, 1:nt - it + 2)];
+        uski = [usz UKi2(:, 1:nt - it + 2)];
+        usks = [usz UKs2(:, 1:nt - it + 2)];
+        
+        usStore{1, it} = usm;
+        usStore{2, it} = usc;
+        usStore{3, it} = uski;
+        usStore{4, it} = usks;
+    end
+end
+
+rvCol = [am];

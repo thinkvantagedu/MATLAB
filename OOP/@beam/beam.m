@@ -347,8 +347,8 @@ classdef beam < handle
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
             obj.pmVal.damp.space = [1:damLeng; damVal]';
             
-%             obj.pmVal.damp.space(:, 3) = zeros(3, 1);
-%             obj.pmVal.comb.space(:, 5) = zeros(15, 1);
+%             obj.pmVal.damp.space(:, 3) = zeros(damLeng, 1);
+%             obj.pmVal.comb.space(:, 5) = zeros(damLeng * obj.domLeng.i, 1);
             
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
@@ -1151,11 +1151,11 @@ classdef beam < handle
                     elseif damSwitch == 1
                         K = K + obj.sti.mtxCell{1} * pmValInp(iPre, 2) + ...
                             obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                        C = pmValInp(iPre, 3) * K;
+                        C = pmValInp(iPre, 3) * obj.sti.mtxCell{1} * ...
+                            pmValInp(iPre, 2);
                     end
                     
                     F = obj.fce.val;
-                    % NEED TO ADD DAMPIING HERE!!!!!!!
                     obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
                 elseif AbaqusSwitch == 1
                     % use Abaqus to obtain exact solutions.
@@ -1196,55 +1196,6 @@ classdef beam < handle
             
             obj.asemb.imp.apply(1) = {impInit};
             obj.asemb.imp.apply(2) = {impStep};
-            
-        end
-        %%
-        function obj = respImpPartTime(obj, iPre, iPhy, nrb)
-            pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) obj.pmVal.s.fix];
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{i} * pmValI(i);
-            end
-            for i_tdiff = 1:2
-                
-                impPass = obj.asemb.imp.apply{i_tdiff};
-                M = obj.mas.mtx;
-                C = obj.dam.mtx;
-                K = stiPre;
-                F = impPass;
-                obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
-                disPass = obj.dis.full;
-                obj.resp.store.pm.hhat(iPre, iPhy, i_tdiff, nrb) = {disPass};
-                
-            end
-            
-        end
-        %%
-        function obj = respImpPartTimeSVD(obj, iPre, iPhy, nRb, nSvd)
-            pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) obj.pmVal.s.fix];
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{i} * pmValI(i);
-            end
-            obj.sti.pre = stiPre;
-            for iTdiff = 1:2
-                
-                impPass = obj.asemb.imp.apply{iTdiff};
-                M = obj.mas.mtx;
-                C = obj.dam.mtx;
-                K = obj.sti.pre;
-                F = impPass;
-                obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
-                [disl, dissig, disr] = svd(obj.dis.full, 'econ');
-                disl = disl(:, 1:nSvd);
-                dissig = dissig(1:nSvd, 1:nSvd);
-                disr = disr(:, 1:nSvd);
-                disl = disl * dissig;
-                % change sign for responses.
-                obj.resp.store.pm.hhat{iPre, iPhy, iTdiff, nRb} = ...
-                    [{-disl}; {disr}];
-                
-            end
             
         end
         %%
@@ -1420,45 +1371,6 @@ classdef beam < handle
                             end
                         end
                     end
-                end
-            end
-        end
-        %%
-        function obj = respImpAllTime(obj, iPre, iPhy, nRb)
-            if obj.indicator.refine == 0
-                obj.resp.store.pm.tdiff = cell(2, 1);
-                pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) ...
-                    obj.pmVal.s.fix];
-                stiPre = sparse(obj.no.dof, obj.no.dof);
-                for i = 1:obj.no.inc + 1
-                    stiPre = stiPre + obj.sti.mtxCell{i} * pmValI(i);
-                end
-                
-                for iTdiff = 1:2
-                    impPass = obj.asemb.imp.apply{iTdiff};
-                    M = obj.mas.mtx;
-                    C = obj.dam.mtx;
-                    K = stiPre;
-                    F = impPass;
-                    obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
-                    obj.resp.store.pm.tdiff(iTdiff) = {obj.dis.full};
-                    
-                end
-                
-                for iTall = 1:obj.no.t_step
-                    
-                    if iTall == 1
-                        obj.resp.store.pm.hhat(iPre, iPhy, 1, nRb) = ...
-                            {obj.resp.store.pm.tdiff{1}(:)};
-                    else
-                        storePmZeros = zeros(obj.no.dof, iTall - 2);
-                        storePmNonZeros = obj.resp.storePm.tdiff{2}...
-                            (:, 1:obj.no.t_step - iTall + 2);
-                        storePmAsemb = [storePmZeros storePmNonZeros];
-                        obj.resp.store.pm.hhat(iPre, iPhy, iTall, ...
-                            nRb) = {storePmAsemb(:)};
-                    end
-                    
                 end
             end
         end
@@ -1757,7 +1669,6 @@ classdef beam < handle
             
             [~, ~, nRvSVD] = basisCompressionSingularRatio(rvpmStore, ...
                 rvSVDreRatio);
-            
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
             % rvL' * eTe * rvL * rvR') = domain size * domain size
@@ -1786,8 +1697,8 @@ classdef beam < handle
             
             pmPass = obj.pmVal.iter;
             if damSwitch == 0
-                pmSlct = repmat([1; 1; pmPass; 1], ...
-                    obj.no.t_step * obj.no.rb, 1);
+                pmSlct = repmat([1; 1; pmPass; 1], obj.no.t_step * ...
+                    obj.no.rb, 1);
             elseif damSwitch == 1
                 pmSlct = repmat([1; pmPass(2) * pmPass(1); pmPass(1); 1], ...
                     obj.no.t_step * obj.no.rb, 1);
@@ -1838,13 +1749,6 @@ classdef beam < handle
             elseif rvSVDswitch == 1
                 obj.pmVal.rvCol = rvAllCol;
             end
-            
-        end
-        %%
-        function obj = pmMultiRv(obj)
-            % this method multiplies the same dim rv vector with pm vector,
-            % ready for the POD on rv.
-            
             
         end
         %%

@@ -93,14 +93,14 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.pmPrepare(rvSVDswitch, 1);
         
         fixie.rvPrepare(rvSVDswitch);
-                
+        
         fixie.rvpmColStore(iIter);
         
     end
     
     % SVD on the collected reduced variables.
     fixie.rvSVD(rvSVDreRatio);
-    
+    % with damping,  impulse doesn't * coeff, this is sorted in pmPrepare. 
     fixie.impGenerate(1);
     
     fixie.respTdiffComputation(respSVDswitch, AbaqusSwitch, trialName, 1);
@@ -157,7 +157,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             disp('iterations reach maximum plot number')
             break
         end
-    
+        
         fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 1);
@@ -182,18 +182,18 @@ end
 % for iGre = 1:fixie.countGreedy
 %     fixie.verifyExtractBasis(iGre);
 %     for iIter = 1:nIter
-%         
+%
 %         fixie.pmIter(iIter, 0);
 %         fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 0);
 %         fixie.verifyExactError(iGre, iIter);
 %         CmdWinTool('statusText', ...
 %             sprintf('verification stage progress: %d of %d', iIter, nIter));
-%         
+%
 %     end
 %     fixie.verifyExtractMaxErr(iGre);
 %     fixie.verifyPlotSurf(iGre, 'r-^');
 % end
-% 
+%
 % %%
 % fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
 % fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
