@@ -330,7 +330,8 @@ classdef beam < handle
                 obj.pmExpo.struct.i = pmStruct;
                 
             end
-            
+            obj.pmExpo.comb.space = obj.pmVal.comb.space;
+            obj.pmExpo.comb.space(:, 3) = log10(obj.pmExpo.comb.space(:, 3));
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond)
@@ -355,7 +356,9 @@ classdef beam < handle
             % set up for the implemented algorithm.
             obj.pmExpo.mid = {sum(obj.domBond.i{:}) / 2 ...
                 sum(obj.domBond.damp) / 2};
-            
+            obj.pmExpo.comb.space = obj.pmVal.comb.space;
+            obj.pmExpo.comb.space(:, 4:5) = ...
+                log10(obj.pmExpo.comb.space(:, 4:5));
         end
         %%
         function obj = rbEnrichmentStructStatic(obj)
@@ -1664,6 +1667,7 @@ classdef beam < handle
         %%
         function obj = rvSVD(obj, rvSVDreRatio)
             % this method performs SVD on the stored reduced variables.
+            % obj.resp.rv.L contains singular values.
             rvpmStore = cell2mat(obj.resp.rvpmStore);
             [rvL, rvSig, rvR] = svd(rvpmStore, 0);
             
@@ -2212,8 +2216,8 @@ classdef beam < handle
         function obj = verifyExtractBasis(obj, iGre)
             % this method extracts the reduced basis history at each Greedy
             % iteration, output is used in method verifiExactError.
-            rvStore = obj.resp.rv.dis.store;
-            nphi = size(rvStore{1, iGre}, 1);
+            rvpmStore = obj.resp.rvpmStore;
+            nphi = size(rvpmStore{1, iGre}, 1);
             obj.phi.verify = obj.phi.val(:, 1:nphi);
         end
         %%
