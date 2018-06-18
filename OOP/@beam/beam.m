@@ -1847,7 +1847,9 @@ classdef beam < handle
                                 % pmBlk is the added block now.
                                 pmAddExpo = pmBlk{iB};
                         end
-                        
+                        % for the 2d case, the order of the samples isn't 
+                        % clockwise, but pointing downwards.
+                        uiTui = uiTui([1 2 4 3], :);
                         cf1d = lagrange(pmIter(1), {gridx(1) gridx(3)});
                         cf2d = lagrange(pmIter(2), {gridy(1) gridy(2)});
                         cf12 = cf1d * cf2d';
@@ -2175,8 +2177,7 @@ classdef beam < handle
                     
                 case 'diff'
                     obj.err.store.surf.diff = ...
-                        [obj.pmExpo.i{:} ...
-                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat)];
+                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat);
                     
                 case 'original'
                     obj.err.store.surf(idx) = ...
@@ -2388,13 +2389,16 @@ classdef beam < handle
         function obj = localHrefinement(obj)
             % find where the maximum distance is between hhat and hat
             % surfaces.
-            if obj.no.inc == 1
+            keyboard
+            if obj.no.pm == 1
                 obj.pmExpo.maxDist = {obj.pmExpo.i{:}(obj.err.max.diffLoc)};
             end
+            
             disp(strcat('error in the error value', {' = '}, ...
                 num2str(obj.refinement.condition), ...
                 {' at sample '}, num2str(obj.err.max.diffLoc),...
                 {', refine around value '}, num2str(obj.pmExpo.maxDist{:})));
+            
             % local h-refinement
             obj.indicator.refine = 1;
             obj.indicator.enrich = 0;
@@ -2544,13 +2548,31 @@ classdef beam < handle
                     diffBlk = cell(nBlk, 1);
                     for iBlk = 1:nBlk
                         
-                        pmExpoBlk = obj.pmExpo.block.hhat{iBlk}(:, 2);
-                        lVal = pmExpoBlk(1);
-                        rVal = pmExpoBlk(2);
-                        pmIdxHhat = obj.pmExpo.i{:};
-                        pmIdxBlk = pmIdxHhat >= lVal & pmIdxHhat <= rVal;
-                        hhatBlk{iBlk} = obj.err.store.surf.hhat(pmIdxBlk, :);
-                        diffBlk{iBlk} = obj.err.store.surf.diff(pmIdxBlk, :);
+                        pmExpoBlk = obj.pmExpo.block.hhat{iBlk}...
+                            (:, 2:obj.no.pm + 1);
+                        xmin = min(pmExpoBlk(:, 1));
+                        xmax = max(pmExpoBlk(:, 1));
+                        if obj.no.pm == 1
+                            pmExpox = obj.pmExpo.comb.space(:, 3);
+                            pmLogix = pmExpox >= xmin & pmExpox <= xmax;
+                            pmLogiMatch = pmLogix;
+                        elseif obj.no.pm == 2
+                            ymin = min(pmExpoBlk(:, 2));
+                            ymax = max(pmExpoBlk(:, 2));
+                            pmExpox = obj.pmExpo.comb.space(:, 4);
+                            pmExpoy = obj.pmExpo.comb.space(:, 5);
+                            
+                            pmLogiy = pmExpoy >= ymin & pmExpoy <= ymax;
+                            pmLogix = pmExpox >= xmin & pmExpox <= xmax;
+                            
+                            pmLogiMatch = pmLogix == 1 & pmLogiy == 1;
+                            pmLogiMatch = reshape(pmLogiMatch, ...
+                                size(obj.err.store.surf.hhat));
+                        end
+                        % hhatBlk to find where the maximum error is.
+                        hhatBlk{iBlk} = obj.err.store.surf.hhat(pmLogiMatch);
+                        % diffBlk to see if the eine exceeds the tolerance.
+                        diffBlk{iBlk} = obj.err.store.surf.diff(pmLogiMatch);
                         
                     end
                     
@@ -2558,14 +2580,25 @@ classdef beam < handle
                     % index of these max values. This index points which
                     % block to be measured with eine and to be refined (if
                     % eine exceeds the tolerance).
-                    [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v), hhatBlk, ...
-                        'un', 0)));
-                    blkToCheck = diffBlk{mpIdx};
-                    % loc_ is not the maximum difference location.
-                    [obj.err.max.diffVal, loc_] = max(blkToCheck(:, 2));
-                    locPmExpo_ = blkToCheck(loc_, 1);
-                    obj.err.max.diffLoc = find(obj.pmExpo.i{:} == locPmExpo_);
-                    
+                    % nMaxBlk is the number of block contains the maximum error.
+                    [~, nMaxBlk] = max(cell2mat(cellfun(@(v) max(v), ...
+                        hhatBlk, 'un', 0)));
+                    diffBlkToCheck = diffBlk{nMaxBlk};
+                    % first find the maximum value of difference.
+                    [maxDiffVal, ~] = max(diffBlkToCheck(:, 1));
+                    obj.err.max.diffVal = maxDiffVal;
+                    % second find the location where maxDiff matches diff surf.
+                    diffMtx = abs(obj.err.store.surf.diff - maxDiffVal);
+                    [~, maxDiffLocIdx] = min(diffMtx(:));
+                    if obj.no.pm == 1
+                        obj.err.max.diffLoc = maxDiffLocIdx;
+                    elseif obj.no.pm == 2
+                        % if 2 pms, diffLoc needs to be transfered from index
+                        % to subscripts.
+                        [mDx, mDy] = ind2sub(size(obj.err.store.surf.hhat), ...
+                            maxDiffLocIdx);
+                        obj.err.max.diffLoc = [mDx mDy];
+                    end
                     obj.refinement.condition = abs(obj.err.max.diffVal / ...
                         norm(obj.dis.qoi.trial, 'fro'));
                     % if refine continue at a different point, cease
@@ -2884,7 +2917,6 @@ classdef beam < handle
             nBlk = length(obj.pmExpo.block.hat);
             % find which block max pm point is in, refine.
             for iBlk = 1:nBlk
-                
                 if obj.no.pm == 2
                     if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
                             obj.pmExpo.block.hat{iBlk}(:, obj.no.pm), ...

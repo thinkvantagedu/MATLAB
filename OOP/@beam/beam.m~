@@ -330,7 +330,8 @@ classdef beam < handle
                 obj.pmExpo.struct.i = pmStruct;
                 
             end
-            
+            obj.pmExpo.comb.space = obj.pmVal.comb.space;
+            obj.pmExpo.comb.space(:, 3) = log10(obj.pmExpo.comb.space(:, 3));
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond)
@@ -346,14 +347,18 @@ classdef beam < handle
             damPm(:, [2 3]) = damPm(:, [3 2]);
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
             obj.pmVal.damp.space = [1:damLeng; damVal]';
-                        
-            obj.pmVal.comb.space(:, 5) = zeros();
+            
+%             obj.pmVal.damp.space(:, 3) = zeros(damLeng, 1);
+%             obj.pmVal.comb.space(:, 5) = zeros(damLeng * obj.domLeng.i, 1);
+            
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
             % set up for the implemented algorithm.
             obj.pmExpo.mid = {sum(obj.domBond.i{:}) / 2 ...
                 sum(obj.domBond.damp) / 2};
-            
+            obj.pmExpo.comb.space = obj.pmVal.comb.space;
+            obj.pmExpo.comb.space(:, 4:5) = ...
+                log10(obj.pmExpo.comb.space(:, 4:5));
         end
         %%
         function obj = rbEnrichmentStructStatic(obj)
@@ -798,9 +803,9 @@ classdef beam < handle
             obj.no.respSVD = nSVD;
                         
             if obj.no.pm == 1
-                obj.resp.rv.store = cell(1, prod(obj.domLeng.i));
+                obj.resp.rvpmStore = cell(1, prod(obj.domLeng.i));
             elseif obj.no.pm == 2
-                obj.resp.rv.store = cell(1, prod([obj.domLeng.i; ...
+                obj.resp.rvpmStore = cell(1, prod([obj.domLeng.i; ...
                     obj.domLeng.damp]));
             end
             obj.resp.rv.dis.store = cell(1);
@@ -1056,7 +1061,6 @@ classdef beam < handle
         function obj = respStorePrepareRemain(obj, timeType)
             obj.resp.store.fce.hhat = cell(obj.no.pre.hhat, 1);
             obj.resp.store.all = cell(obj.no.pre.hhat, 3);
-            obj.resp.surfStore.hhat = cell([obj.no.incNode obj.no.Greedy]);
             obj.resp.store.tDiff = ...
                 cell(obj.no.pre.hhat, obj.no.phy, 2, obj.no.rb);
             
@@ -1150,11 +1154,11 @@ classdef beam < handle
                     elseif damSwitch == 1
                         K = K + obj.sti.mtxCell{1} * pmValInp(iPre, 2) + ...
                             obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                        C = pmValInp(iPre, 3) * K;
+                        C = pmValInp(iPre, 3) * obj.sti.mtxCell{1} * ...
+                            pmValInp(iPre, 2);
                     end
                     
                     F = obj.fce.val;
-                    % NEED TO ADD DAMPIING HERE!!!!!!!
                     obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
                 elseif AbaqusSwitch == 1
                     % use Abaqus to obtain exact solutions.
@@ -1195,55 +1199,6 @@ classdef beam < handle
             
             obj.asemb.imp.apply(1) = {impInit};
             obj.asemb.imp.apply(2) = {impStep};
-            
-        end
-        %%
-        function obj = respImpPartTime(obj, iPre, iPhy, nrb)
-            pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) obj.pmVal.s.fix];
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{i} * pmValI(i);
-            end
-            for i_tdiff = 1:2
-                
-                impPass = obj.asemb.imp.apply{i_tdiff};
-                M = obj.mas.mtx;
-                C = obj.dam.mtx;
-                K = stiPre;
-                F = impPass;
-                obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
-                disPass = obj.dis.full;
-                obj.resp.store.pm.hhat(iPre, iPhy, i_tdiff, nrb) = {disPass};
-                
-            end
-            
-        end
-        %%
-        function obj = respImpPartTimeSVD(obj, iPre, iPhy, nRb, nSvd)
-            pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) obj.pmVal.s.fix];
-            stiPre = sparse(obj.no.dof, obj.no.dof);
-            for i = 1:obj.no.inc + 1
-                stiPre = stiPre + obj.sti.mtxCell{i} * pmValI(i);
-            end
-            obj.sti.pre = stiPre;
-            for iTdiff = 1:2
-                
-                impPass = obj.asemb.imp.apply{iTdiff};
-                M = obj.mas.mtx;
-                C = obj.dam.mtx;
-                K = obj.sti.pre;
-                F = impPass;
-                obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
-                [disl, dissig, disr] = svd(obj.dis.full, 'econ');
-                disl = disl(:, 1:nSvd);
-                dissig = dissig(1:nSvd, 1:nSvd);
-                disr = disr(:, 1:nSvd);
-                disl = disl * dissig;
-                % change sign for responses.
-                obj.resp.store.pm.hhat{iPre, iPhy, iTdiff, nRb} = ...
-                    [{-disl}; {disr}];
-                
-            end
             
         end
         %%
@@ -1419,45 +1374,6 @@ classdef beam < handle
                             end
                         end
                     end
-                end
-            end
-        end
-        %%
-        function obj = respImpAllTime(obj, iPre, iPhy, nRb)
-            if obj.indicator.refine == 0
-                obj.resp.store.pm.tdiff = cell(2, 1);
-                pmValI = [obj.pmVal.hhat(iPre, 2:obj.no.inc + 1) ...
-                    obj.pmVal.s.fix];
-                stiPre = sparse(obj.no.dof, obj.no.dof);
-                for i = 1:obj.no.inc + 1
-                    stiPre = stiPre + obj.sti.mtxCell{i} * pmValI(i);
-                end
-                
-                for iTdiff = 1:2
-                    impPass = obj.asemb.imp.apply{iTdiff};
-                    M = obj.mas.mtx;
-                    C = obj.dam.mtx;
-                    K = stiPre;
-                    F = impPass;
-                    obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
-                    obj.resp.store.pm.tdiff(iTdiff) = {obj.dis.full};
-                    
-                end
-                
-                for iTall = 1:obj.no.t_step
-                    
-                    if iTall == 1
-                        obj.resp.store.pm.hhat(iPre, iPhy, 1, nRb) = ...
-                            {obj.resp.store.pm.tdiff{1}(:)};
-                    else
-                        storePmZeros = zeros(obj.no.dof, iTall - 2);
-                        storePmNonZeros = obj.resp.storePm.tdiff{2}...
-                            (:, 1:obj.no.t_step - iTall + 2);
-                        storePmAsemb = [storePmZeros storePmNonZeros];
-                        obj.resp.store.pm.hhat(iPre, iPhy, iTall, ...
-                            nRb) = {storePmAsemb(:)};
-                    end
-                    
                 end
             end
         end
@@ -1751,12 +1667,12 @@ classdef beam < handle
         %%
         function obj = rvSVD(obj, rvSVDreRatio)
             % this method performs SVD on the stored reduced variables.
-            rvStore = cell2mat(obj.resp.rv.store);
-            [rvL, rvSig, rvR] = svd(rvStore, 0);
+            % obj.resp.rv.L contains singular values.
+            rvpmStore = cell2mat(obj.resp.rvpmStore);
+            [rvL, rvSig, rvR] = svd(rvpmStore, 0);
             
-            [~, ~, nRvSVD] = basisCompressionSingularRatio(rvStore, ...
+            [~, ~, nRvSVD] = basisCompressionSingularRatio(rvpmStore, ...
                 rvSVDreRatio);
-            
             % size(rvL) = ntnrnf * domain size, size(rvR) = domain size *
             % domain size. size(eTe) = ntnrnf * ntnrnf, therefore size(rvR *
             % rvL' * eTe * rvL * rvR') = domain size * domain size
@@ -1785,10 +1701,10 @@ classdef beam < handle
             
             pmPass = obj.pmVal.iter;
             if damSwitch == 0
-                pmSlct = repmat([1; 1; pmPass; 1], ...
-                    obj.no.t_step * obj.no.rb, 1);
+                pmSlct = repmat([1; 1; pmPass; 1], obj.no.t_step * ...
+                    obj.no.rb, 1);
             elseif damSwitch == 1
-                pmSlct = repmat([1; pmPass(2); pmPass(1); 1], ...
+                pmSlct = repmat([1; pmPass(2) * pmPass(1); pmPass(1); 1], ...
                     obj.no.t_step * obj.no.rb, 1);
             end
             pmSlct = [1; pmSlct];
@@ -1840,19 +1756,12 @@ classdef beam < handle
             
         end
         %%
-        function obj = pmMultiRv(obj)
-            % this method multiplies the same dim rv vector with pm vector,
-            % ready for the POD on rv.
+        function obj = rvpmColStore(obj, iIter)
+            % this method stores pm multiplies rv to perform SVD.
             pmVec = obj.pmVal.pmCol;
             rvVec = obj.pmVal.rvCol;
-            obj.pmVal.pmrv = pmVec .* rvVec;
-            
-        end
-        %%
-        function obj = rvpmColStore(obj, iIter)
-            % this method stores reduced variables to perform SVD.
-            rvpmCol = obj.pmVal.pmrv;
-            obj.resp.rv.store(iIter) = {rvpmCol};
+            rvpmCol = pmVec .* rvVec;
+            obj.resp.rvpmStore(iIter) = {rvpmCol};
         end
         %%
         function obj = inpolyItplExpo(obj, type)
@@ -1938,7 +1847,9 @@ classdef beam < handle
                                 % pmBlk is the added block now.
                                 pmAddExpo = pmBlk{iB};
                         end
-                        
+                        % for the 2d case, the order of the samples isn't 
+                        % clockwise, but pointing downwards.
+                        uiTui = uiTui([1 2 4 3], :);
                         cf1d = lagrange(pmIter(1), {gridx(1) gridx(3)});
                         cf2d = lagrange(pmIter(2), {gridy(1) gridy(2)});
                         cf12 = cf1d * cf2d';
@@ -2266,8 +2177,7 @@ classdef beam < handle
                     
                 case 'diff'
                     obj.err.store.surf.diff = ...
-                        [obj.pmExpo.i{:} ...
-                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat)];
+                        abs(obj.err.store.surf.hhat - obj.err.store.surf.hat);
                     
                 case 'original'
                     obj.err.store.surf(idx) = ...
@@ -2307,8 +2217,8 @@ classdef beam < handle
         function obj = verifyExtractBasis(obj, iGre)
             % this method extracts the reduced basis history at each Greedy
             % iteration, output is used in method verifiExactError.
-            rvStore = obj.resp.rv.dis.store;
-            nphi = size(rvStore{1, iGre}, 1);
+            rvpmStore = obj.resp.rvpmStore;
+            nphi = size(rvpmStore{1, iGre}, 1);
             obj.phi.verify = obj.phi.val(:, 1:nphi);
         end
         %%
@@ -2479,13 +2389,16 @@ classdef beam < handle
         function obj = localHrefinement(obj)
             % find where the maximum distance is between hhat and hat
             % surfaces.
+            
             if obj.no.inc == 1
                 obj.pmExpo.maxDist = {obj.pmExpo.i{:}(obj.err.max.diffLoc)};
             end
+            
             disp(strcat('error in the error value', {' = '}, ...
                 num2str(obj.refinement.condition), ...
                 {' at sample '}, num2str(obj.err.max.diffLoc),...
                 {', refine around value '}, num2str(obj.pmExpo.maxDist{:})));
+            
             % local h-refinement
             obj.indicator.refine = 1;
             obj.indicator.enrich = 0;
@@ -2635,13 +2548,31 @@ classdef beam < handle
                     diffBlk = cell(nBlk, 1);
                     for iBlk = 1:nBlk
                         
-                        pmExpoBlk = obj.pmExpo.block.hhat{iBlk}(:, 2);
-                        lVal = pmExpoBlk(1);
-                        rVal = pmExpoBlk(2);
-                        pmIdxHhat = obj.pmExpo.i{:};
-                        pmIdxBlk = pmIdxHhat >= lVal & pmIdxHhat <= rVal;
-                        hhatBlk{iBlk} = obj.err.store.surf.hhat(pmIdxBlk, :);
-                        diffBlk{iBlk} = obj.err.store.surf.diff(pmIdxBlk, :);
+                        pmExpoBlk = obj.pmExpo.block.hhat{iBlk}...
+                            (:, 2:obj.no.pm + 1);
+                        xmin = min(pmExpoBlk(:, 1));
+                        xmax = max(pmExpoBlk(:, 1));
+                        if obj.no.pm == 1
+                            pmExpox = obj.pmExpo.comb.space(:, 3);
+                            pmLogix = pmExpox >= xmin & pmExpox <= xmax;
+                            pmLogiMatch = pmLogix;
+                        elseif obj.no.pm == 2
+                            ymin = min(pmExpoBlk(:, 2));
+                            ymax = max(pmExpoBlk(:, 2));
+                            pmExpox = obj.pmExpo.comb.space(:, 4);
+                            pmExpoy = obj.pmExpo.comb.space(:, 5);
+                            
+                            pmLogiy = pmExpoy >= ymin & pmExpoy <= ymax;
+                            pmLogix = pmExpox >= xmin & pmExpox <= xmax;
+                            
+                            pmLogiMatch = pmLogix == 1 & pmLogiy == 1;
+                            pmLogiMatch = reshape(pmLogiMatch, ...
+                                size(obj.err.store.surf.hhat));
+                        end
+                        % hhatBlk to find where the maximum error is.
+                        hhatBlk{iBlk} = obj.err.store.surf.hhat(pmLogiMatch);
+                        % diffBlk to see if the eine exceeds the tolerance.
+                        diffBlk{iBlk} = obj.err.store.surf.diff(pmLogiMatch);
                         
                     end
                     
@@ -2649,14 +2580,18 @@ classdef beam < handle
                     % index of these max values. This index points which
                     % block to be measured with eine and to be refined (if
                     % eine exceeds the tolerance).
-                    [~, mpIdx] = max(cell2mat(cellfun(@(v) max(v), hhatBlk, ...
-                        'un', 0)));
-                    blkToCheck = diffBlk{mpIdx};
+                    % nMaxBlk is the number of block contains the maximum error.
+                    [~, nMaxBlk] = max(cell2mat(cellfun(@(v) max(v), ...
+                        hhatBlk, 'un', 0)));
+                    blkToCheck = diffBlk{nMaxBlk};
                     % loc_ is not the maximum difference location.
-                    [obj.err.max.diffVal, loc_] = max(blkToCheck(:, 2));
+                    [, loc_] = max(blkToCheck(:, 1));
                     locPmExpo_ = blkToCheck(loc_, 1);
-                    obj.err.max.diffLoc = find(obj.pmExpo.i{:} == locPmExpo_);
-                    
+                    keyboard
+                    obj.err.max.diffVal = maxDiffVal;
+                    % find the nearest value.
+                    [~, obj.err.max.diffLoc] = ...
+                        min(abs(obj.pmExpo.i{:} - locPmExpo_));
                     obj.refinement.condition = abs(obj.err.max.diffVal / ...
                         norm(obj.dis.qoi.trial, 'fro'));
                     % if refine continue at a different point, cease
@@ -2975,7 +2910,6 @@ classdef beam < handle
             nBlk = length(obj.pmExpo.block.hat);
             % find which block max pm point is in, refine.
             for iBlk = 1:nBlk
-                
                 if obj.no.pm == 2
                     if inpolygon(pmExptoTest{1}, pmExptoTest{2}, ...
                             obj.pmExpo.block.hat{iBlk}(:, obj.no.pm), ...
@@ -3115,6 +3049,8 @@ classdef beam < handle
                 
             end
             obj.pmVal.block.hhat = pmValhhat;
+%             obj.pmVal.hat(:, 3) = zeros(4, 1);
+%             obj.pmVal.hhat(:, 3) = zeros(9, 1);
         end
         %%
         function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)

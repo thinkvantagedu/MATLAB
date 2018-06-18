@@ -164,7 +164,6 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.reducedMatricesStatic;
         fixie.reducedMatricesDynamic;
         
-        
     elseif fixie.refinement.condition > fixie.refinement.thres
         %% local h-refinement.
         % this method displays refinement informations.

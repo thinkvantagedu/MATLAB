@@ -15,8 +15,8 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 5;
-domLengs = 5;
+domLengi = 129;
+domLengs = 129;
 damLeng = 3;
 damBond = [-1 1];
 
@@ -32,7 +32,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
+tMax = 4.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -55,11 +55,11 @@ errRbCtrlTNo = 1;
 cntInit = 0;
 
 %% refinement threshold. ==========
-refiThres = 0.002;
+refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 2;
+drawCol = 3;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 

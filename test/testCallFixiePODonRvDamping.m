@@ -121,7 +121,8 @@ end
 
 %% interpolate.
 nTest = 11;
-pmcfTest = fixie.pmExpo.comb.space(nTest, 4:5);
+% pmcfTest = fixie.pmExpo.comb.space(nTest, 4:5);
+pmcfTest = [-0.25 0.75];
 [gridx, gridy] = meshgrid([-1 0], [0 1]);
 cf1d = lagrange(pmcfTest(1), {gridx(1) gridx(3)});
 cf2d = lagrange(pmcfTest(2), {gridy(1) gridy(2)});

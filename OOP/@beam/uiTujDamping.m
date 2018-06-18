@@ -52,6 +52,9 @@ for im = 1:nBlkhat
         % re-order stored responses into clockwise sequence.
         uReordhat{ic, 3} = uStorehat{locLogi, 3};
     end
+    % for the 2d case, the order of the samples isn't clockwise, but
+    % pointing downwards.
+    uReordhat = uReordhat([1 2 4 3], :);
     % compute the 6 combinations of responses. idx is the combination of
     % indices.
     idx = nchoosek(1:4, 2);
@@ -94,6 +97,7 @@ for im = 1:nBlkhhat
         % re-order stored responses into clockwise sequence.
         uReordhhat{ic, 3} = uStorehhat{locLogi, 3};
     end
+    uReordhhat = uReordhhat([1 2 4 3], :);
     % for each block, compute the 6 combinations of responses. 
     % idx is the combination of indices.
     idx = nchoosek(1:4, 2);
