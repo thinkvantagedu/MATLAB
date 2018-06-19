@@ -185,7 +185,7 @@ for iGre = 1:fixie.countGreedy
         
     end
     fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'r-^');
+    fixie.verifyPlotSurf(iGre, 'r-^');
 end
 
 %%

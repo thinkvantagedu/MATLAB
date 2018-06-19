@@ -15,9 +15,9 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 5;
-domLengs = 5;
-damLeng = 3;
+domLengi = 9;
+domLengs = 9;
+damLeng = 5;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -55,7 +55,7 @@ errRbCtrlTNo = 1;
 cntInit = 0;
 
 %% refinement threshold. ==========
-refiThres = 0.002;
+refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
@@ -103,11 +103,3 @@ refCeaseSwitch = 0;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
-
-
-
-
-
-
-
-

@@ -359,6 +359,8 @@ classdef beam < handle
             obj.pmExpo.comb.space = obj.pmVal.comb.space;
             obj.pmExpo.comb.space(:, 4:5) = ...
                 log10(obj.pmExpo.comb.space(:, 4:5));
+            obj.pmExpo.damp.space = obj.pmVal.damp.space;
+            obj.pmExpo.damp.space(:, 3) = log10(obj.pmExpo.damp.space(:, 3));
         end
         %%
         function obj = rbEnrichmentStructStatic(obj)
@@ -1779,7 +1781,7 @@ classdef beam < handle
                     pmBlk = obj.pmExpo.block.hat;
                     ehats = obj.err.pre.hat;
                 case 'add' % this is the number of the newly divided blocks.
-                    nBlk = 2 ^ obj.no.inc;
+                    nBlk = 2 ^ obj.no.pm;
                     pmBlk = obj.pmExpo.block.add;
                     ehats = obj.err.pre.hhat;
             end
@@ -1794,17 +1796,10 @@ classdef beam < handle
                 % generate x-y (1 inclusion) or x-y-z (2 inclusions) domain.
                 if obj.no.pm == 1
                     if inBetweenTwoPoints(pmIter, pmBlkCell{:}) == 1
-                        switch type
-                            case {'hhat', 'hat'}
-                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
-                                uiTuj = ehats(pmBlk{iB}(1, 1), 4);
-                            case 'add'
-                                % pmBlk is the added block now, there are 2
-                                % blocks in 1D case.
-                                pmAddExpo = pmBlk{iB};
-                                uiTui = ehats(pmAddExpo(:, 1), 3);
-                                uiTuj = ehats(pmAddExpo(1, 1), 4);
-                        end
+                        
+                        uiTui = ehats(pmBlk{iB}(:, 1), 3);
+                        uiTuj = ehats(pmBlk{iB}(1, 1), 4);
+                        
                         pmCell = num2cell(cell2mat(pmBlkCell));
                         % this is the Lagrange coefficient matrix, 2 by 2
                         % for linear interpolations.
@@ -1836,19 +1831,13 @@ classdef beam < handle
                         
                         [gridx, gridy] = meshgrid([xl xr], [yl yr]);
                         
-                        switch type
-                            case 'hhat'
-                                uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
-                                uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 1:5);
-                            case 'hat'
-                                uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
-                                uiTuj = obj.err.pre.uiTuj.hat{iB}(:, 1:5);
-                            case 'add'
-                                % pmBlk is the added block now.
-                                pmAddExpo = pmBlk{iB};
-                        end
+                        uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
+                        uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 1:5);
+                        
                         % for the 2d case, the order of the samples isn't 
-                        % clockwise, but pointing downwards.
+                        % clockwise, but pointing downwards. Has to shift
+                        % here. For uiTuj, shift when computing in
+                        % uiTujDamping. 
                         uiTui = uiTui([1 2 4 3], :);
                         cf1d = lagrange(pmIter(1), {gridx(1) gridx(3)});
                         cf2d = lagrange(pmIter(2), {gridy(1) gridy(2)});
@@ -1983,7 +1972,7 @@ classdef beam < handle
                                 % pmBlk is the added block now.
                                 pmAdd = pmBlk{iB};
                         end
-                        keyboard
+                        
                         gridz = [gridzVal(1) gridzVal(2); ...
                             gridzVal(4) gridzVal(3)];
                         % interpolate in 2D.
@@ -2139,16 +2128,16 @@ classdef beam < handle
         function obj = inAddBlockIndicator(obj)
             % indicator for determining whether pm point is in added
             % parameter block (polygon).
-            pmIterCell = obj.pmExpo.iter;
+            pmIterInpt = obj.pmExpo.iter;
             pmExpoAdd = obj.pmExpo.block.add;
             
-            if obj.no.inc == 1
+            if obj.no.pm == 1
                 obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
-                    inBetweenTwoPoints(pmIterCell, pmExpoAdd(:, 2)), ...
-                    pmExpoAdd);
-            elseif obj.no.inc == 2
-                obj.indicator.inBlock = cellfun(@(pmExpoAdd) inpolygon...
-                    (pmIterCell, pmExpoAdd(:, 2), pmExpoAdd(:, 3)), pmExpoAdd);
+                    inBetweenTwoPoints(pmIterInpt, pmExpoAdd(:, 2)), pmExpoAdd);
+            elseif obj.no.pm == 2
+                obj.indicator.inBlock = cellfun(@(pmExpoAdd) ...
+                    inpolygon(pmIterInpt(1), pmIterInpt(2), ...
+                    pmExpoAdd(:, 2), pmExpoAdd(:, 3)), pmExpoAdd);
             else
                 disp('dimension > 2')
             end
@@ -2208,18 +2197,22 @@ classdef beam < handle
         %%
         function obj = verifyPrepare(obj)
             % this method prepares for the verification.
-            obj.err.store.allSurf.verify = zeros(obj.countGreedy, ...
-                obj.domLeng.i);
+            obj.err.store.allSurf.verify = {};
             obj.err.store.max.verify = zeros(obj.countGreedy, 1);
-            obj.err.store.loc.verify = zeros(obj.countGreedy, 2);
+            obj.err.store.loc.verify = zeros(obj.countGreedy, obj.no.pm + 1);
+            
         end
         %%
         function obj = verifyExtractBasis(obj, iGre)
             % this method extracts the reduced basis history at each Greedy
             % iteration, output is used in method verifiExactError.
-            rvpmStore = obj.resp.rvpmStore;
-            nphi = size(rvpmStore{1, iGre}, 1);
-            obj.phi.verify = obj.phi.val(:, 1:nphi);
+            nPhiIter = obj.no.store.rb(iGre);
+            obj.phi.verify = obj.phi.val(:, 1:nPhiIter);
+            if obj.no.pm == 1
+                obj.err.store.surf.verify = obj.err.setZ.sInc;
+            elseif obj.no.pm == 2
+                obj.err.store.surf.verify = obj.err.setZ.mInc;
+            end
         end
         %%
         function obj = verifyExactError(obj, iGre, iIter)
@@ -2231,28 +2224,54 @@ classdef beam < handle
             disErr = obj.dis.verify - obj.phi.verify * rvmu;
             disErrQoI = disErr(obj.qoi.dof, obj.qoi.t);
             errVerify = norm(disErrQoI, 'fro') / norm(obj.dis.qoi.trial, 'fro');
-            obj.err.store.allSurf.verify(iGre, iIter) = errVerify;
+            obj.err.store.surf.verify(iIter) = ...
+                obj.err.store.surf.verify(iIter) + errVerify;
+            obj.err.store.allSurf.verify{iGre} = obj.err.store.surf.verify;
             
         end
         %%
         function obj = verifyExtractMaxErr(obj, iGre)
             % this method extracts the maximum error for each Greedy
             % iteration for verification purpose.
-            errSurfStore = obj.err.store.allSurf.verify(iGre, :);
-            [eMval, eMloc] = max(errSurfStore);
+            errSurfStore = obj.err.store.allSurf.verify{iGre};
+            [eMval, eMloc] = max(errSurfStore(:));
             obj.err.store.max.verify(iGre) = eMval;
             obj.err.store.loc.verify(iGre, 1) = eMloc;
-            obj.err.store.loc.verify(iGre, 2) = obj.pmVal.i.space{:}(eMloc, 2);
+            if obj.no.pm == 1
+                obj.err.store.loc.verify(iGre, 2) = ...
+                    obj.pmVal.comb.space(eMloc, 3);
+            elseif obj.no.pm == 2
+                obj.err.store.loc.verify(iGre, 2:3) = ...
+                    obj.pmVal.comb.space(eMloc, 4:5);
+            end
         end
         %%
         function obj = verifyPlotSurf(obj, iGre, plotColor)
             % this method plots the response surface for verification
             % purpose.
-            xVal = obj.pmVal.i.space{:}(:, 2);
-            yVal = obj.err.store.allSurf.verify(iGre, :);
-            semilogy(xVal, yVal, plotColor);
-            hold on
-            grid on
+            
+            if obj.no.pm == 1
+                ex = obj.pmVal.i.space{:}(:, 2);
+                ez = obj.err.store.allSurf.verify{iGre};
+                semilogy(ex, ez, plotColor);
+                hold on
+                grid on
+            elseif obj.no.pm == 2
+                figure
+                ex = obj.pmVal.i.space{:}(:, 2);
+                ey = obj.pmVal.damp.space(:, 3);
+                eSurf = obj.err.store.surf.verify;
+                surf(ex, ey, eSurf');
+                set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
+                    'dataaspectratio', [length(ey) length(ex) 1])
+                shading interp
+                view(2)
+                
+                colorbar
+                ylabel('Damping coefficient')
+                zlabel('Maximum relative error')
+                colormap(jet)
+            end
             
         end
         %%
@@ -2389,15 +2408,20 @@ classdef beam < handle
         function obj = localHrefinement(obj)
             % find where the maximum distance is between hhat and hat
             % surfaces.
-            keyboard
+            
             if obj.no.pm == 1
                 obj.pmExpo.maxDist = {obj.pmExpo.i{:}(obj.err.max.diffLoc)};
+            elseif obj.no.pm == 2
+                maxDiffLoc = obj.err.max.diffLoc;
+                pmMaxDist = obj.pmExpo.i{:}(maxDiffLoc(1));
+                cfMaxDist = obj.pmExpo.damp.space(maxDiffLoc(2), 3);
+                obj.pmExpo.maxDist = {pmMaxDist cfMaxDist};
             end
             
             disp(strcat('error in the error value', {' = '}, ...
                 num2str(obj.refinement.condition), ...
                 {' at sample '}, num2str(obj.err.max.diffLoc),...
-                {', refine around value '}, num2str(obj.pmExpo.maxDist{:})));
+                {', refine around value '}, num2str([obj.pmExpo.maxDist{:}])));
             
             % local h-refinement
             obj.indicator.refine = 1;
@@ -2410,7 +2434,7 @@ classdef beam < handle
             % nExist + nAdd should equal to nhhat.
             obj.no.itplEx = obj.no.pre.hat;
             obj = refineGridLocalwithIdx(obj, 'iteration');
-            obj.no.block.add = 2 ^ obj.no.inc - 1;
+            obj.no.block.add = 2 ^ obj.no.pm - 1;
             
             % finds the information relates to newly added samples.
             % the newly added blocks.
@@ -2923,6 +2947,7 @@ classdef beam < handle
                             obj.pmExpo.block.hat{iBlk}...
                             (:, obj.no.pm + 1)) == 1
                         obj = refineGrid(obj, iBlk);
+                        % iRec records the no of block being refined.
                         iRec = iBlk;
                     end
                 elseif obj.no.inc == 1
@@ -2935,7 +2960,6 @@ classdef beam < handle
                 else
                     disp('dimension >= 3')
                 end
-                
             end
             
             % delete repeated point with the chosen block.
@@ -2980,7 +3004,6 @@ classdef beam < handle
                     pmExpOtpt_(pmIdx, :) = [];
                     
                     for iComp1 = 1:length(pmExpInpPm_)
-                        keyboard
                         b = ismember(pmExpOtptSpecVal, ...
                             pmExpInpPm_(iComp1, 2:3), 'rows');
                         if b == 1
@@ -3056,8 +3079,9 @@ classdef beam < handle
                 
             end
             obj.pmVal.block.hhat = pmValhhat;
-%             obj.pmVal.hat(:, 3) = zeros(4, 1);
-%             obj.pmVal.hhat(:, 3) = zeros(9, 1);
+            % no.refBlk records the no of block being refined, being used
+            % in uiTujDamping.
+            obj.no.refBlk = iRec;
         end
         %%
         function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)

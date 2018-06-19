@@ -21,10 +21,10 @@ if obj.countGreedy == 0
 else
     % number of nre response vectors.
     nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
-    eTeImporthhat = sortrows(obj.err.pre.hhat, 2);
-    eTeImporthhat = eTeImporthhat(:, 6);
-    eTeImporthat = sortrows(obj.err.pre.hat, 2);
-    eTeImporthat = eTeImporthat(:, 6);
+    uiTujImporthhat = sortrows(obj.err.pre.hhat, 2);
+    uiTujImporthhat = uiTujImporthhat(:, 6);
+    uiTujImporthat = sortrows(obj.err.pre.hat, 2);
+    uiTujImporthat = uiTujImporthat(:, 6);
 end
 
 % for hhat, responses need to be chosen based on enrich or refine.
@@ -53,25 +53,24 @@ respCell_ = cell(nBlkComp, 4);
 if obj.indicator.enrich == 1 && obj.indicator.refine == 0
     % when enrich (initial or not), calculate part 1 2 3 4.
     for iPre = 1:obj.no.block.hat
-        respExtOld = respSorthat{iPre, 3}(1:nVecOld);
-        respExtNew = respSorthat{iPre, 3}(end - nVecNew + 1:end);
-        respExtpOld = respSorthat{iPre + 1, 3}(1:nVecOld);
-        respExtpNew = respSorthat{iPre + 1, 3}(end - nVecNew + 1:end);
+        uExtOld = respSorthat{iPre, 3}(1:nVecOld);
+        uExtNew = respSorthat{iPre, 3}(end - nVecNew + 1:end);
+        uExtpOld = respSorthat{iPre + 1, 3}(1:nVecOld);
+        uExtpNew = respSorthat{iPre + 1, 3}(end - nVecNew + 1:end);
         if obj.countGreedy == 0
             % if initial, re-compute eTe part 1.
-            lu11 = uTuPart(nVecOld, nVecOld, ...
-                respExtOld, respExtpOld, 'rectangle');
+            lu11 = uTuPart(nVecOld, nVecOld, uExtOld, uExtpOld, 'rectangle');
             
         else
             % if enrich, inherit eTe part 1.
-            lu11 = eTeImporthat{iPre};
+            lu11 = uiTujImporthat{iPre};
         end
         % part 2: right upper block, full rectangle, unsymmetric (j from 1).
-        ru12 = uTuPart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
+        ru12 = uTuPart(nVecOld, nVecNew, uExtOld, uExtpNew, 'rectangle');
         % part 3: right lower block, right upper triangle, symmetric.
-        rd22 = uTuPart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
+        rd22 = uTuPart(nVecNew, nVecNew, uExtNew, uExtpNew, 'rectangle');
         % part 4: left lower block, rectangle all-zeros.
-        ld21 = uTuPart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
+        ld21 = uTuPart(nVecNew, nVecOld, uExtNew, uExtpOld, 'rectangle');
         
         % put part 1 2 3 4 together to form a triangular matrix.
         respTrans_ = cell2mat({lu11 ru12; ld21 rd22});
@@ -103,28 +102,28 @@ respCell_ = cell(nBlkComp + 1, 4);
 
 for iPre = 1:nBlkComp
     
-    respExtOld = respSorthhat{iPre, 3}(1:nVecOld);
-    respExtNew = respSorthhat{iPre, 3}(end - nVecNew + 1:end);
-    respExtpOld = respSorthhat{iPre + 1, 3}(1:nVecOld);
-    respExtpNew = respSorthhat{iPre + 1, 3}(end - nVecNew + 1:end);
+    uExtOld = respSorthhat{iPre, 3}(1:nVecOld);
+    uExtNew = respSorthhat{iPre, 3}(end - nVecNew + 1:end);
+    uExtpOld = respSorthhat{iPre + 1, 3}(1:nVecOld);
+    uExtpNew = respSorthhat{iPre + 1, 3}(end - nVecNew + 1:end);
     
     % part 1: left upper block, unsymmetric.
     if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
             obj.indicator.refine == 1
         % if initial or refine, re-compute eTe part 1.
-        lu11 = uTuPart(nVecOld, nVecOld, respExtOld, respExtpOld, 'rectangle');
+        lu11 = uTuPart(nVecOld, nVecOld, uExtOld, uExtpOld, 'rectangle');
         
     elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
         % if enrich, inherit eTe part 1.
-        lu11 = eTeImporthhat{iPre};
+        lu11 = uiTujImporthhat{iPre};
         
     end
     % part 2: right upper block, unsymmetric.
-    ru12 = uTuPart(nVecOld, nVecNew, respExtOld, respExtpNew, 'rectangle');
+    ru12 = uTuPart(nVecOld, nVecNew, uExtOld, uExtpNew, 'rectangle');
     % part 3: right lower block, unsymmetric.
-    rd22 = uTuPart(nVecNew, nVecNew, respExtNew, respExtpNew, 'rectangle');
+    rd22 = uTuPart(nVecNew, nVecNew, uExtNew, uExtpNew, 'rectangle');
     % part 4: left lower block, unsymmetric.
-    ld21 = uTuPart(nVecNew, nVecOld, respExtNew, respExtpOld, 'rectangle');
+    ld21 = uTuPart(nVecNew, nVecOld, uExtNew, uExtpOld, 'rectangle');
     
     % put part 1 2 3 4 together to form a full rectangular matrix.
     respTrans_ = cell2mat({lu11 ru12; ld21 rd22});

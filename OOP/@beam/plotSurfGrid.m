@@ -19,7 +19,6 @@ switch typeSwitch
         eMloc = obj.err.max.loc.hat;
 end
 
-
 if damSwitch == 0
     figure(1)
     % for single inclusion case, plot error response curve.
