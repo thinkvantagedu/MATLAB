@@ -25,6 +25,7 @@ if damSwitch == 0
     ylabel('Maximum Relative Error')
     
 elseif damSwitch == 1
+    
     ex = obj.pmVal.i.space{:}(:, 2);
     ey = obj.pmVal.damp.space(:, 3);
     eMx = ex(obj.err.store.loc(:, 1));

@@ -5,7 +5,7 @@ trialName = 'l9h2SingleInc';
 rvSVDswitch = 1;
 callPreliminary;
 noPm = 2;
-
+tic
 %% trial solution.
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -76,7 +76,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         break
     end
     %% Greedy OFFLINE.
-    % disp('offline start')
+    disp('POD-Greedy offline start')
     fixie.errPrepareSetZero;
     
     nIter = domLengi * damLeng;
@@ -114,10 +114,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     
     fixie.uiTujDamping;
     
-    % disp('offline end')
+    disp('POD-Greedy offline end')
     
     %% Greedy ONLINE.
-    % disp('online start')
+    disp('POD-Greedy online start')
     % multiply the output with pm and interpolate.
     for iIter = 1:nIter
         
@@ -129,7 +129,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
-    % disp('online end')
+    disp('POD-Greedy online end')
     
     %% extract error information.
     fixie.errStoreSurfs('diff', 1);
@@ -174,26 +174,26 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     end
     
 end
-
+toc
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % All Greedy iterations are included here.
-fixie.verifyPrepare;
-for iGre = 1:fixie.countGreedy
-    fixie.verifyExtractBasis(iGre);
-    for iIter = 1:nIter
-
-        fixie.pmIter(iIter, 1);
-        
-        fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 1);
-        fixie.verifyExactError(iGre, iIter);
-        CmdWinTool('statusText', ...
-            sprintf('verification stage progress: %d of %d', iIter, nIter));
-
-    end
-    fixie.verifyExtractMaxErr(iGre);
-    fixie.verifyPlotSurf(iGre, 'r-^');
-end
-
-%%
-fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0); % randomSwitch
-fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 1); % damSwitch
+% fixie.verifyPrepare;
+% for iGre = 1:fixie.countGreedy
+%     fixie.verifyExtractBasis(iGre);
+%     for iIter = 1:nIter
+% 
+%         fixie.pmIter(iIter, 1);
+%         
+%         fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 1);
+%         fixie.verifyExactError(iGre, iIter);
+%         CmdWinTool('statusText', ...
+%             sprintf('verification stage progress: %d of %d', iIter, nIter));
+% 
+%     end
+%     fixie.verifyExtractMaxErr(iGre);
+%     fixie.verifyPlotSurf(iGre, 'r-^');
+% end
+% 
+% %%
+% fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0); % randomSwitch
+% fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 1); % damSwitch

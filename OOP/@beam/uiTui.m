@@ -1,6 +1,5 @@
 function obj = uiTui(obj)
 disp('uiTui starts')
-tic
 % an IMPORTANT difference from uiTuj: no of calculations relates to no of
 % sample points, not no of blocks.
 % all lu11, rd22 blocks are symmetric, thus triangulated. Use triu when
@@ -74,6 +73,5 @@ obj.no.oldVec = nVecOld;
 % uiTui of ehat is completely inherited from uiTui of ehhat.
 obj.err.pre.hat(1:obj.no.pre.hat, [1:3 5]) = obj.err.pre.hhat...
     (1:obj.no.pre.hat, [1:3 5]);
-toc
 disp('uiTui ends')
 end

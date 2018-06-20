@@ -12,8 +12,8 @@ function [INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
 % know where to look for. 
 % noIncl: number of inclusions. 
 if lin == 0
-    route = '/Users/kevin/GoogleDrive/Temp/AbaqusModels/cantileverBeam/';
-else
+    route = '/Users/kevin/GoogleDrive/AbaqusModels/cantileverBeam/';
+elseif lin == 1
     route = '/home/xiaohan/Desktop/Temp/AbaqusModels/cantileverBeam/';
 end
 switch trialName
@@ -91,7 +91,11 @@ switch trialName
         
     case 'l9h2SingleInc'
         % l = 90, h = 20, li = 35.8, ri = 54.2
-        route = '/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/';
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/fixBeam/';
+        end
         INPname = strcat(route, 'l9h2SingleInc.inp');
         mas = strcat(route, 'l9h2SingleInc_MASS1.mtx');
         sti1 = strcat(route, 'l9h2SingleIncI1S0_STIF1.mtx');

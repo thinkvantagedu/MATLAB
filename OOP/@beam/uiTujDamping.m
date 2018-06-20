@@ -3,7 +3,6 @@ function obj = uiTujDamping(obj)
 % blocks, not no of sample points.
 disp('uiTuj starts')
 
-tic
 pmExpoBlkhat = obj.pmExpo.block.hat;
 nBlkhat = obj.no.block.hat;
 
@@ -81,7 +80,15 @@ if obj.indicator.enrich == 1 && obj.indicator.refine == 0
             uExtNew = uReordhat{subs(is, 1), 3}(end - nVecNew + 1:end);
             uExtpOld = uReordhat{subs(is, 2), 3}(1:nVecOld);
             uExtpNew = uReordhat{subs(is, 2), 3}(end - nVecNew + 1:end);
-            lu11 = uTuPart(nVecOld, nVecOld, uExtOld, uExtpOld, 'rectangle');
+            if obj.countGreedy == 0
+                % if initial, re-compute eTe part 1.
+                lu11 = uTuPart(nVecOld, nVecOld, uExtOld, uExtpOld, ...
+                    'rectangle');
+            else
+                % if enrich, inherit eTe part 1.
+                uiTujImporthat = obj.err.pre.uiTuj.hat{iPre};
+                lu11 = uiTujImporthat{subs(is, 1), 4 + subs(is, 2)};
+            end
             % part 2: right upper block, full rectangle, unsymmetric (j from 1).
             ru12 = uTuPart(nVecOld, nVecNew, uExtOld, uExtpNew, 'rectangle');
             % part 3: right lower block, right upper triangle, symmetric.
@@ -134,7 +141,6 @@ for iPre = 1:nBlkComp
         uExtNew = uReordhhat{subs(is, 1), 3}(end - nVecNew + 1:end);
         uExtpOld = uReordhhat{subs(is, 2), 3}(1:nVecOld);
         uExtpNew = uReordhhat{subs(is, 2), 3}(end - nVecNew + 1:end);
-        lu11 = uTuPart(nVecOld, nVecOld, uExtOld, uExtpOld, 'rectangle');
         % part 1: left upper block, unsymmetric.
         if obj.countGreedy == 0 || obj.indicator.enrich == 0 && ...
                 obj.indicator.refine == 1
@@ -143,8 +149,8 @@ for iPre = 1:nBlkComp
             
         elseif obj.indicator.enrich == 1 && obj.indicator.refine == 0
             % if enrich, inherit eTe part 1.
-            eTeImporthhat = obj.err.pre.uiTuj.hhat{iPre};
-            lu11 = eTeImporthhat{subs(is, 1), 4 + subs(is, 2)};
+            uiTujImporthhat = obj.err.pre.uiTuj.hhat{iPre};
+            lu11 = uiTujImporthhat{subs(is, 1), 4 + subs(is, 2)};
         end
         % part 2: right upper block, full rectangle, unsymmetric (j from 1).
         ru12 = uTuPart(nVecOld, nVecNew, uExtOld, uExtpNew, 'rectangle');
@@ -178,6 +184,5 @@ elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     % in interpolation, see inpolyItplExpo.
 end
 
-toc
 disp('uiTuj ends')
 end

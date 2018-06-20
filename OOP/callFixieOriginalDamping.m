@@ -5,7 +5,7 @@ trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
 callPreliminary;
 noPm = 2;
-
+tic
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -107,6 +107,7 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.reducedMatricesDynamic;
     
 end
+toc
 %%
 if randomSwitch == 0
     lineWidth = 2;

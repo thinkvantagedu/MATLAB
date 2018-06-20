@@ -1,14 +1,12 @@
+route = '/home/xiaohan/Desktop/Temp/MATLAB/OOP/@beam';
+% route = '/Users/kevin/Documents/Temp';
+oopPath = strcat(route, '/MATLAB/OOP');
+addpath(genpath(oopPath));
+cd /home/xiaohan/Desktop/Temp/MATLAB/OOP/@beam;
+addpath(genpath('/Users/kevin/Documents/OOP'));
+cd /Users/kevin/Documents/OOP/@beam;
 %% data for beam class.
 lin = 1;
-if lin == 1
-    oopPath = '/home/xiaohan/Desktop/Temp/MATLAB/OOP';
-    cd /home/xiaohan/Desktop/Temp/MATLAB/OOP/@beam;
-elseif lin == 0
-    oopPath = '/Users/kevin/Documents/OOP';
-    cd /Users/kevin/Documents/OOP/@beam;
-end
-
-addpath(genpath(oopPath));
 [INPname, mas, sti, locStartCons, locEndCons, noIncl] = ...
     trialCaseSelect(trialName, lin);
 noStruct = 1;
@@ -18,9 +16,9 @@ dam = 0;
 nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 39;
-domLengs = 39;
-damLeng = 39;
+domLengi = 9;
+domLengs = 9;
+damLeng = 5;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -62,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 2;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 
@@ -81,9 +79,9 @@ reductionRatio = 0.6;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 5; 
+nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
-rvSVDreRatio = 0.9;
+rvSVDreRatio = 1;
 
 %% set types
 timeType = 'allTime';
@@ -95,7 +93,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 0;
 structSwitch = 0;
