@@ -1,0 +1,12 @@
+clear; clc;
+% this script plots ONERA OA209 airfoil wing section.
+
+cd /home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/Plots/;
+fileID = fopen('OA209_CrossSection.txt', 'r');
+coord = fscanf(fileID, '%f');
+
+sec1 = coord(1:length(coord) / 2);
+sec1 = reshape(sec1, [2, length(coord) / 4]);
+sec1 = sec1';
+
+scatter(sec1(:, 1), sec1(:, 2));

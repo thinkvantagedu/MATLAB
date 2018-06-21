@@ -1,0 +1,108 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/CAE Release 6.14-1 replay file
+# Internal Version: 2014_06_04-20.37.49 134264
+# Run by xiaohan on Thu Jun 21 14:44:29 2018
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=442.647888183594, 
+    height=208.674087524414)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from caeModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+session.viewports['Viewport: 1'].partDisplay.geometryOptions.setValues(
+    referenceRepresentation=ON)
+Mdb()
+#: A new model database has been created.
+#: The model "Model-1" has been created.
+session.viewports['Viewport: 1'].setValues(displayedObject=None)
+s = mdb.models['Model-1'].ConstrainedSketch(name='__profile__', 
+    sheetSize=200.0)
+g, v, d, c = s.geometry, s.vertices, s.dimensions, s.constraints
+s.setPrimaryObject(option=STANDALONE)
+s.CircleByCenterPerimeter(center=(-36.25, 10.0), point1=(-21.25, -11.25))
+s.unsetPrimaryObject()
+del mdb.models['Model-1'].sketches['__profile__']
+s1 = mdb.models['Model-1'].ConstrainedSketch(name='__profile__', 
+    sheetSize=200.0)
+g, v, d, c = s1.geometry, s1.vertices, s1.dimensions, s1.constraints
+s1.setPrimaryObject(option=STANDALONE)
+s1.unsetPrimaryObject()
+del mdb.models['Model-1'].sketches['__profile__']
+openMdb(pathName='/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/airfoil.cae')
+#: The model database "/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/airfoil.cae" has been opened.
+session.viewports['Viewport: 1'].setValues(displayedObject=None)
+p = mdb.models['Model-1'].parts['airfoil']
+session.viewports['Viewport: 1'].setValues(displayedObject=p)
+p = mdb.models['Model-1'].Part(name='airfoil-failed', 
+    objectToCopy=mdb.models['Model-1'].parts['airfoil'])
+mdb.models['Model-1'].parts['airfoil-failed'].Unlock(reportWarnings=False)
+del mdb.models['Model-1'].parts['airfoil']
+mdb.models['Model-1'].parts.changeKey(fromName='airfoil-failed', 
+    toName='airfoil')
+import assembly
+mdb.models['Model-1'].rootAssembly.regenerate()
+p1 = mdb.models['Model-1'].parts['airfoil']
+session.viewports['Viewport: 1'].setValues(displayedObject=p1)
+p = mdb.models['Model-1'].parts['airfoil']
+session.viewports['Viewport: 1'].setValues(displayedObject=p)
+#: Warning: Validity of the geometry was updated after one or more of the selected features.
+#: Deleting these features may cause the validity of the geometry to change.
+p = mdb.models['Model-1'].parts['airfoil']
+p.deleteFeatures(('Partition face-1', 'Partition cell-2', 'Partition cell-1', 
+    ))
+p = mdb.models['Model-1'].parts['airfoil']
+s = p.features['Solid extrude-1'].sketch
+mdb.models['Model-1'].ConstrainedSketch(name='__edit__', objectToCopy=s)
+s2 = mdb.models['Model-1'].sketches['__edit__']
+g, v, d, c = s2.geometry, s2.vertices, s2.dimensions, s2.constraints
+s2.setPrimaryObject(option=SUPERIMPOSE)
+p.projectReferencesOntoSketch(sketch=s2, 
+    upToFeature=p.features['Solid extrude-1'], filter=COPLANAR_EDGES)
+s2.unsetPrimaryObject()
+del mdb.models['Model-1'].sketches['__edit__']
+session.viewports['Viewport: 1'].view.setValues(nearPlane=906.062, 
+    farPlane=1377.44, width=450.976, height=243.433, viewOffsetX=0.874027, 
+    viewOffsetY=0.382898)
+p = mdb.models['Model-1'].parts['airfoil']
+f = p.faces
+p.DatumPlaneByOffset(plane=f[6], flip=SIDE1, offset=50.0)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=871.276, 
+    farPlane=1383.36, width=526.59, height=284.248, viewOffsetX=24.1863, 
+    viewOffsetY=17.5785)
+session.viewports['Viewport: 1'].view.setValues(session.views['Iso'])
+session.viewports['Viewport: 1'].view.setValues(nearPlane=996.44, 
+    farPlane=1515.41, width=571.813, height=308.659, viewOffsetX=2.89446, 
+    viewOffsetY=6.5116)
+p = mdb.models['Model-1'].parts['airfoil']
+s = p.features['Solid extrude-1'].sketch
+mdb.models['Model-1'].ConstrainedSketch(name='__edit__', objectToCopy=s)
+s1 = mdb.models['Model-1'].sketches['__edit__']
+g, v, d, c = s1.geometry, s1.vertices, s1.dimensions, s1.constraints
+s1.setPrimaryObject(option=SUPERIMPOSE)
+p.projectReferencesOntoSketch(sketch=s1, 
+    upToFeature=p.features['Solid extrude-1'], filter=COPLANAR_EDGES)
+s1.unsetPrimaryObject()
+del mdb.models['Model-1'].sketches['__edit__']
+p = mdb.models['Model-1'].parts['airfoil']
+p.features['Solid extrude-1'].setValues(depth=50.0)
+p = mdb.models['Model-1'].parts['airfoil']
+p.regenerate()
+p = mdb.models['Model-1'].parts['airfoil']
+p.regenerate()
+session.viewports['Viewport: 1'].view.setValues(nearPlane=1232.77, 
+    farPlane=1538.89, width=766.974, height=414.005, viewOffsetX=-17.7314, 
+    viewOffsetY=-2.01661)
+session.viewports['Viewport: 1'].view.setValues(session.views['Iso'])
+session.viewports['Viewport: 1'].view.setValues(nearPlane=323.475, 
+    farPlane=551.22, width=325.475, height=175.689, viewOffsetX=4.00783, 
+    viewOffsetY=1.35768)
+p = mdb.models['Model-1'].parts['airfoil']
+del p.features['Datum plane-1']

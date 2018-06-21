@@ -584,7 +584,7 @@ classdef beam < handle
             ur = phiInpt * rv;
             urQoi = ur(obj.qoi.dof, obj.qoi.t);
             obj.err.rbRedRemain = norm(disQoiInpt - urQoi, 'fro') / ...
-                norm(obj.dis.qoi.trial, 'fro');
+                obj.dis.norm.trial;
         end
         
         %%
@@ -630,8 +630,7 @@ classdef beam < handle
                 ur = phiOtpt * rv;
                 
                 urQoi = ur(obj.qoi.dof, obj.qoi.t);
-                errRb = norm(disQoiInpt - urQoi, 'fro') / ...
-                    norm(obj.dis.qoi.trial, 'fro');
+                errRb = norm(disQoiInpt - urQoi, 'fro') / obj.dis.norm.trial;
                 if errRb >= (1 - redRatio) * errPre
                     nEnrich = nEnrich + 1;
                 elseif errRb < (1 - redRatio) * errPre
@@ -689,6 +688,7 @@ classdef beam < handle
                     obj.dis.trial = obj.dis.full;
                     obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, ...
                         obj.qoi.t);
+                    obj.dis.norm.trial = norm(obj.dis.qoi.trial, 'fro');
                 case 'Greedy'
                     obj.dis.rbEnrich = obj.dis.full;
                 case 'verify'
@@ -1043,20 +1043,6 @@ classdef beam < handle
                 [~, otpt_] = lagrange(obj.pmVal.iter{2}, y, z);
                 obj.err.itpl.otpt = otpt_;
             end
-            
-        end
-        %%
-        function obj = resptoErrStore(obj)
-            % this method takes stored responses and compute relative
-            % error, store in a matrix to plot error response surfaces.
-            resphhat = obj.resp.store.hhat;
-            resphat = obj.resp.store.hat;
-            errhhat = cellfun(@(v) norm(v, 'fro') / ...
-                norm(obj.dis.qoi.trial, 'fro'), resphhat, 'un', 0);
-            obj.err.store.surf.hhat = cell2mat(errhhat);
-            errhat = cellfun(@(v) norm(v, 'fro') / ...
-                norm(obj.dis.qoi.trial, 'fro'), resphat, 'un', 0);
-            obj.err.store.surf.hat = cell2mat(errhat);
             
         end
         %%
@@ -2087,18 +2073,15 @@ classdef beam < handle
                 switch type
                     case {'hhat', 'add'}
                         obj.err.norm(1) = ...
-                            sqrt(abs(ePreSqrt)) / ...
-                            norm(obj.dis.qoi.trial, 'fro');
+                            sqrt(abs(ePreSqrt)) / obj.dis.norm.trial;
                     case 'hat'
                         obj.err.norm(2) = ...
-                            sqrt(abs(ePreSqrt)) / ...
-                            norm(obj.dis.qoi.trial, 'fro');
+                            sqrt(abs(ePreSqrt)) / obj.dis.norm.trial;
                 end
                 
             elseif rvSVDswitch == 1
                 ePreSqrtMtx = obj.resp.rv.R * e * obj.resp.rv.R';
-                ePreMtx = sqrt(abs(ePreSqrtMtx)) / ...
-                    norm(obj.dis.qoi.trial, 'fro');
+                ePreMtx = sqrt(ePreSqrtMtx) / obj.dis.norm.trial;
                 ePreDiag = diag(ePreMtx);
                 switch type
                     case {'hhat', 'add'}
@@ -2223,7 +2206,7 @@ classdef beam < handle
             rvmu = obj.resp.rv.dis.store{iIter, iGre};
             disErr = obj.dis.verify - obj.phi.verify * rvmu;
             disErrQoI = disErr(obj.qoi.dof, obj.qoi.t);
-            errVerify = norm(disErrQoI, 'fro') / norm(obj.dis.qoi.trial, 'fro');
+            errVerify = norm(disErrQoI, 'fro') / obj.dis.norm.trial;
             obj.err.store.surf.verify(iIter) = ...
                 obj.err.store.surf.verify(iIter) + errVerify;
             obj.err.store.allSurf.verify{iGre} = obj.err.store.surf.verify;
@@ -2624,7 +2607,7 @@ classdef beam < handle
                         obj.err.max.diffLoc = [mDx mDy];
                     end
                     obj.refinement.condition = abs(obj.err.max.diffVal / ...
-                        norm(obj.dis.qoi.trial, 'fro'));
+                        obj.dis.norm.trial);
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1
