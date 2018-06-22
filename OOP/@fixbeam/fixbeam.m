@@ -91,14 +91,12 @@ classdef fixbeam < beam
             obj.fce.val(obj.fce.dof) = obj.fce.val(obj.fce.dof) - 1;
             
         end
+        
         %%
         function obj = readINPconsFixie(obj, dim)
             % Read constraint information from INP file. Still manually
             % input the constraint informations (left and right for fixie case).
-            % Input: 
             % obj.INPname: dir and name of Abaqus INP file.
-            % Output: 
-            % 
             lineConsStart = [];
             lineConsEnd = [];
             fid = fopen(obj.INPname);
@@ -158,7 +156,6 @@ classdef fixbeam < beam
                 obj.cons.dof(i) = {consDof};
                 
             end
-            
         end
     end
 end

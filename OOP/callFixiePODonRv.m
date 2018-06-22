@@ -5,7 +5,9 @@ trialName = 'l9h2SingleInc';
 rvSVDswitch = 1;
 callPreliminary;
 noPm = 1;
-
+nConsEnd = 2;
+nDofPerNode = 2;
+fNode = 9;
 %% trial solution.
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...

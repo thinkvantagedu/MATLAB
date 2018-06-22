@@ -15,12 +15,11 @@ noStruct = 1;
 noMas = 1;
 noDam = 1;
 dam = 0;
-nDofPerNode = 2;
 
 %% data for parameter class. ==========
-domLengi = 39;
-domLengs = 39;
-damLeng = 39;
+domLengi = 9;
+domLengs = 9;
+damLeng = 5;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -30,17 +29,16 @@ bondL2 = 1;
 bondR2 = 2;
 domBondi = {[bondL1 bondR1]};
 % Both ends are constrained.
-nConsEnd = 2;
+
 domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
+tMax = 4.9;
 tStep = 0.1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
-fNode = 9;
 ftime = 0.2;
 fRange = 10;
 
@@ -62,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 1;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 

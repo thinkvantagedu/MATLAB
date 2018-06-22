@@ -9,37 +9,41 @@ classdef canbeam < beam
     
     methods
         
-        function obj = canbeam(mas, dam, sti, ...
-                locStartCons, locEndCons, INPname, domLengi, ...
-                domLengs, domBondi, domMid, trial, noIncl, ...
-                noStruct, noMas, noDam, tMax, tStep, ...
-                errLowBond, errMaxValInit, errRbCtrl, ...
+        function obj = canbeam(abaInpFile, masFile, damFile, stiFile, ...
+                locStart, locEnd, INPname, domLengi, ...
+                domBondi, domMid, trial, noIncl, ...
+                noStruct, noPm, noMas, noDam, tMax, tStep, ...
+                errLowBond, errMaxVal, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
                 drawRow, drawCol, fNode, ftime, fRange, nConsEnd)
             
-            obj = obj@beam(mas, dam, sti, locStartCons, ...
-                locEndCons, INPname, domLengi, domLengs, domBondi, domMid, ...
-                trial, noIncl, noStruct, noMas, noDam, ...
-                tMax, tStep, errLowBond, errMaxValInit, errRbCtrl, ...
+            obj = obj@beam(abaInpFile, masFile, damFile, stiFile, locStart, ...
+                locEnd, INPname, domLengi, ...
+                domBondi, domMid, trial, noIncl, ...
+                noStruct, noPm, noMas, noDam, tMax, tStep, ...
+                errLowBond, errMaxVal, errRbCtrl, ...
                 errRbCtrlThres, errRbCtrlTNo, cntInit, refiThres, ...
                 drawRow, drawCol); % only base class properties
             
             obj.fce.time = ftime;
+            
             obj.fce.node = fNode;
-            obj.no.consEnd = nConsEnd;
+            
             obj.fce.range = fRange;
+            
+            obj.no.consEnd = nConsEnd;
         end
         %%
-        function obj = gaussian(obj, shift, sig, unitAmp, debugMode)
-            % generate Gaussian function. 
-            % Input: 
+        function obj = gaussian(obj, shift, sig, unit_amp, debugMode)
+            % generate Gaussian function.
+            % Input:
             % obj.fce.xaxis: x-axis, contains length of gap.
-            % shift: negative value moves the curve to right. 
+            % shift: negative value moves the curve to right.
             % sig: small value = narrow curve.
-            % unitAmp: set to 1 normalise the amplitude. 
-            % debugMode: set to 1 
-            % Output: 
-            % obj.fce.gaus: 1-by-n array gaussian bell shape force. 
+            % unitAmp: set to 1 normalise the amplitude.
+            % debugMode: set to 1
+            % Output:
+            % obj.fce.gaus: 1-by-n array gaussian bell shape force.
             if debugMode == 1
                 % if in debug mode, use xaxis of fce with shift to generate
                 % efunc.
@@ -47,7 +51,7 @@ classdef canbeam < beam
                 obj.fce.gaus = 1 / sqrt(2 * pi * sig ^ 2) * exp(efunc);
             elseif debugMode == 0
                 % if not in debug mode, use a wide range without shift to
-                % generate efunc. 
+                % generate efunc.
                 xRange = linspace(-1, 1, obj.fce.range);
                 efunc = - xRange .^ 2 / 2 / sig ^ 2;
                 obj.fce.gaus = 1 / sqrt(2 * pi * sig ^ 2) * exp(efunc);
@@ -56,7 +60,7 @@ classdef canbeam < beam
                 obj.fce.gaus = obj.fce.gaus - obj.fce.gaus(1);
             end
             
-            if unitAmp == 1
+            if unit_amp == 1
                 obj.fce.gaus = obj.fce.gaus / max(obj.fce.gaus);
             end
             
@@ -76,21 +80,34 @@ classdef canbeam < beam
                 obj.fce.gaus;
             
         end
+        
+        %%
+        function obj = generateNodalFceStatic(obj, ndofPerNode)
+            % generate -1 static force.
+            obj.fce.dof = ndofPerNode * obj.fce.node;
+            obj.fce.val = sparse(obj.no.dof, 1);
+            % gaussian(obj, shift, sig, unit_amp)
+            obj.fce.val(obj.fce.dof) = obj.fce.val(obj.fce.dof) - 1;
+            
+        end
+        
         %%
         function obj = readINPconsCanti(obj, dim)
-            % Read constraint information from INP file.
-            % Input: 
+            % Read constraint information from INP file. Still manually
+            % input the constraint informations (left and right for fixie case).
+            % obj.INPname: dir and name of Abaqus INP file.
             lineConsStart = [];
             lineConsEnd = [];
             fid = fopen(obj.INPname);
             tline = fgetl(fid);
             lineNo = 1;
-            
+            % find the line no of constraints.
             while ischar(tline)
                 lineNo = lineNo + 1;
                 tline = fgetl(fid);
                 celltext{lineNo} = tline;
                 for i = 1:obj.no.consEnd
+                    
                     line_cons1 = strfind(tline, obj.str.locStart{i});
                     location = isempty(line_cons1);
                     if location == 0
@@ -105,34 +122,38 @@ classdef canbeam < beam
                 end
             end
             
-            %
             strtext = char(celltext(2:(length(celltext)-1)));
             
             fclose(fid);
-            
-            txtCons = strtext((lineConsStart(1) : lineConsEnd(1) - 2), :);
-            trimCons = strtrim(txtCons);
-            obj.cons.node=[];
-            for iCons = 1 : size(trimCons, 1)
+            obj.cons.node = cell(1, obj.no.consEnd);
+            obj.cons.dof = cell(1, obj.no.consEnd);
+            for i = 1:obj.no.consEnd
+                txtCons = strtext((lineConsStart(i, 1) : ...
+                    lineConsEnd(i, 1) - 2), :);
+                trimCons = strtrim(txtCons);
+                consNode = [];
+                for iCons = 1:size(trimCons, 1)
+                    
+                    cons0 = str2num(trimCons(iCons, :));
+                    consNode = [consNode; cons0'];
+                    
+                end
+                obj.cons.node(i) = {consNode};
+                obj.no.cons(i) = length(obj.cons.node{i});
+                consDof = zeros(dim * obj.no.cons(i), 1);
                 
-                cons0 = str2num(trimCons(iCons, :));
-                obj.cons.node = [obj.cons.node; cons0'];
+                for j = 1:obj.no.cons
+                    
+                    consDof(j * dim - (dim - 1) : j * dim) = ...
+                        consDof(j * dim - (dim - 1) : j * dim) + ...
+                        (dim * obj.cons.node{i}(j) - (dim - 1): dim * ...
+                        obj.cons.node{i}(j))';
+                    
+                end
+                
+                obj.cons.dof(i) = {consDof};
                 
             end
-            obj.no.cons = length(obj.cons.node);
-            
-            obj.cons.dof = zeros(dim * obj.no.cons, 1);
-            
-            for i = 1:obj.no.cons
-                obj.cons.dof(i * dim - (dim - 1) : i * dim) = ...
-                    obj.cons.dof(i * dim - (dim - 1) : i * dim) + ...
-                    (dim * obj.cons.node(i) - (dim - 1): ...
-                    dim * obj.cons.node(i))';
-            end
-            obj.cons.dof = {obj.cons.dof};
-            obj.cons.node = {obj.cons.node};
         end
-        
-        
     end
 end

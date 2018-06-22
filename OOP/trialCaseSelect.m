@@ -109,5 +109,21 @@ switch trialName
         locEndCons = {locEndConsLc; locEndConsRc};
         noIncl = 1;
         
+    case 'ONERA_M6'
+        % l = 90, h = 20, li = 35.8, ri = 54.2
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/airfoil/';
+        end
+        INPname = strcat(route, 'ONERA_M6.inp');
+        mas = strcat(route, 'ONERA_M6_MASS1.mtx');
+        sti1 = strcat(route, 'ONERA_M6_I1S0_STIF1.mtx');
+        stis = strcat(route, 'ONERA_M6_I0S1_STIF1.mtx');
+        sti = {sti1; stis};
+        locStartCons = {'nset=Set-root'};
+        locEndCons = {'elset=Set-root'};
+        noIncl = 1;
+        
 end
 end

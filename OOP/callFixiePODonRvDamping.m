@@ -5,6 +5,9 @@ trialName = 'l9h2SingleInc';
 rvSVDswitch = 1;
 callPreliminary;
 noPm = 2;
+nConsEnd = 2;
+nDofPerNode = 2;
+fNode = 9;
 tic
 %% trial solution.
 % use subclass: fixbeam to create beam.

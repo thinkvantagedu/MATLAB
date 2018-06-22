@@ -183,6 +183,7 @@ classdef beam < handle
                 
             end
             obj.no.dof = length(obj.sti.mtxCell{1});
+            
         end
         %%
         function obj = readINPgeoMultiInc(obj)
@@ -214,20 +215,17 @@ classdef beam < handle
                     lineElem = [lineElem; lineNo];
                     
                 end
-                for i = 1:nInc
+                for iI = 1:nInc
                     
-                    strInci = num2str(i);
+                    strInci = num2str(iI);
                     incNline = strcat('*Nset, nset=Set-I', strInci);
                     incEline = strcat('*Elset, elset=Set-I', strInci);
                     
                     if strncmpi(tline, incNline, length(incNline)) == 1 || ...
                             strncmpi(tline, incEline, length(incEline)) == 1
                         lineInc = [lineInc; lineNo];
-                        
                     end
-                    
                 end
-                
             end
             % element may contains multiple locations, but only takes the
             % first 2 locations.
@@ -248,15 +246,15 @@ classdef beam < handle
             obj.no.elem = size(obj.elem.all, 1);
             
             % inclusions
-            nodeIncCell = cell(obj.no.inc, 1);
-            nNodeInc = zeros(obj.no.inc, 1);
-            incConn = cell(obj.no.inc, 1);
+            nodeIncCell = cell(nInc, 1);
+            nNodeInc = zeros(nInc, 1);
+            incConn = cell(nInc, 1);
             trimIncCell = {};
             
-            for i = 1:obj.no.inc
+            for iI = 1:nInc
                 % nodal info of inclusions
                 
-                txtInc = strtext((lineInc(1, i):lineInc(2, i) - 2), :);
+                txtInc = strtext((lineInc(1, iI):lineInc(2, iI) - 2), :);
                 trimInc = strtrim(txtInc);
                 for j = 1:size(trimInc, 1)
                     
@@ -267,11 +265,11 @@ classdef beam < handle
                 nodeInc = cell2mat(trimIncCell(:));
                 nodeInc = obj.node.all(nodeInc, :);
                 nInc = size(nodeInc, 1);
-                nodeIncCell(i) = {nodeInc};
-                nNodeInc(i) = nInc;
+                nodeIncCell(iI) = {nodeInc};
+                nNodeInc(iI) = nInc;
                 % connectivities of inclusions
                 connSwitch = zeros(obj.no.node.all, 1);
-                connSwitch(nodeIncCell{i}(:, 1)) = 1;
+                connSwitch(nodeIncCell{iI}(:, 1)) = 1;
                 elemInc = [];
                 for k = 1:obj.no.elem
                     
@@ -281,7 +279,7 @@ classdef beam < handle
                     end
                     
                 end
-                incConn(i) = {elemInc};
+                incConn(iI) = {elemInc};
                 
             end
             obj.elem.inc = incConn;
@@ -3097,23 +3095,20 @@ classdef beam < handle
             
             Khat = K + a0 * M + a1 * C;
             
-            for i_nm = 1 : length(t) - 1
+            for in = 1 : length(t) - 1
                 
-                dFhat = fce(:, i_nm+1) + ...
-                    M * (a0 * obj.dis.val(:, i_nm) + ...
-                    a2 * obj.vel.val(:, i_nm) + ...
-                    a3 * obj.acc.val(:, i_nm)) + ...
-                    C * (a1 * obj.dis.val(:, i_nm) + ...
-                    a4 * obj.vel.val(:, i_nm) + ...
-                    a5 * obj.acc.val(:, i_nm));
+                dFhat = fce(:, in+1) + M * (a0 * obj.dis.val(:, in) + ...
+                    a2 * obj.vel.val(:, in) + a3 * obj.acc.val(:, in)) + ...
+                    C * (a1 * obj.dis.val(:, in) + a4 * obj.vel.val(:, in) + ...
+                    a5 * obj.acc.val(:, in));
                 dU_r = Khat \ dFhat;
-                dA_r = a0 * dU_r - a0 * obj.dis.val(:, i_nm) - ...
-                    a2 * obj.vel.val(:, i_nm) - a3 * obj.acc.val(:, i_nm);
-                dV_r = obj.vel.val(:, i_nm) + ...
-                    a6 * obj.acc.val(:, i_nm) + a7 * dA_r;
-                obj.acc.val(:, i_nm+1) = dA_r;
-                obj.vel.val(:, i_nm+1) = dV_r;
-                obj.dis.val(:, i_nm+1) = dU_r;
+                dA_r = a0 * dU_r - a0 * obj.dis.val(:, in) - ...
+                    a2 * obj.vel.val(:, in) - a3 * obj.acc.val(:, in);
+                dV_r = obj.vel.val(:, in) + ...
+                    a6 * obj.acc.val(:, in) + a7 * dA_r;
+                obj.acc.val(:, in+1) = dA_r;
+                obj.vel.val(:, in+1) = dV_r;
+                obj.dis.val(:, in+1) = dU_r;
                 
             end
             
@@ -3125,6 +3120,7 @@ classdef beam < handle
                 obj.vel.full(obj.cons.dof{iCons}, :) = 0;
                 obj.dis.full(obj.cons.dof{iCons}, :) = 0;
             end
+            
         end
         %%
         function obj = abaqusStrInfo(obj, trialName)
