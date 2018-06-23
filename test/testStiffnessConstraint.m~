@@ -1,0 +1,34 @@
+disVec = fixie.dis.trial(:, 340);
+node = fixie.node.all;
+elem = fixie.elem.all;
+
+plotDeformedStruct(node, elem, disVec, 1, 0)
+
+k1 = fixie.sti.mtxCell{1};
+k2 = fixie.sti.mtxCell{2};
+
+testPm = [10 10];
+% non-constraint stiffness matrix.
+knon = k1 * testPm(1) + k2 * 1;
+
+c = k1 * testPm(1) * testPm(2);
+
+m = fixie.mas.mtx;
+
+f = fixie.fce.val;
+
+dT = 0.1;
+mT = 4.9;
+
+u0 = zeros(fixie.no.dof, 1);
+v0 = zeros(fixie.no.dof, 1);
+
+phi = eye(fixie.no.dof);
+
+[~, ~, ~, unon, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+    (phi, m, c, knon, f, 'average', dT, mT, u0, v0);
+
+% constraint stiffness matrix.
+kcon = knon;
+kcon(fixie.cons.dof{:}, :) = 0;
+kcon(:, fixie.cons.dof{:}) = 0;

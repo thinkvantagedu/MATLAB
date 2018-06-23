@@ -34,7 +34,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 4.9;
+tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -60,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 1;
+drawCol = 3;
 nPhiInitial = 1;
 nPhiEnrich = 1;
 

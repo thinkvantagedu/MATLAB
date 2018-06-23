@@ -1,0 +1,16 @@
+Abaqus JOB l9h2SingleIncI1S0
+Abaqus 6.14-1
+Abaqus License Manager checked out the following licenses:
+Abaqus/Standard checked out 5 tokens from Flexnet server 10.74.7.8.
+<139 out of 152 licenses remain available>.
+Begin Analysis Input File Processor
+Sat Jun 23 20:43:48 2018
+Run pre
+Sat Jun 23 20:43:50 2018
+End Analysis Input File Processor
+Begin Abaqus/Standard Analysis
+Sat Jun 23 20:43:50 2018
+Run standard
+Sat Jun 23 20:44:06 2018
+End Abaqus/Standard Analysis
+Abaqus JOB l9h2SingleIncI1S0 COMPLETED

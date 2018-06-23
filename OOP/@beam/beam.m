@@ -674,7 +674,7 @@ classdef beam < handle
                 % use Abaqus to obtain exact solutions.
                 obj.abaqusStrInfo(trialName);
                 % define the logarithm input for inclusion and matrix.
-                pmI = obj.pmVal.i.trial';
+                pmI = obj.pmVal.trial';
                 pmS = obj.pmVal.s.fix;
                 % input parameter 0 indicates the force is not modified.
                 obj.abaqusJob(trialName, pmI, pmS, 0, 0);
@@ -2461,8 +2461,9 @@ classdef beam < handle
                 obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
-                pmI = obj.pmVal.iter{1};
-                pmS = obj.pmVal.iter{2};
+                pmI = obj.pmVal.iter;
+                pmS = obj.pmVal.s.fix;
+                obj.fce.pass = F;
                 % input parameter 1 indicates the force is completely
                 % modified.
                 obj.abaqusJob(trialName, pmI, pmS, 1, 'residual');
