@@ -1,4 +1,4 @@
-clear; clc;
+clear;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
 callPreliminary;
@@ -52,10 +52,25 @@ fixie.exactSolutionDynamic('initial', 1, trialName, 0);
 disAbaqus = fixie.dis.trial;
 
 %% plot displacement for test dof.
-clf;
-x = 1:fixie.no.t_step;
+x = 0:fixie.time.step:fixie.time.max;
 
-testDof = 500;
-plot(x, disMatlab(testDof, :), 'b->');
-hold on
-plot(x, disAbaqus(testDof, :), 'k-<');
+testDof = [100; 200; 300; 400];
+testi = testDof(4);
+figure
+plot(x, disMatlab(testi, :), 'b--', 'lineWidth', 4);
+leg = legend(strcat('Matlab, test DoF=', num2str(testi)));
+leg.FontSize = 30;
+xlabel('time')
+ylabel('Amplitude')
+grid on
+axis tight
+set(gca, 'fontsize', 30, 'lineWidth', 2)
+figure
+plot(x, disAbaqus(testi, :), 'k-.', 'lineWidth', 4);
+leg = legend(strcat('Abaqus, test DoF=', num2str(testi)));
+leg.FontSize = 30;
+xlabel('time')
+ylabel('Amplitude')
+grid on
+axis tight
+set(gca, 'fontsize', 30, 'lineWidth', 2)
