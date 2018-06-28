@@ -89,7 +89,7 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-    fixie.plotSurfGrid('original', '-.k', 0);
+%     fixie.plotSurfGrid('original', '-.k', 0);
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.

@@ -449,7 +449,7 @@ classdef beam < handle
             end
             F = obj.fce.val;
             if ratioSwitch == 0
-                [leftVecAll, ~, ~] = svd(rbErrFull, 0);
+                [leftVecAll, ~, ~] = svd(rbErrFull, 'econ');
                 phiEnrich = leftVecAll(:, 1:nEnrich);
                 phi_ = [obj.phi.val phiEnrich];
                 obj.GramSchmidtOOP(phi_);
@@ -461,7 +461,7 @@ classdef beam < handle
                 phiInpt = obj.phi.val;
                 % generate initial projection error.
                 rbErrFull = disMax - phiInpt * phiInpt' * disMax;
-                [phiEnrich, ~, ~] = svd(rbErrFull, 0);
+                [phiEnrich, ~, ~] = svd(rbErrFull, 'econ');
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
                 obj.basisCompressionRvIterate(disMax, phiInpt, phiEnrich, ...
@@ -505,7 +505,7 @@ classdef beam < handle
             obj.no.store.rb = [];
             disTrial = obj.dis.trial;
             pmTrial = obj.pmVal.trial;
-            [u, ~, ~] = svd(disTrial, 0);
+            [u, ~, ~] = svd(disTrial, 'econ');
             
             % construct system inputs.
             M = obj.mas.mtx;
@@ -1161,7 +1161,7 @@ classdef beam < handle
                     obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
-                    [uFcel, uFceSig, uFcer] = svd(obj.dis.full, 0);
+                    [uFcel, uFceSig, uFcer] = svd(obj.dis.full, 'econ');
                     uFcel = uFcel(:, 1:obj.no.respSVD);
                     uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
                     uFcer = uFcer(:, 1:obj.no.respSVD);
@@ -1265,7 +1265,7 @@ classdef beam < handle
                                     {obj.dis.full};
                             elseif respSVDswitch == 1
                                 disSVD = full(obj.dis.full);
-                                [ul, usig, ur] = svd(disSVD, 0);
+                                [ul, usig, ur] = svd(disSVD, 'econ');
                                 ul = ul(:, 1:obj.no.respSVD);
                                 usig = usig(1:obj.no.respSVD, ...
                                     1:obj.no.respSVD);
@@ -1655,7 +1655,7 @@ classdef beam < handle
             % this method performs SVD on the stored reduced variables.
             % obj.resp.rv.L contains singular values.
             rvpmStore = cell2mat(obj.resp.rvpmStore);
-            [rvL, rvSig, rvR] = svd(rvpmStore, 0);
+            [rvL, rvSig, rvR] = svd(rvpmStore, 'econ');
             
             [~, ~, nRvSVD] = basisCompressionSingularRatio(rvpmStore, ...
                 rvSVDreRatio);
@@ -2665,8 +2665,8 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-%             qoiT = [10 20 30 40 50]';
-            qoiT = [3 5 7]';
+            qoiT = [10 20 30 40 50]';
+%             qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
