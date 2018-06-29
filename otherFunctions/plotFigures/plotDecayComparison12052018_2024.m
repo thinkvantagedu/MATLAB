@@ -1,5 +1,5 @@
 clear; clc;
-cd ~/Desktop/Temp/thesisResults/12052018_2024+;
+cd ~/Desktop/Temp/thesisResults/12052018_2024+/trial=129/;
 load('errOriginalStore.mat', 'errOriginalStore')
 load('errProposedStore.mat', 'errProposedStore')
 load('errRandom1.mat', 'errRandom1')
@@ -15,24 +15,22 @@ errRanMax5 = errRandom5.store.max;
 
 %% plot decay value curve.
 clf; 
-errxOri = [4 6 8 10 13 14 18 20 24 34 39];
+errxOri = [errOriginalStore.store.redInfo{2:end, 3}];
 errOriMax = errOriginalStore.store.max;
-errxPro = [4 7 8 10 12 14 22 26 30 33 38];
+errxPro = [errProposedStore.store.redInfo{2:end, 3}];
 errProMax = errProposedStore.store.max.verify;
-errRanx1 = [4 6 7 10 11 12 14 16 17 22 30 32 33 36 39 43 46];
-errRanx2 = [4 6 7 8 9 10 11 13 14 15 17 23 25 28 33 35 36 44 ...
-    45 46 47 48 49 50 51 55];
-errRanx3 = [4 6 7 9 10 12 14 15 23 24 25 29 33 35];
-errRanx4 = [4 6 7 8 9 12 19 20 22 23 24 29 33 35 38 39 40];
-errRanx5 = [4 6 7 8 11 12 13 14 15 16 17 18 19 20 21 22 24 25 27 28 29 30 34 ...
-    35 39 40 41 42 43 44 45 46 47 53];
+errRanx1 = [errRandom1.store.redInfo{2:end, 3}];
+errRanx2 = [errRandom2.store.redInfo{2:end, 3}];
+errRanx3 = [errRandom3.store.redInfo{2:end, 3}];
+errRanx4 = [errRandom4.store.redInfo{2:end, 3}];
+errRanx5 = [errRandom5.store.redInfo{2:end, 3}];
 
 figure(1)
 ha1 = semilogy(errxOri, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 grid on
 hold all
 ha2 = semilogy(errxPro, errProMax, 'r-+', 'MarkerSize', 10, 'lineWidth', 3);
-ylim([0.028 errProMax(1)])
+% ylim([0.028 errProMax(1)])
 
 har1 = semilogy(errRanx1, errRanMax1, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5);
 har2 = semilogy(errRanx2, errRanMax2, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5);

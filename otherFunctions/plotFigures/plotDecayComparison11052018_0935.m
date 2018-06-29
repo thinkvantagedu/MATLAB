@@ -1,12 +1,12 @@
 clf; clear; clc;
-cd ~/Desktop/Temp/thesisResults/11052018_0935+;
+cd ~/Desktop/Temp/thesisResults/11052018_0935+/trial=129/;
 load('errOriginalStore.mat', 'errOriginalStore')
-load('errProposedStore129.mat', 'errProposedStore')
+load('errProposedStore.mat', 'errProposedStore')
 load('errRandom1.mat', 'errRandom1')
 load('errRandom2.mat', 'errRandom2')
 load('errRandom3.mat', 'errRandom3')
 load('errRandom4.mat', 'errRandom4')
-load('errRandom6.mat', 'errRandom6')
+load('errRandom5.mat', 'errRandom5')
 
 nPhiIni = 10;
 nPhiAdd = 4;
@@ -15,23 +15,23 @@ nRb = 50;
 %% plot decay value curve.
 errx = (nPhiIni:nPhiAdd:nRb);
 errOriMax = errOriginalStore.store.max;
-errProMax129 = errProposedStore.store.max.verify;
+errProMax = errProposedStore.store.max.verify;
 
 errRanMax1 = errRandom1.store.max;
 errRanMax2 = errRandom2.store.max;
 errRanMax3 = errRandom3.store.max;
 errRanMax4 = errRandom4.store.max;
-errRanMax6 = errRandom6.store.max;
+errRanMax5 = errRandom5.store.max;
 
 figure(1)
 semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 hold on
-semilogy(errx, errProMax129, 'r-^', 'MarkerSize', 10, 'lineWidth', 3);
+semilogy(errx, errProMax, 'r-^', 'MarkerSize', 10, 'lineWidth', 3);
 semilogy(errx, errRanMax1, 'k-.', 'lineWidth', 1.5);
 semilogy(errx, errRanMax2, 'k-.', 'lineWidth', 1.5);
 semilogy(errx, errRanMax3, 'k-.', 'lineWidth', 1.5);
 semilogy(errx, errRanMax4, 'k-.', 'lineWidth', 1.5);
-semilogy(errx, errRanMax6, 'k-.', 'lineWidth', 1.5);
+semilogy(errx, errRanMax5, 'k-.', 'lineWidth', 1.5);
 xticks(errx);
 axis([0 nRb 0 errOriMax(1)]);
 axis normal
@@ -51,7 +51,7 @@ figure(2)
 pmSpaceOri = logspace(-1, 1, 129);
 pmSpacePro = logspace(-1, 1, 129);
 errPmLocOri = pmSpaceOri(errOriginalStore.store.loc);
-errPmLocPro = pmSpacePro(errProposedStore.store.loc.verify);
+errPmLocPro = pmSpacePro(errProposedStore.store.loc.verify(:, 1));
 % errPmLocRan1 = pmSpaceOri(errRandom1.store.loc);
 % errPmLocRan2 = pmSpaceOri(errRandom2.store.loc);
 % errPmLocRan3 = pmSpaceOri(errRandom3.store.loc);
@@ -59,7 +59,7 @@ errPmLocPro = pmSpacePro(errProposedStore.store.loc.verify);
 % errPmLocRan6 = pmSpaceOri(errRandom6.store.loc);
 loglog(errPmLocOri, errOriMax, 'b-o', 'MarkerSize', 10, 'LineWidth', 3)
 hold on
-loglog(errPmLocPro, errProMax129, 'r-+', 'MarkerSize', 10, 'LineWidth', 3)
+loglog(errPmLocPro, errProMax, 'r-+', 'MarkerSize', 10, 'LineWidth', 3)
 
 % loglog(errPmLocRan1, errRanMax1, 'k-.', 'MarkerSize', 10, 'LineWidth', 1.5)
 % loglog(errPmLocRan2, errRanMax2, 'k-.', 'MarkerSize', 10, 'LineWidth', 1.5)

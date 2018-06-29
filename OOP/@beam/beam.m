@@ -473,7 +473,6 @@ classdef beam < handle
                     eMaxPre = obj.err.store.max(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc;
                 case 'hhat'
-                    
                     eMaxPre = obj.err.store.max.hhat(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc.hhat;
             end
