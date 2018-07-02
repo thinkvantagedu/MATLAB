@@ -60,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 11;
+drawCol = 22;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -79,7 +79,7 @@ reductionRatio = 0.6;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 20; 
+nRespSVD = 25; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -93,7 +93,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 0;
+ratioSwitch = 1;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 1;
 structSwitch = 0;

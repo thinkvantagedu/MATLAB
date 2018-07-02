@@ -89,7 +89,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.pmPrepare(rvSVDswitch, 0);
         
         fixie.rvPrepare(rvSVDswitch);
-                
+        
         fixie.rvpmColStore(iIter);
         
     end
@@ -145,7 +145,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.storeErrorInfo;
         fixie.errStoreAllSurfs('hhat');
         
-                fixie.plotSurfGrid('hhat', 'g->', 0);
+        fixie.plotSurfGrid('hhat', 'g->', 0);
         %         fixie.plotSurfGrid('hat', 'r--', 0);
         
         if fixie.countGreedy == drawRow * drawCol
@@ -153,7 +153,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             disp('iterations reach maximum plot number')
             break
         end
-    
+        
         fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
         % rbEnrichment set the indicators.
         fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'hhat', 0);

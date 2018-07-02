@@ -1,5 +1,5 @@
 clear; clc;
-cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=65/;
+cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=1/;
 load('errOriginalStore.mat', 'errOriginalStore')
 load('errProposedStore.mat', 'errProposedStore')
 load('errRandom1.mat', 'errRandom1')
@@ -15,22 +15,22 @@ errRanMax5 = errRandom5.store.max;
 
 %% plot decay value curve.
 clf; 
-errxOri = [errOriginalStore.store.redInfo{2:end, 3}];
+errxOri = [errOriginalStore.store.redInfo{2:end - 1, 3}];
 errOriMax = errOriginalStore.store.max;
-errxPro = [errProposedStore.store.redInfo{2:end, 3}];
+errxPro = [errProposedStore.store.redInfo{2:end - 1, 3}];
 errProMax = errProposedStore.store.max.verify;
-errRanx1 = [errRandom1.store.redInfo{2:end, 3}];
-errRanx2 = [errRandom2.store.redInfo{2:end, 3}];
-errRanx3 = [errRandom3.store.redInfo{2:end, 3}];
-errRanx4 = [errRandom4.store.redInfo{2:end, 3}];
-errRanx5 = [errRandom5.store.redInfo{2:end, 3}];
+errRanx1 = [errRandom1.store.redInfo{2:end - 1, 3}];
+errRanx2 = [errRandom2.store.redInfo{2:end - 1, 3}];
+errRanx3 = [errRandom3.store.redInfo{2:end - 1, 3}];
+errRanx4 = [errRandom4.store.redInfo{2:end - 1, 3}];
+errRanx5 = [errRandom5.store.redInfo{2:end - 1, 3}];
 
 figure(1)
 ha1 = semilogy(errxOri, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 grid on
 hold all
 ha2 = semilogy(errxPro, errProMax, 'r-+', 'MarkerSize', 10, 'lineWidth', 3);
-ylim([errOriMax(end) errOriMax(1)])
+% ylim([0.028 errProMax(1)])
 
 har1 = semilogy(errRanx1, errRanMax1, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5);
 har2 = semilogy(errRanx2, errRanMax2, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5);
@@ -38,12 +38,11 @@ har3 = semilogy(errRanx3, errRanMax3, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5)
 har4 = semilogy(errRanx4, errRanMax4, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5);
 har5 = semilogy(errRanx5, errRanMax5, 'k-.', 'MarkerSize', 10, 'lineWidth', 1.5);
 legend({'Classical', 'Proposed', 'Random'}, 'FontSize', 20);
-% xlim([-inf 44])
+
 ax1 = gca;
 ax1.XColor = 'b';
 ax1.XTick = errxOri;
-xlimr = 44;
-ax1.XLim = [0 xlimr];
+ax1.XLim = [0 60];
 xlabel('Total number of basis vectors (classical)', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
 set(gca,'fontsize',20)
@@ -52,7 +51,7 @@ ax2 = axes(...
     'XAxisLocation',  'top',...
     'Color',          'none',...
     'YTick',          [],...
-    'XLim',           [0 xlimr],...
+    'XLim',           [0 60],...
     'XTick',          errxPro);
 ax2.XColor = 'r';
 ax2.XTick = errxPro;
@@ -60,6 +59,8 @@ set(gca,'fontsize',20)
 xlabel('Total number of basis vectors (proposed)', 'FontSize', 20);
 grid on
 hold on
+
+
 
 %% plot decay location curve.
 figure(2)
