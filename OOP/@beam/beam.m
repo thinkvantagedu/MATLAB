@@ -2515,7 +2515,7 @@ classdef beam < handle
             % is computed.
             obj.mas.re.mtx = obj.phi.val' * obj.mas.mtx * obj.phi.val;
             obj.dam.re.mtx = obj.phi.val' * obj.dam.mtx * obj.phi.val;
-            
+            keyboard
         end
         %%
         function obj = refiCondition(obj, type, refCeaseSwitch)
