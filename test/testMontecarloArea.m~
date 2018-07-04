@@ -1,0 +1,27 @@
+clear; clc; clf;
+% this script tests Monte-Carlo to calculate area. 
+%% plot figure. 
+xaxis = 0 : 0.25 : 12;
+y1 = xaxis .^ 2;
+y2 = 12 - xaxis;
+plot(xaxis, y1, xaxis, y2);
+xlabel('x');
+ylabel('y');
+legend('y1 = x^2','y2 = 12 - x');
+axis([0 15 0 15]);
+text(3, 9, 'cross');
+grid minor
+%% Monte Carlo.
+% 
+total = 10;
+x = unifrnd(0, 12, [1, dens]);
+y = unifrnd(0, 9, [1, dens]);
+freq = sum(y < x .^ 2 & x <= 3) + sum(y < 12 - x & x >= 3);
+
+areaSquare = 12 * 9;
+ratio = freq / total;
+area = areaSquare * (freq / total);
+
+hold on
+scatter(x, y)
+axis square
