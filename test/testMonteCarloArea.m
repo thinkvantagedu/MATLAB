@@ -27,7 +27,5 @@ hold on
 scatter(x, y)
 axis square
 
-
-
 % Monte-Carlo can be pseudo-random in this case. If not pseudo-random, use
 % low-discrepancy sequence such as Halton or Hammersley or Sobol sequence. 
