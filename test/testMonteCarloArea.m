@@ -12,16 +12,16 @@ axis([0 12 0 9]);
 grid minor
 %% Monte Carlo.
 % total number of random points.
-N = 1000;
+pAll = 1000;
 % generate N random points.
-x = unifrnd(0, 12, [1, N]);
-y = unifrnd(0, 9, [1, N]);
+x = unifrnd(0, 12, [1, pAll]);
+y = unifrnd(0, 9, [1, pAll]);
 % calculate frequency, i.e. how many points are inside the pattern.
-freq = sum(y < x .^ 2 & x <= 3) + sum(y < 12 - x & x >= 3);
+pIn = sum(y < x .^ 2 & x <= 3) + sum(y < 12 - x & x >= 3);
 % area of the rectangle.
 areaRec = 12 * 9;
-ratio = freq / N;
-area = areaRec * (freq / N);
+ratio = pIn / pAll;
+area = areaRec * (pIn / pAll);
 
 hold on
 scatter(x, y)
