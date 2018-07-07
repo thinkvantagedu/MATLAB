@@ -1,10 +1,18 @@
 % this is the original static case, no damping, to test the Greedy procedure.
-
+% initial sample is 10^0, to suit the uniform structure sequence.
 clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
 callPreliminary;
 noPm = 1;
+nConsEnd = 2;
+nDofPerNode = 2;
+fNode = 9;
+%% test cases. 1 at a time. If all 0, Greedy procedure.
+randomSwitch = 0;
+structSwitch = 0;
+sobolSwitch = 0;
+latinSwitch = 1;
 
 %% trial solution
 % use subclass: fixbeam to create beam.
@@ -21,7 +29,8 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
+fixie.generatePmSpaceSingleDim(structSwitch, sobolSwitch, latinSwitch, ...
+    drawRow, drawCol);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -35,10 +44,10 @@ fixie.generateNodalFceStatic(nDofPerNode);
 % quantity of interest.
 fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 fixie.errPrepareRemainStatic;
-if structSwitch == 0
+if randomSwitch == 0 && structSwitch == 0
     % compute initial exact solution.
     fixie.exactSolutionStatic('initial');
-elseif structSwitch == 1
+elseif randomSwitch == 0 && structSwitch == 1
     fixie.exactSolutionStructStatic('initial');
 elseif randomSwitch == 1 && structSwitch == 1
     error('Random and struct cannot co-exist.');

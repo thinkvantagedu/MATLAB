@@ -43,7 +43,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 129;
+trial = 65;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -60,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 22;
+drawCol = 5;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -91,12 +91,11 @@ timeType = 'allTime';
 qoiSwitchSpace = 1;
 qoiSwitchTime = 1;
 % SVD on responses.
-respSVDswitch = 1;
+respSVDswitch = 0;
 % ratioSwitch iteratively add basis vector based on RB error,
 ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 randomSwitch = 1;
-structSwitch = 0;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;

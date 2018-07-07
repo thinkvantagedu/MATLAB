@@ -9,6 +9,11 @@ nConsEnd = 2;
 nDofPerNode = 2;
 fNode = 9;
 tic
+%% test cases. 1 at a time. If all 0, Greedy procedure.
+randomSwitch = 0;
+structSwitch = 0;
+sobolSwitch = 0;
+latinSwitch = 0;
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -27,7 +32,8 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
+fixie.generatePmSpaceSingleDim(0, sobolSwitch, latinSwitch, ...
+    drawRow, drawCol);
 
 % generate damping coefficient space, the combination is stiffness then damping.
 fixie.generateDampingSpace(damLeng, damBond);

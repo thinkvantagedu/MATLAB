@@ -336,8 +336,8 @@ classdef beam < handle
                 
             elseif sobolSwitch == 1
                 pmSobol = {};
-                pmAll_ = sobolset(1);
-                pmPart = pmAll_(1:nCal);
+                pmAll = sobolset(1);
+                pmPart = pmAll(1:nCal);
                 pmPart = -1 + 2 * pmPart;
                 for is = 1:nCal
                     pmSobol{is} = pmPart(1:is);
@@ -346,24 +346,27 @@ classdef beam < handle
                 obj.pmVal.sobol.i = cellfun(@(v) 10 .^ v, pmSobol, 'un', 0);
             elseif latinSwitch == 1
                 pmLatin = {};
-                pmAll_ = lhsdesign(nCal, 1);
-                pmAll_ = -1 + 2 * pmAll_;
-                pmAll = zeros(nCal, 1);
+                pmAll = lhsdesign(nCal, 1);
+                pmAll = -1 + 2 * pmAll;
                 % latin needs to find the closest matching point on the
                 % parameter value and expo domain. 
-                pmExpoInpt = obj.pmExpo.comb.space(:, 3);
-                for ip = 1:length(pmAll_)
-                    [~, idx] = min(abs(pmAll_(ip) - pmExpoInpt));
-                    pmAll(ip) = pmExpoInpt(idx);
+                pmExpo = obj.pmExpo.comb.space(:, 3);
+                for ip = 1:length(pmAll)
+                    
+                    
+                    
                 end
                 pmAll(1) = 0;
+                keyboard
                 for is = 1:nCal
                     pmLatin{is} = pmAll(1:is);
                 end
                 obj.pmExpo.latin.i = pmLatin;
                 obj.pmVal.latin.i = cellfun(@(v) 10 .^ v, pmLatin, 'un', 0);
                 
+                
             end
+            keyboard
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond)
