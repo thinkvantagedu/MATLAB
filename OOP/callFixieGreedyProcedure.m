@@ -8,12 +8,12 @@ noPm = 1;
 nConsEnd = 2;
 nDofPerNode = 2;
 fNode = 9;
-%% test cases. 1 at a time. If all 0, Greedy procedure.
+%% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
 randomSwitch = 0;
 structSwitch = 0;
 sobolSwitch = 0;
 latinSwitch = 1;
-
+greedySwitch = 0;
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -44,13 +44,12 @@ fixie.generateNodalFceStatic(nDofPerNode);
 % quantity of interest.
 fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 fixie.errPrepareRemainStatic;
-if randomSwitch == 0 && structSwitch == 0
+if greedySwitch == 1
     % compute initial exact solution.
     fixie.exactSolutionStatic('initial');
-elseif randomSwitch == 0 && structSwitch == 1
-    fixie.exactSolutionStructStatic('initial');
-elseif randomSwitch == 1 && structSwitch == 1
-    error('Random and struct cannot co-exist.');
+else
+    fixie.exactSolutionSampleStatic('initial', structSwitch, sobolSwitch, ...
+        latinSwitch);
 end
 % compute initial reduced basis from trial solution.
 fixie.rbInitialStatic;
@@ -80,7 +79,7 @@ while fixie.err.max.val > fixie.err.lowBond
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
-       
+    
     fixie.extractMaxErrorInfo('original', randomSwitch, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
@@ -95,15 +94,14 @@ while fixie.err.max.val > fixie.err.lowBond
         disp('iterations reach maximum plot number')
         break
     end
-    if structSwitch == 0
+    if greedySwitch == 1
         fixie.exactSolutionStatic('Greedy');
         % rbEnrichment set the indicators.
         fixie.rbEnrichmentStatic;
-    elseif structSwitch == 1
-        fixie.exactSolutionStructStatic('Greedy');
+    else
+        fixie.exactSolutionSampleStatic('Greedy', structSwitch, sobolSwitch, ...
+            latinSwitch);
         fixie.rbEnrichmentStructStatic;
-    elseif randomSwitch == 1 && structSwitch == 1
-        error('Random and struct cannot co-exist.');
     end
     fixie.reducedMatricesStatic;
     

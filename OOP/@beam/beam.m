@@ -339,8 +339,9 @@ classdef beam < handle
                 pmAll_ = sobolset(1);
                 pmPart = pmAll_(1:nCal);
                 pmPart = -1 + 2 * pmPart;
+                pmPart([1 2]) = pmPart([2 1]);
                 for is = 1:nCal
-                    pmSobol{is} = pmPart(1:is);
+                    pmSobol{is} = (pmPart(1:is))';
                 end
                 obj.pmExpo.sobol.i = pmSobol;
                 obj.pmVal.sobol.i = cellfun(@(v) 10 .^ v, pmSobol, 'un', 0);
@@ -358,11 +359,10 @@ classdef beam < handle
                 end
                 pmAll(1) = 0;
                 for is = 1:nCal
-                    pmLatin{is} = pmAll(1:is);
+                    pmLatin{is} = (pmAll(1:is))';
                 end
                 obj.pmExpo.latin.i = pmLatin;
                 obj.pmVal.latin.i = cellfun(@(v) 10 .^ v, pmLatin, 'un', 0);
-                
             end
         end
         %%
@@ -731,14 +731,28 @@ classdef beam < handle
             
         end
         %%
-        function obj = exactSolutionStructStatic(obj, type)
+        function obj = exactSolutionSampleStatic(obj, type, structSwitch, ...
+                sobolSwitch, latinSwitch)
             % this method computes exact solutions at structurally
             % distributed samples.
             switch type
                 case 'initial'
-                    pmInp = obj.pmVal.struct.i{1};
+                    if structSwitch == 1
+                        pmInp = obj.pmVal.struct.i{1};
+                    elseif sobolSwitch == 1
+                        pmInp = obj.pmVal.sobol.i{1};
+                    elseif latinSwitch == 1
+                        pmInp = obj.pmVal.latin.i{1};
+                    end
+                    keyboard
                 case 'Greedy'
-                    pmInp = obj.pmVal.struct.i{obj.countGreedy + 1};
+                    if structSwitch == 1
+                        pmInp = obj.pmVal.struct.i{obj.countGreedy + 1};
+                    elseif sobolSwitch == 1
+                        pmInp = obj.pmVal.sobol.i{obj.countGreedy + 1};
+                    elseif latinSwitch == 1
+                        pmInp = obj.pmVal.latin.i{obj.countGreedy + 1};
+                    end
             end
             % use MATLAB Newmark code to obtain exact solutions.
             disStore = zeros(obj.no.dof, length(pmInp));
