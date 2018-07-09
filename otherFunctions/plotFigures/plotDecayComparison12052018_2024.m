@@ -1,5 +1,5 @@
 clear; clc;
-cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=65/;
+cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=129/;
 load('errOriginalStore.mat', 'errOriginalStore')
 load('errProposedStore.mat', 'errProposedStore')
 load('errRandom1.mat', 'errRandom1')

@@ -1,6 +1,6 @@
 % this is the original static case, no damping, to test the Greedy procedure.
 % initial sample is 10^0, to suit the uniform structure sequence.
-clear; clc;
+clear; clc; clf;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
 callPreliminary;
@@ -8,12 +8,7 @@ noPm = 1;
 nConsEnd = 2;
 nDofPerNode = 2;
 fNode = 9;
-%% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
-randomSwitch = 0;
-structSwitch = 0;
-sobolSwitch = 0;
-latinSwitch = 1;
-greedySwitch = 0;
+
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -29,8 +24,8 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim(structSwitch, sobolSwitch, latinSwitch, ...
-    drawRow, drawCol);
+fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
+    latinSwitch, drawRow, drawCol);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -41,15 +36,16 @@ fixie.pmTrial(0);
 % generate nodal force.
 fixie.generateNodalFceStatic(nDofPerNode);
 
-% quantity of interest.
+% quantity of interest. Time is not varied in this case. 
 fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 fixie.errPrepareRemainStatic;
-if greedySwitch == 1
+if any([greedySwitch randomSwitch sobolSwitch latinSwitch]) == 1
     % compute initial exact solution.
+    % the exact solution is computed for SINGLE magic point.
     fixie.exactSolutionStatic('initial');
-else
-    fixie.exactSolutionSampleStatic('initial', structSwitch, sobolSwitch, ...
-        latinSwitch);
+elseif structSwitch == 1
+    % the exact solutions are computed for ALL magic points.
+    fixie.exactSolutionStructStatic('initial');
 end
 % compute initial reduced basis from trial solution.
 fixie.rbInitialStatic;
@@ -80,7 +76,8 @@ while fixie.err.max.val > fixie.err.lowBond
         
     end
     
-    fixie.extractMaxErrorInfo('original', randomSwitch, 0); % greedy + 1
+    fixie.extractMaxErrorInfo('original', greedySwitch, randomSwitch, ...
+        sobolSwitch, latinSwitch, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original', 0);
@@ -94,13 +91,14 @@ while fixie.err.max.val > fixie.err.lowBond
         disp('iterations reach maximum plot number')
         break
     end
-    if greedySwitch == 1
+    if any([greedySwitch randomSwitch sobolSwitch latinSwitch]) == 1
+        % compute initial exact solution.
+        % the exact solution is computed for SINGLE magic point.
         fixie.exactSolutionStatic('Greedy');
         % rbEnrichment set the indicators.
         fixie.rbEnrichmentStatic;
     else
-        fixie.exactSolutionSampleStatic('Greedy', structSwitch, sobolSwitch, ...
-            latinSwitch);
+        fixie.exactSolutionStructStatic('Greedy');
         fixie.rbEnrichmentStructStatic;
     end
     fixie.reducedMatricesStatic;

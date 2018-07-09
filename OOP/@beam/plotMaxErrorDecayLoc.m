@@ -2,9 +2,9 @@ function obj = plotMaxErrorDecayLoc(obj, errType, color, width, damSwitch)
 
 switch errType
     case 'original'
-        errx = obj.pmVal.i.space{:}(obj.err.store.loc, 2);
+        errx = obj.pmVal.i.space{:}(obj.err.store.realLoc, 2);
         erry = obj.err.store.max;
-        xLocText = obj.err.store.loc;
+        xLocText = obj.err.store.realLoc;
     case 'verify'
         errx = obj.err.store.loc.verify(:, 2);
         erry = obj.err.store.max.verify;
@@ -28,8 +28,8 @@ elseif damSwitch == 1
     
     ex = obj.pmVal.i.space{:}(:, 2);
     ey = obj.pmVal.damp.space(:, 3);
-    eMx = ex(obj.err.store.loc(:, 1));
-    eMy = ey(obj.err.store.loc(:, 2));
+    eMx = ex(obj.err.store.realLoc(:, 1));
+    eMy = ey(obj.err.store.realLoc(:, 2));
     eMz = obj.err.store.max;
     scatter3(eMx, eMy, eMz, 'filled', 'k')
     for iT = 1:length(eMx)

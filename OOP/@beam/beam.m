@@ -294,7 +294,8 @@ classdef beam < handle
         end
         %%
         function obj = generatePmSpaceSingleDim(obj, ...
-                structSwitch, sobolSwitch, latinSwitch, drawRow, drawCol)
+                randomSwitch, structSwitch, sobolSwitch, latinSwitch, ...
+                drawRow, drawCol)
             % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
             
@@ -322,11 +323,25 @@ classdef beam < handle
             % set single inclusion error surface to 0.
             obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
             
-            % treat different sampling cases. 
+            % treat different sampling cases.
             nCal = drawRow * drawCol;
-            if structSwitch == 1
+            pmExpoInpt = obj.pmExpo.comb.space(:, 3);
+            redun = 10;
+            if randomSwitch == 1
+                % randomly select magic point locations, then find related
+                % pm values.
+                % random magic point locations. +10 for redundancy.
+                randLoc = randi([1 obj.domLeng.i], [nCal + redun, 1]);
+                randVal = pmExpoInpt(randLoc);
+                obj.pmExpo.random.i = [randVal randLoc];
+                obj.pmVal.random.i = [10 .^ randVal, randLoc];
+                
+            elseif structSwitch == 1
+                % construct structure pm values, then find related locations.
+                % pmStruct is cell stratified as the basis is constructed
+                % from all exact solutions.
                 pmStruct = {};
-                for is = 1:nCal
+                for is = 1:nCal + redun
                     pmStruct{is} = linspace(-1, 1, is);
                 end
                 pmStruct{1} = 0;
@@ -335,34 +350,40 @@ classdef beam < handle
                 obj.pmVal.struct.i = cellfun(@(v) 10 .^ v, pmStruct, 'un', 0);
                 
             elseif sobolSwitch == 1
-                pmSobol = {};
+                % construct Sobol pm values, then find the closest locations.
                 pmAll_ = sobolset(1);
-                pmPart = pmAll_(1:nCal);
+                % +10 for redundancy.
+                pmPart = pmAll_(2:nCal + redun);
                 pmPart = -1 + 2 * pmPart;
                 pmPart([1 2]) = pmPart([2 1]);
-                for is = 1:nCal
-                    pmSobol{is} = (pmPart(1:is))';
+                for ip = 1:length(pmPart)
+                    [~, idx] = min(abs(pmPart(ip) - pmExpoInpt));
+                    pmIdx(ip) = idx;
                 end
+                pmSobol = [pmPart'; pmIdx]';
+                % first column of pmSobol is pmExpo, second is number label.
                 obj.pmExpo.sobol.i = pmSobol;
-                obj.pmVal.sobol.i = cellfun(@(v) 10 .^ v, pmSobol, 'un', 0);
+                obj.pmVal.sobol.i = [10 .^ pmSobol(:, 1) pmSobol(:, 2)];
+                
             elseif latinSwitch == 1
-                pmLatin = {};
-                pmAll_ = lhsdesign(nCal, 1);
+                % construct Latin pm values, then find the closest locations.
+                % +10 for redundancy.
+                pmAll_ = lhsdesign(nCal + redun, 1);
                 pmAll_ = -1 + 2 * pmAll_;
                 pmAll = zeros(nCal, 1);
+                pmIdx = zeros(nCal, 1);
                 % latin needs to find the closest matching point on the
-                % parameter value and expo domain. 
-                pmExpoInpt = obj.pmExpo.comb.space(:, 3);
-                for ip = 1:length(pmAll_)
+                % parameter value and expo domain.
+                pmAll_(1) = 0;
+                for ip = 1:nCal + redun
                     [~, idx] = min(abs(pmAll_(ip) - pmExpoInpt));
                     pmAll(ip) = pmExpoInpt(idx);
+                    pmIdx(ip) = idx;
                 end
-                pmAll(1) = 0;
-                for is = 1:nCal
-                    pmLatin{is} = (pmAll(1:is))';
-                end
+                pmLatin = [pmAll'; pmIdx']';
                 obj.pmExpo.latin.i = pmLatin;
-                obj.pmVal.latin.i = cellfun(@(v) 10 .^ v, pmLatin, 'un', 0);
+                obj.pmVal.latin.i = [10 .^ pmLatin(:, 1) pmLatin(:, 2)];
+                
             end
         end
         %%
@@ -380,8 +401,8 @@ classdef beam < handle
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
             obj.pmVal.damp.space = [1:damLeng; damVal]';
             
-%             obj.pmVal.damp.space(:, 3) = zeros(damLeng, 1);
-%             obj.pmVal.comb.space(:, 5) = zeros(damLeng * obj.domLeng.i, 1);
+            % obj.pmVal.damp.space(:, 3) = zeros(damLeng, 1);
+            % obj.pmVal.comb.space(:, 5) = zeros(damLeng * obj.domLeng.i, 1);
             
             obj.err.setZ.mInc = zeros(obj.domLeng.i, damLeng);
             obj.domLeng.damp = damLeng;
@@ -410,8 +431,7 @@ classdef beam < handle
             obj.GramSchmidtOOP(phi_);
             obj.phi.val = obj.phi.otpt;
             
-            % Gram Schmidt 3 times to ensure orthogonality?????
-            eMaxLoc = obj.err.max.loc;
+            eMaxLoc = obj.err.max.magicLoc;
             
             redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
             obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
@@ -440,7 +460,7 @@ classdef beam < handle
             obj.GramSchmidtOOP(phi_);
             obj.phi.val = obj.phi.otpt;
             
-            eMaxLoc = obj.err.max.loc;
+            eMaxLoc = obj.err.max.magicLoc;
             
             redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
             obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
@@ -506,7 +526,7 @@ classdef beam < handle
             switch errType
                 case 'original'
                     eMaxPre = obj.err.store.max(obj.countGreedy);
-                    eMaxLoc = obj.err.max.loc;
+                    eMaxLoc = obj.err.max.realLoc;
                 case 'hhat'
                     eMaxPre = obj.err.store.max.hhat(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc.hhat;
@@ -731,29 +751,11 @@ classdef beam < handle
             
         end
         %%
-        function obj = exactSolutionSampleStatic(obj, type, structSwitch, ...
-                sobolSwitch, latinSwitch)
+        function obj = exactSolutionStructStatic(obj, type)
             % this method computes exact solutions at structurally
             % distributed samples.
-            switch type
-                case 'initial'
-                    if structSwitch == 1
-                        pmInp = obj.pmVal.struct.i{1};
-                    elseif sobolSwitch == 1
-                        pmInp = obj.pmVal.sobol.i{1};
-                    elseif latinSwitch == 1
-                        pmInp = obj.pmVal.latin.i{1};
-                    end
-                    keyboard
-                case 'Greedy'
-                    if structSwitch == 1
-                        pmInp = obj.pmVal.struct.i{obj.countGreedy + 1};
-                    elseif sobolSwitch == 1
-                        pmInp = obj.pmVal.sobol.i{obj.countGreedy + 1};
-                    elseif latinSwitch == 1
-                        pmInp = obj.pmVal.latin.i{obj.countGreedy + 1};
-                    end
-            end
+            pmInp = obj.pmVal.struct.i{obj.countGreedy + 1};
+            
             % use MATLAB Newmark code to obtain exact solutions.
             disStore = zeros(obj.no.dof, length(pmInp));
             K = sparse(obj.no.dof, obj.no.dof);
@@ -851,7 +853,7 @@ classdef beam < handle
         function obj = otherPrepare(obj, nSVD)
             % prepare other essential storages.
             obj.no.respSVD = nSVD;
-                        
+            
             if obj.no.pm == 1
                 obj.resp.rvpmStore = cell(1, prod(obj.domLeng.i));
             elseif obj.no.pm == 2
@@ -898,8 +900,8 @@ classdef beam < handle
         function obj = errPrepareRemainOriginal(obj)
             
             obj.err.store.max = [];
-            obj.err.store.loc = [];
-            obj.err.store.magicLoc = [];
+            obj.err.store.magicLoc = obj.pmVal.comb.trial;
+            obj.err.store.realLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 6);
             reductionText = {'magic point' 'parameter value' ...
@@ -910,8 +912,8 @@ classdef beam < handle
         function obj = errPrepareRemainStatic(obj)
             
             obj.err.store.max = [];
-            obj.err.store.loc = [];
-            obj.err.store.magicLoc = [];
+            obj.err.store.magicLoc = obj.pmVal.comb.trial;
+            obj.err.store.realLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 3);
             reductionText = {'magic point' 'parameter value' 'no of vectors'};
@@ -1868,10 +1870,10 @@ classdef beam < handle
                         uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
                         uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 1:5);
                         
-                        % for the 2d case, the order of the samples isn't 
+                        % for the 2d case, the order of the samples isn't
                         % clockwise, but pointing downwards. Has to shift
                         % here. For uiTuj, shift when computing in
-                        % uiTujDamping. 
+                        % uiTujDamping.
                         uiTui = uiTui([1 2 4 3], :);
                         cf1d = lagrange(pmIter(1), {gridx(1) gridx(3)});
                         cf2d = lagrange(pmIter(2), {gridy(1) gridy(2)});
@@ -2042,9 +2044,9 @@ classdef beam < handle
             % if there is no refinement at all, both hhat and hat domain
             % need to perform interpolation.
             
-            % the interpolation uses exponentional values (inpolyItplExpo), 
+            % the interpolation uses exponentional values (inpolyItplExpo),
             % not real values (inpolyItplVal), somehow this performs
-            % better (tested). 
+            % better (tested).
             if obj.no.block.hat == 1
                 obj.inpolyItplExpo('hhat');
                 obj.inpolyItplExpo('hat');
@@ -2328,8 +2330,13 @@ classdef beam < handle
             
         end
         %%
-        function obj = extractMaxErrorInfo(obj, type, randomSwitch, damSwitch)
+        function obj = extractMaxErrorInfo(obj, type, greedySwitch, ...
+                randomSwitch, sobolSwitch, latinSwitch, damSwitch)
             % extract error max and location from surfaces, greedy + 1.
+            % magicLoc = magic point location, realLoc = real max error
+            % location.
+            % magicLoc is for tests, if Greedy, magicLoc = realLoc.
+            % if random, randomly select magic point location (magicLoc).
             switch type
                 
                 case 'hats'
@@ -2356,33 +2363,49 @@ classdef beam < handle
                     obj.err.max.val = eMaxVal;
                     pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, ...
                         2:obj.no.pm + 1);
+                    obj.err.max.realLoc = pmMaxLoc;
+                    magicLocStore = obj.err.store.magicLoc;
+                    
                     if damSwitch == 0
-                        obj.err.max.magicLoc = pmMaxLoc;
+                        % check needed: is there repeated points in
+                        % magicLocStore? If so, remove and add next point. 
                         if randomSwitch == 1
-                            if obj.countGreedy == 0
-                                obj.err.max.loc = pmMaxLoc;
-                            else
-                                obj.err.max.loc = randi([1 obj.domLeng.i], 1);
+                            magicLocStore = [magicLocStore; ...
+                                obj.pmVal.random.i(obj.countGreedy + 1, 2)];
+                            
+                        elseif sobolSwitch == 1
+                            magicLocStore = [magicLocStore; ...
+                                obj.pmVal.sobol.i(obj.countGreedy + 1, 2)];
+                            if length(magicLocStore) ~= ...
+                                    length(unique(magicLocStore))
+                                magicLocStore = [magicLocStore(1:end - 1); ...
+                                    obj.pmVal.sobol.i(obj.countGreedy + 2, 2)];
                             end
-                        else
-                            obj.err.max.loc = pmMaxLoc;
+                        elseif latinSwitch == 1
+                            magicLocStore = [magicLocStore; ...
+                                obj.pmVal.sobol.i(obj.countGreedy + 1, 2)];
+                            
+                        elseif greedySwitch == 1
+                            magicLocStore = [magicLocStore; pmMaxLoc];
                         end
+                        
+                        obj.err.store.magicLoc = magicLocStore;
+                        obj.err.max.magicLoc = magicLocStore(end);
                     elseif damSwitch == 1
-                        obj.err.max.magicLoc = pmMaxLoc;
                         if randomSwitch == 1
                             if obj.countGreedy == 0
                                 obj.err.max.locIdx = eMaxLocIdx;
-                                obj.err.max.loc = pmMaxLoc;
+                                obj.err.max.magicLoc = pmMaxLoc;
                             else
                                 obj.err.max.locIdx = randi([1 ...
                                     obj.domLeng.i * obj.domLeng.damp], 1);
-                                obj.err.max.loc = ...
+                                obj.err.max.magicLoc = ...
                                     obj.pmVal.comb.space...
                                     (obj.err.max.locIdx, 2:3);
                             end
                         else
                             obj.err.max.locIdx = eMaxLocIdx;
-                            obj.err.max.loc = pmMaxLoc;
+                            obj.err.max.magicLoc = pmMaxLoc;
                         end
                     end
             end
@@ -2406,9 +2429,8 @@ classdef beam < handle
         function obj = storeErrorInfoOriginal(obj)
             
             obj.err.store.max = [obj.err.store.max; obj.err.max.val];
-            obj.err.store.loc = [obj.err.store.loc; obj.err.max.loc];
-            obj.err.store.magicLoc = [obj.err.store.magicLoc; ...
-                obj.err.max.magicLoc];
+            obj.err.store.realLoc = [obj.err.store.realLoc; ...
+                obj.err.max.realLoc];
             
         end
         %%
@@ -2421,7 +2443,7 @@ classdef beam < handle
             
             switch type
                 case 'original'
-                    eMloc = obj.err.max.loc;
+                    eMloc = obj.err.max.magicLoc;
                 case 'hhat'
                     eMloc = obj.err.max.loc.hhat;
             end
@@ -2685,14 +2707,16 @@ classdef beam < handle
             switch type
                 case 'original'
                     disp(strcat('magic point location', {' = '}, ...
-                        num2str(obj.err.max.loc)));
+                        num2str(obj.err.max.magicLoc)));
+                    disp(strcat('max error point location', {' = '}, ...
+                        num2str(obj.err.max.realLoc)));
                     disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val)));
                 case 'hhat'
                     disp(strcat('error in the error value', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
-                    disp(strcat('magic point location', {' = '}, ...
+                    disp(strcat('max error point location', {' = '}, ...
                         num2str(obj.err.max.loc.hhat)));
                     disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val.hhat)));
@@ -2701,7 +2725,7 @@ classdef beam < handle
                     disp(strcat('error in the error value', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
-                    disp(strcat('magic point location', {' = '}, ...
+                    disp(strcat('max error point location', {' = '}, ...
                         num2str(obj.err.max.loc.hat)));
                     disp(strcat('maximum relative error value', {' = '}, ...
                         num2str(obj.err.max.val.hat)));
@@ -2716,7 +2740,7 @@ classdef beam < handle
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
             qoiT = [10 20 30 40 50]';
-%             qoiT = [3 5 7]';
+            %             qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -2738,6 +2762,7 @@ classdef beam < handle
                 ('time step number = ', {' '}, num2str(obj.no.t_step), ...
                 ', qoi space = the inclusion, qoi time = ', ...
                 {' '}, num2str(obj.qoi.t')))
+            
         end
         %%
         function obj = NewmarkBetaMethod(obj, mas, dam, sti, fce, ...
@@ -3091,7 +3116,7 @@ classdef beam < handle
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
             obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
-            % generate same cell blocks for pmVal (hhat and hat). 
+            % generate same cell blocks for pmVal (hhat and hat).
             pmValhat = cell(length(obj.pmExpo.block.hat), 1);
             for ip = 1:length(pmValhat)
                 

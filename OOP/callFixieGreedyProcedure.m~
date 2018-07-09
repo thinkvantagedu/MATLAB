@@ -1,5 +1,5 @@
 % this is the original static case, no damping, to test the Greedy procedure.
-
+% initial sample is 10^0, to suit the uniform structure sequence.
 clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
@@ -8,7 +8,12 @@ noPm = 1;
 nConsEnd = 2;
 nDofPerNode = 2;
 fNode = 9;
-
+%% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
+randomSwitch = 0;
+structSwitch = 0;
+sobolSwitch = 1;
+latinSwitch = 0;
+greedySwitch = 0;
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -24,7 +29,8 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim(structSwitch, drawRow, drawCol);
+fixie.generatePmSpaceSingleDim(structSwitch, sobolSwitch, latinSwitch, ...
+    drawRow, drawCol);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -38,13 +44,14 @@ fixie.generateNodalFceStatic(nDofPerNode);
 % quantity of interest.
 fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 fixie.errPrepareRemainStatic;
-if randomSwitch == 0 && structSwitch == 0
+if any([greedySwitch randomSwitch sobolSwitch latinSwitch]) == 1
     % compute initial exact solution.
+    % the exact solution is computed for SINGLE magic point.
     fixie.exactSolutionStatic('initial');
-elseif randomSwitch == 0 && structSwitch == 1
-    fixie.exactSolutionStructStatic('initial');
-elseif randomSwitch == 1 && structSwitch == 1
-    error('Random and struct cannot co-exist.');
+elseif structSwitch == 1
+    % the exact solutions are computed for ALL magic points.
+    fixie.exactSolutionStructStatic('initial', structSwitch, sobolSwitch, ...
+        latinSwitch);
 end
 % compute initial reduced basis from trial solution.
 fixie.rbInitialStatic;
@@ -74,7 +81,7 @@ while fixie.err.max.val > fixie.err.lowBond
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
-       
+    
     fixie.extractMaxErrorInfo('original', randomSwitch, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
@@ -89,15 +96,14 @@ while fixie.err.max.val > fixie.err.lowBond
         disp('iterations reach maximum plot number')
         break
     end
-    if structSwitch == 0
+    if any([greedySwitch randomSwitch sobolSwitch latinSwitch]) == 1
         fixie.exactSolutionStatic('Greedy');
         % rbEnrichment set the indicators.
         fixie.rbEnrichmentStatic;
-    elseif structSwitch == 1
-        fixie.exactSolutionStructStatic('Greedy');
+    else
+        fixie.exactSolutionStructStatic('Greedy', structSwitch, sobolSwitch, ...
+            latinSwitch);
         fixie.rbEnrichmentStructStatic;
-    elseif randomSwitch == 1 && structSwitch == 1
-        error('Random and struct cannot co-exist.');
     end
     fixie.reducedMatricesStatic;
     

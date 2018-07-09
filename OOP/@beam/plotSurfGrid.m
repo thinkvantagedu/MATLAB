@@ -4,31 +4,31 @@ function obj = plotSurfGrid(obj, typeSwitch, lineColor, damSwitch)
 switch typeSwitch
     case 'original'
         eMax = obj.err.max.val;
-        eLoc = obj.err.store.loc;
+        eLocStore = obj.err.store.realLoc;
         eSurf = obj.err.store.surf;
-        eMloc = obj.err.max.loc;
+        eLocMaxMagic = obj.err.max.realLoc;
     case 'hhat'
         eMax = obj.err.max.val.hhat;
-        eLoc = obj.err.store.loc.hhat;
+        eLocStore = obj.err.store.loc.hhat;
         eSurf = obj.err.store.surf.hhat;
-        eMloc = obj.err.max.loc.hhat;
+        eLocMaxMagic = obj.err.max.loc.hhat;
     case 'hat'
         eMax = obj.err.max.val.hat;
-        eLoc = obj.err.store.loc.hat;
+        eLocStore = obj.err.store.loc.hat;
         eSurf = obj.err.store.surf.hat;
-        eMloc = obj.err.max.loc.hat;
+        eLocMaxMagic = obj.err.max.loc.hat;
 end
 
 if damSwitch == 0
     figure(1)
     % for single inclusion case, plot error response curve.
     loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 3);
-    txtMax = sprintf('[%d %.2g]', eMloc, eMax);
+    txtMax = sprintf('[%d %.2g]', eLocMaxMagic, eMax);
     text(obj.pmVal.max, eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     if obj.countGreedy > 1
         
         % location of previous maximum error.
-        eLocPrev = num2cell(eLoc(obj.countGreedy - 1, :));
+        eLocPrev = num2cell(eLocStore(obj.countGreedy - 1, :));
         % switch to index.
         eLocIdx = sub2ind(size(eSurf), eLocPrev{:});
         % value of previous maximum error location on current response surface.
@@ -49,7 +49,7 @@ elseif damSwitch == 1
     ex = obj.pmVal.i.space{:}(:, 2);
     ey = obj.pmVal.damp.space(:, 3);
     surf(ex, ey, eSurf');
-    txtMax = sprintf('[%d %d %.2g]', eMloc, eMax);
+    txtMax = sprintf('[%d %d %.2g]', eLocMaxMagic, eMax);
     text(obj.pmVal.max(1), obj.pmVal.max(2), eMax, ...
         txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...

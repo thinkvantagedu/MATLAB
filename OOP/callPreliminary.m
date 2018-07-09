@@ -60,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 5;
+drawCol = 3;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -95,7 +95,6 @@ respSVDswitch = 0;
 % ratioSwitch iteratively add basis vector based on RB error,
 ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
-randomSwitch = 1;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
@@ -103,3 +102,10 @@ refCeaseSwitch = 0;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
+
+%% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
+greedySwitch = 1; % Greedy procedure
+randomSwitch = 0; % pseudorandom
+structSwitch = 0; % uniform structure
+sobolSwitch = 0; % Sobol sequence
+latinSwitch = 0; % Latin Hypercube
