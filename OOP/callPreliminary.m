@@ -60,7 +60,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 10;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -104,8 +104,8 @@ abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
 
 %% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
-greedySwitch = 1; % Greedy procedure
+greedySwitch = 0; % Greedy procedure
 randomSwitch = 0; % pseudorandom
 structSwitch = 0; % uniform structure
 sobolSwitch = 0; % Sobol sequence
-latinSwitch = 0; % Latin Hypercube
+latinSwitch = 1; % Latin Hypercube

@@ -374,7 +374,6 @@ classdef beam < handle
                 pmIdx = zeros(nCal, 1);
                 % latin needs to find the closest matching point on the
                 % parameter value and expo domain.
-                pmAll_(1) = 0;
                 for ip = 1:nCal + redun
                     [~, idx] = min(abs(pmAll_(ip) - pmExpoInpt));
                     pmAll(ip) = pmExpoInpt(idx);
@@ -2368,7 +2367,9 @@ classdef beam < handle
                     
                     if damSwitch == 0
                         % check needed: is there repeated points in
-                        % magicLocStore? If so, remove and add next point. 
+                        % magicLocStore? If so, remove and add next point.
+                        % the above is achieved in testRepeatPointRemove,
+                        % but not developed here.
                         if randomSwitch == 1
                             magicLocStore = [magicLocStore; ...
                                 obj.pmVal.random.i(obj.countGreedy + 1, 2)];
@@ -2376,6 +2377,7 @@ classdef beam < handle
                         elseif sobolSwitch == 1
                             magicLocStore = [magicLocStore; ...
                                 obj.pmVal.sobol.i(obj.countGreedy + 1, 2)];
+                            % this is the check.
                             if length(magicLocStore) ~= ...
                                     length(unique(magicLocStore))
                                 magicLocStore = [magicLocStore(1:end - 1); ...
@@ -2383,7 +2385,7 @@ classdef beam < handle
                             end
                         elseif latinSwitch == 1
                             magicLocStore = [magicLocStore; ...
-                                obj.pmVal.sobol.i(obj.countGreedy + 1, 2)];
+                                obj.pmVal.latin.i(obj.countGreedy + 1, 2)];
                             
                         elseif greedySwitch == 1
                             magicLocStore = [magicLocStore; pmMaxLoc];

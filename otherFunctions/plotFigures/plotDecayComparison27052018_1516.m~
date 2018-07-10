@@ -29,7 +29,7 @@ errLatinMax2 = errLatin2.store.max;
 errLatinMax3 = errLatin3.store.max;
 errLatinMax4 = errLatin4.store.max;
 errLatinMax5 = errLatin5.store.max;
-%%
+
 % greedy vs random.
 figure(1)
 h1 = semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
@@ -47,7 +47,7 @@ grid on
 xlabel('N');
 ylabel('Maximum relative error');
 set(gca,'fontsize',20)
-%%
+
 % greedy vs structure.
 figure(2)
 h1 = semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
@@ -61,13 +61,13 @@ grid on
 xlabel('N');
 ylabel('Maximum relative error');
 set(gca,'fontsize',20)
-%%
+
 % greedy vs Sobol.
 figure(3)
 h1 = semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 hold on
 h4 = semilogy(errx, errSobolMax, 'r-*', 'lineWidth', 1.5);
-legend([h1, h4], {'Greedy', 'Quasi-random'});
+legend([h1, h4], {'Greedy', 'Sobol'});
 set(gca, 'YScale', 'log')
 xticks(errx);
 axis([0 errx(end) + 1 errOriMax(end) errOriMax(1)]);
@@ -75,17 +75,17 @@ grid on
 xlabel('N');
 ylabel('Maximum relative error');
 set(gca,'fontsize',20)
-%%
+
 % greedy vs Latin.
 figure(4)
 h1 = semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 hold on;
-h4 = semilogy(errx, errLatinMax1, 'g--', 'lineWidth', 1.5);
-semilogy(errx, errLatinMax2, 'g--', 'lineWidth', 1.5);
-semilogy(errx, errLatinMax3, 'g--', 'lineWidth', 1.5);
-semilogy(errx, errLatinMax4, 'g--', 'lineWidth', 1.5);
-semilogy(errx, errLatinMax5, 'g--', 'lineWidth', 1.5);
-legend([h1, h4], {'Greedy', 'Latin Hypercube'});
+h4 = semilogy(errx, errLatinMax1, 'c--', 'lineWidth', 1.5);
+semilogy(errx, errLatinMax2, 'c--', 'lineWidth', 1.5);
+semilogy(errx, errLatinMax3, 'c--', 'lineWidth', 1.5);
+semilogy(errx, errLatinMax4, 'k-.', 'lineWidth', 1.5);
+semilogy(errx, errLatinMax5, 'k-.', 'lineWidth', 1.5);
+legend([h1, h2], {'Greedy', 'Pseudorandom'});
 set(gca, 'YScale', 'log')
 xticks(errx);
 axis([0 errx(end) + 1 errOriMax(end) errOriMax(1)]);
