@@ -1,0 +1,4 @@
+clear; clc;
+% this script tests the use of function pdist2, and howt ofind the closest
+% point in a matrix to anot point.
+

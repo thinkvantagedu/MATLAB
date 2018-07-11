@@ -294,8 +294,7 @@ classdef beam < handle
         end
         %%
         function obj = generatePmSpaceSingleDim(obj, ...
-                randomSwitch, structSwitch, sobolSwitch, latinSwitch, ...
-                drawRow, drawCol)
+                randomSwitch, structSwitch, sobolSwitch, latinSwitch)
             % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
             
@@ -324,7 +323,7 @@ classdef beam < handle
             obj.err.setZ.sInc = zeros(obj.domLeng.i, 1);
             
             % treat different sampling cases.
-            nCal = drawRow * drawCol;
+            nCal = obj.no.Greedy;
             pmExpoInpt = obj.pmExpo.comb.space(:, 3);
             redun = 10;
             if randomSwitch == 1
@@ -332,9 +331,9 @@ classdef beam < handle
                 % pm values.
                 % random magic point locations. +10 for redundancy.
                 randLoc = randi([1 obj.domLeng.i], [nCal + redun, 1]);
-                randVal = pmExpoInpt(randLoc);
-                obj.pmExpo.random.i = [randVal randLoc];
-                obj.pmVal.random.i = [10 .^ randVal, randLoc];
+                randExpo = pmExpoInpt(randLoc);
+                obj.pmExpo.random.i = [randExpo randLoc];
+                obj.pmVal.random.i = [10 .^ randExpo, randLoc];
                 
             elseif structSwitch == 1
                 % construct structure pm values, then find related locations.
@@ -355,7 +354,6 @@ classdef beam < handle
                 % +10 for redundancy.
                 pmPart = pmAll_(2:nCal + redun);
                 pmPart = -1 + 2 * pmPart;
-                pmPart([1 2]) = pmPart([2 1]);
                 for ip = 1:length(pmPart)
                     [~, idx] = min(abs(pmPart(ip) - pmExpoInpt));
                     pmIdx(ip) = idx;
@@ -386,9 +384,14 @@ classdef beam < handle
             end
         end
         %%
-        function obj = generateDampingSpace(obj, damLeng, damBond)
-            % this method add damping as a parameter.
+        function obj = generateDampingSpace(obj, damLeng, damBond, ...
+                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch)
+            % this method adds damping as a parameter.
             % sequence is: [index loc1 loc2 value1 value2].
+            % If there is damping, the sampling examples are regenerated
+            % here for the 2D case, i.e. generatePmSpaceSingleDim output is
+            % replaced by output from this method.
+            % no structure samples.
             obj.domBond.damp = damBond;
             damVal = (logspace(obj.domBond.damp(1), obj.domBond.damp(2), ...
                 damLeng));
@@ -398,7 +401,7 @@ classdef beam < handle
             damPm = damPm';
             damPm(:, [2 3]) = damPm(:, [3 2]);
             obj.pmVal.comb.space = [(1:length(damPm))' damPm];
-            obj.pmVal.damp.space = [1:damLeng; damVal]';
+            obj.pmVal.damp.space = damVal';
             
             % obj.pmVal.damp.space(:, 3) = zeros(damLeng, 1);
             % obj.pmVal.comb.space(:, 5) = zeros(damLeng * obj.domLeng.i, 1);
@@ -411,9 +414,64 @@ classdef beam < handle
             obj.pmExpo.comb.space = obj.pmVal.comb.space;
             obj.pmExpo.comb.space(:, 4:5) = ...
                 log10(obj.pmExpo.comb.space(:, 4:5));
-            obj.pmExpo.damp.space = obj.pmVal.damp.space;
-            obj.pmExpo.damp.space(:, 3) = log10(obj.pmExpo.damp.space(:, 3));
+            pmExpoSpace_ = obj.pmVal.damp.space;
+            obj.pmExpo.damp.space = [obj.pmVal.damp.space(:, 1) ...
+                log10(pmExpoSpace_(:, 2))];
             
+            % treat different sampling cases.
+            nCal = obj.no.Greedy;
+            pmExpoInpt = obj.pmExpo.comb.space(:, 4:5);
+            redun = 10;
+            if randomSwitch == 1
+                randLoc = [randi([1, obj.domLeng.i], [nCal + redun, 1])...
+                    randi([1, obj.domLeng.damp], [nCal + redun, 1])];
+                pmExpoI = obj.pmExpo.i{:};
+                pmExpoDamp = obj.pmExpo.damp.space(:, 2);
+                randExpo = [pmExpoI(randLoc(:, 1)) pmExpoDamp(randLoc(:, 2))];
+                obj.pmExpo.random.i = [randExpo(:, 1) randLoc(:, 1)...
+                    randExpo(:, 2) randLoc(:, 2)];
+                obj.pmVal.random.i = [10 .^ randExpo(:, 1) randLoc(:, 1)...
+                    10 .^ randExpo(:, 2) randLoc(:, 2)];
+                
+            elseif sobolSwitch == 1
+                pmAll_ = sobolset(2);
+                pmPart = pmAll_(1:nCal + redun, :);
+                pmPart = -1 + 2 * pmPart;
+                pmIdx = zeros(length(pmPart), 3);
+                for ip = 1:length(pmPart)
+                    [~, minIdx] = pdist2(pmExpoInpt, pmPart(ip, :), ...
+                        'euclidean', 'Smallest', 1);
+                    pmIdx(ip, :) = pmIdx(ip, :) + ...
+                        obj.pmExpo.comb.space(minIdx, 1:3);
+                end
+                pmSobol = [pmExpoInpt(pmIdx(:, 1), 1) pmIdx(:, 2) ...
+                    pmExpoInpt(pmIdx(:, 1), 2) pmIdx(:, 3)];
+                obj.pmExpo.sobol.i = pmSobol;
+                obj.pmVal.sobol.i = [10 .^ pmSobol(:, 1) pmSobol(:, 2)...
+                    10 .^ pmSobol(:, 3) pmSobol(:, 4)];
+                
+            elseif haltonSwitch == 1
+                pmAll_ = haltonset(2);
+                pmPart = pmAll_(1:nCal + redun, :);
+                pmPart = -1 + 2 * pmPart;
+                pmIdx = zeros(length(pmPart), 3);
+                for ip = 1:length(pmPart)
+                    [~, minIdx] = pdist2(pmExpoInpt, pmPart(ip, :), ...
+                        'euclidean', 'Smallest', 1);
+                    pmIdx(ip, :) = pmIdx(ip, :) + ...
+                        obj.pmExpo.comb.space(minIdx, 1:3);
+                end
+                pmHalton = [pmExpoInpt(pmIdx(:, 1), 1) pmIdx(:, 2) ...
+                    pmExpoInpt(pmIdx(:, 1), 2) pmIdx(:, 3)];
+                obj.pmExpo.halton.i = pmHalton;
+                obj.pmVal.halton.i = [10 .^ pmHalton(:, 1) pmHalton(:, 2)...
+                    10 .^ pmHalton(:, 3) pmHalton(:, 4)];
+                
+            elseif latinSwitch == 1
+                
+                
+            end
+            keyboard
         end
         %%
         function obj = rbEnrichmentStructStatic(obj)
@@ -2377,6 +2435,7 @@ classdef beam < handle
                         elseif sobolSwitch == 1
                             magicLocStore = [magicLocStore; ...
                                 obj.pmVal.sobol.i(obj.countGreedy + 1, 2)];
+                            
                             % this is the check.
                             if length(magicLocStore) ~= ...
                                     length(unique(magicLocStore))

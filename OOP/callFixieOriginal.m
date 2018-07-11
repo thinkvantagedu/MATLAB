@@ -26,7 +26,8 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim(0, 0, 0, drawRow, drawCol);
+fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
+    latinSwitch);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -81,7 +82,8 @@ while fixie.err.max.val > fixie.err.lowBond
         
     end
     
-    fixie.extractMaxErrorInfo('original', randomSwitch, 0, 0, 0); % greedy + 1
+    fixie.extractMaxErrorInfo('original', greedySwitch, randomSwitch, ...
+        sobolSwitch, latinSwitch, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original', 0);

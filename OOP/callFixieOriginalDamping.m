@@ -9,11 +9,6 @@ nConsEnd = 2;
 nDofPerNode = 2;
 fNode = 9;
 tic
-%% test cases. 1 at a time. If all 0, Greedy procedure.
-randomSwitch = 0;
-structSwitch = 0;
-sobolSwitch = 0;
-latinSwitch = 0;
 %% trial solution
 % use subclass: fixbeam to create beam.
 fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
@@ -32,11 +27,12 @@ fixie.readINPconsFixie(nDofPerNode);
 fixie.readINPgeoMultiInc;
 
 % generate parameter space.
-fixie.generatePmSpaceSingleDim(0, sobolSwitch, latinSwitch, ...
-    drawRow, drawCol);
+fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
+    latinSwitch);
 
 % generate damping coefficient space, the combination is stiffness then damping.
-fixie.generateDampingSpace(damLeng, damBond);
+fixie.generateDampingSpace(damLeng, damBond, randomSwitch, sobolSwitch, ...
+    haltonSwitch, latinSwitch);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -93,7 +89,8 @@ while fixie.err.max.val > fixie.err.lowBond
         
     end
     
-    fixie.extractMaxErrorInfo('original', randomSwitch, 1); % greedy + 1
+    fixie.extractMaxErrorInfo('original', greedySwitch, randomSwitch,...
+        sobolSwitch, latinSwitch, 1); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original', 1);    

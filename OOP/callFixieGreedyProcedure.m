@@ -25,7 +25,7 @@ fixie.readINPgeoMultiInc;
 
 % generate parameter space.
 fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
-    latinSwitch, drawRow, drawCol);
+    latinSwitch);
 
 % read stiffness matrices.
 fixie.readStiMTX2DOFBCMod(nDofPerNode);
@@ -85,7 +85,7 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-%     fixie.plotSurfGrid('original', 'b', 0);
+    fixie.plotSurfGrid('original', 'b', 0);
     
     if fixie.countGreedy == drawRow * drawCol
         disp('iterations reach maximum plot number')
