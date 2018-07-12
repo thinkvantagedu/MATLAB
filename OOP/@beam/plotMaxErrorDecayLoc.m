@@ -27,7 +27,7 @@ if damSwitch == 0
 elseif damSwitch == 1
     
     ex = obj.pmVal.i.space{:}(:, 2);
-    ey = obj.pmVal.damp.space(:, 3);
+    ey = obj.pmVal.damp.space(:, 2);
     eMx = ex(obj.err.store.realLoc(:, 1));
     eMy = ey(obj.err.store.realLoc(:, 2));
     eMz = obj.err.store.max;

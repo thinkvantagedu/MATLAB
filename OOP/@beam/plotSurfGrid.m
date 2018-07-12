@@ -48,7 +48,7 @@ if damSwitch == 0
 elseif damSwitch == 1
     figure
     ex = obj.pmVal.i.space{:}(:, 2);
-    ey = obj.pmVal.damp.space(:, 3);
+    ey = obj.pmVal.damp.space(:, 2);
     surf(ex, ey, eSurf');
     txtMax = sprintf('[%d %d %.2g]', eLocMaxMagic, eMax);
     text(obj.pmVal.max(1), obj.pmVal.max(2), eMax, ...

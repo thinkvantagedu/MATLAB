@@ -28,7 +28,7 @@ fixie.readINPgeoMultiInc;
 
 % generate parameter space.
 fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
-    latinSwitch);
+    haltonSwitch, latinSwitch);
 
 % generate damping coefficient space, the combination is stiffness then damping.
 fixie.generateDampingSpace(damLeng, damBond, randomSwitch, sobolSwitch, ...
@@ -90,7 +90,7 @@ while fixie.err.max.val > fixie.err.lowBond
     end
     
     fixie.extractMaxErrorInfo('original', greedySwitch, randomSwitch,...
-        sobolSwitch, latinSwitch, 1); % greedy + 1
+        sobolSwitch, haltonSwitch, latinSwitch, 1); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original', 1);    

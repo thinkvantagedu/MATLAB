@@ -293,8 +293,8 @@ classdef beam < handle
             obj.node.dof.inc = sort(dofInc(:));
         end
         %%
-        function obj = generatePmSpaceSingleDim(obj, ...
-                randomSwitch, structSwitch, sobolSwitch, latinSwitch)
+        function obj = generatePmSpaceSingleDim(obj, randomSwitch, ...
+                structSwitch, sobolSwitch, haltonSwitch, latinSwitch)
             % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
             
@@ -327,22 +327,15 @@ classdef beam < handle
             pmExpoInpt = obj.pmExpo.comb.space(:, 3);
             redun = 10;
             
-            if sobolSwitch == 1
+            if sobolSwitch == 1 || haltonSwitch == 1
                 pmAll_ = sobolset(1);
             elseif latinSwitch == 1
                 pmAll_ = lhsdesign(nCal + redun, 1);
+            elseif randomSwitch == 1
+                pmAll_ = rand(nCal + redun, 1);
             end
             
-            if randomSwitch == 1
-                % randomly select magic point locations, then find related
-                % pm values.
-                % random magic point locations. +10 for redundancy.
-                randLoc = randi([1 obj.domLeng.i], [nCal + redun, 1]);
-                randExpo = pmExpoInpt(randLoc);
-                obj.pmExpo.quasi.i = [randExpo randLoc];
-                obj.pmVal.quasi.i = [10 .^ randExpo, randLoc];
-                
-            elseif structSwitch == 1
+            if structSwitch == 1
                 % construct structure pm values, then find related locations.
                 % pmStruct is cell stratified as the basis is constructed
                 % from all exact solutions.
@@ -355,7 +348,8 @@ classdef beam < handle
                 obj.pmExpo.quasi.i = pmStruct;
                 obj.pmVal.quasi.i = cellfun(@(v) 10 .^ v, pmStruct, 'un', 0);
                 
-            elseif sobolSwitch == 1 || latinSwitch == 1
+            elseif randomSwitch == 1 || sobolSwitch == 1 || ...
+                    haltonSwitch == 1|| latinSwitch == 1
                 % construct Sobol pm values, then find the closest locations.
                 % +10 for redundancy.
                 pmPart = pmAll_(1:nCal + redun);
@@ -367,11 +361,12 @@ classdef beam < handle
                     pmAll(ip) = pmExpoInpt(idx);
                     pmIdx(ip) = idx;
                 end
-                pmQuasi = [pmAll pmIdx];
+                pmQuasi = [pmIdx pmIdx pmAll];
                 
                 obj.pmExpo.quasi.i = pmQuasi;
-                obj.pmVal.quasi.i = [10 .^ pmQuasi(:, 1) pmQuasi(:, 2)];
+                obj.pmVal.quasi.i = [pmIdx pmIdx 10 .^ pmQuasi(:, 3)];
             end
+            
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond, ...
@@ -413,29 +408,21 @@ classdef beam < handle
             pmExpoInpt = obj.pmExpo.comb.space(:, 4:5);
             redun = 10;
             
-            % set up Sobol or Halton, as they are same in following
-            % implementation. 
-            if sobolSwitch == 1
-                pmAll_ = sobolset(2);
-            elseif haltonSwitch == 1
-                pmAll_ = haltonset(2);
-            elseif latinSwitch == 1
-                pmAll_ = lhsdesign(nCal + redun, 2);
-            end
-            
-            % 4 cases: pseudorandom, Sobol, Halton, Latin Hypercube. 
-            if randomSwitch == 1
-                randLoc = [randi([1, obj.domLeng.i], [nCal + redun, 1])...
-                    randi([1, obj.domLeng.damp], [nCal + redun, 1])];
-                pmExpoI = obj.pmExpo.i{:};
-                pmExpoDamp = obj.pmExpo.damp.space(:, 2);
-                randExpo = [pmExpoI(randLoc(:, 1)) pmExpoDamp(randLoc(:, 2))];
-                obj.pmExpo.quasi.i = [randExpo(:, 1) randLoc(:, 1)...
-                    randExpo(:, 2) randLoc(:, 2)];
-                obj.pmVal.quasi.i = [10 .^ randExpo(:, 1) randLoc(:, 1)...
-                    10 .^ randExpo(:, 2) randLoc(:, 2)];
+            if any([randomSwitch, sobolSwitch, haltonSwitch, latinSwitch]) == 1
+                % set up Sobol or Halton, as they are same in following
+                % implementation.
+                if sobolSwitch == 1
+                    pmAll_ = sobolset(2);
+                elseif haltonSwitch == 1
+                    pmAll_ = haltonset(2);
+                elseif latinSwitch == 1
+                    pmAll_ = lhsdesign(nCal + redun, 2);
+                elseif randomSwitch == 1
+                    pmAll_ = rand(nCal + redun, 2);
+                end
                 
-            elseif sobolSwitch == 1 || haltonSwitch == 1
+                % 4 cases: pseudorandom, Sobol, Halton, Latin Hypercube.
+                
                 pmPart = pmAll_(1:nCal + redun, :);
                 pmPart = -1 + 2 * pmPart;
                 pmIdx = zeros(length(pmPart), 3);
@@ -445,17 +432,14 @@ classdef beam < handle
                     pmIdx(ip, :) = pmIdx(ip, :) + ...
                         obj.pmExpo.comb.space(minIdx, 1:3);
                 end
-                pmQuasi = [pmExpoInpt(pmIdx(:, 1), 1) pmIdx(:, 2) ...
-                    pmExpoInpt(pmIdx(:, 1), 2) pmIdx(:, 3)];
+                pmQuasi = [pmIdx pmExpoInpt(pmIdx(:, 1), :)];
+                
                 obj.pmExpo.quasi.i = pmQuasi;
                 obj.pmVal.quasi.i = [10 .^ pmQuasi(:, 1) pmQuasi(:, 2)...
                     10 .^ pmQuasi(:, 3) pmQuasi(:, 4)];
-            elseif latinSwitch == 1
-                
                 
             end
             
-            keyboard
         end
         %%
         function obj = rbEnrichmentStructStatic(obj)
@@ -2372,7 +2356,7 @@ classdef beam < handle
         end
         %%
         function obj = extractMaxErrorInfo(obj, type, greedySwitch, ...
-                randomSwitch, sobolSwitch, latinSwitch, damSwitch)
+                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch, damSwitch)
             % extract error max and location from surfaces, greedy + 1.
             % magicLoc = magic point location, realLoc = real max error
             % location.
@@ -2400,12 +2384,19 @@ classdef beam < handle
                     obj.err.max.loc.hat = pmMaxLochat;
                     
                 case 'original'
+                    % max error value and index from error surface.
                     [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
+                    % assign max eror value.
                     obj.err.max.val = eMaxVal;
+                    % the (x or x-y) location of max error.
                     pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, ...
                         2:obj.no.pm + 1);
+                    % this is the real max error location.
                     obj.err.max.realLoc = pmMaxLoc;
-                    magicLocStore = obj.err.store.magicLoc;
+                    % this is the magic point location, if not Greedy, not
+                    % real location.
+                    magicLocStore = obj.pmVal.comb.space...
+                        (obj.err.store.magicLoc, 2:obj.no.pm + 1);
                     
                     if damSwitch == 0
                         % check needed: is there repeated points in
@@ -2427,30 +2418,35 @@ classdef beam < handle
                             magicLocStore = [magicLocStore; pmMaxLoc];
                         end
                         
-                        obj.err.store.magicLoc = magicLocStore;
-                        obj.err.max.magicLoc = magicLocStore(end);
-                        
                     elseif damSwitch == 1
-                        if randomSwitch == 1
-                            if obj.countGreedy == 0
-                                obj.err.max.locIdx = eMaxLocIdx;
-                                obj.err.max.magicLoc = pmMaxLoc;
-                            else
-                                obj.err.max.locIdx = randi([1 ...
-                                    obj.domLeng.i * obj.domLeng.damp], 1);
-                                obj.err.max.magicLoc = ...
-                                    obj.pmVal.comb.space...
-                                    (obj.err.max.locIdx, 2:3);
+                        if randomSwitch == 1 || latinSwitch == 1 || ...
+                                sobolSwitch == 1 || haltonSwitch == 1
+                            
+                            magicLocStore = [magicLocStore; ...
+                                obj.pmVal.quasi.i(obj.countGreedy + 1, [2, 4])];
+                            % this is the check to ensure point 2 doesn't
+                            % repeat point 1.
+                            if norm(magicLocStore(end, :) - ...
+                                    magicLocStore(end - 1, :), 'fro') == 0
+                                
+                                magicLocStore = ...
+                                    [magicLocStore(1:end - 1, :); ...
+                                    obj.pmVal.quasi.i(obj.countGreedy + 2, ...
+                                    [2, 4])];
+                                
                             end
-                        else
+                        elseif greedySwitch == 1
+                            magicLocStore = [magicLocStore; pmMaxLoc];
                             obj.err.max.locIdx = eMaxLocIdx;
-                            obj.err.max.magicLoc = pmMaxLoc;
                         end
                     end
+                    obj.err.store.magicLoc = magicLocStore;
+                    obj.err.max.magicLoc = magicLocStore(end, :);
             end
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 obj.countGreedy = obj.countGreedy + 1;
             end
+            
         end
         %%
         function obj = storeErrorInfo(obj)
@@ -2490,7 +2486,6 @@ classdef beam < handle
             if damSwitch == 0
                 obj.pmVal.max = obj.pmVal.comb.space(eMloc, 3);
             elseif damSwitch == 1
-                eMaxLocIdx = obj.err.max.locIdx;
                 obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 4:5);
             end
             
