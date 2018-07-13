@@ -941,6 +941,8 @@ classdef beam < handle
             obj.err.store.max = [];
             obj.err.store.magicLoc = obj.pmVal.comb.space...
                 (obj.indicator.trial, 2:obj.no.pm + 1);
+            obj.err.store.magicIdx = obj.pmVal.comb.space...
+                (obj.indicator.trial, 1);
             obj.err.store.realLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 3);
@@ -2456,7 +2458,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = extractMaxPmInfo(obj, type, damSwitch)
+        function obj = extractMaxPmInfo(obj, type)
             % when extracting maximum error information, values and
             % locations of maximum error can be different, for example, use
             % eDiff to decide maximum error location (eMaxPmLoc =
@@ -2465,18 +2467,19 @@ classdef beam < handle
             
             switch type
                 case 'original'
-                    eMloc = obj.err.max.magicIdx;
+                    eMaxLocMagic = obj.err.max.magicIdx;
+                    eMaxLocReal = obj.err.max.realLoc;
                 case 'hhat'
-                    eMloc = obj.err.max.loc.hhat;
+                    eMaxLocMagic = obj.err.max.loc.hhat;
+                    eMaxLocReal = obj.err.max.loc.hhat;
             end
             
-            if damSwitch == 0
-                obj.pmVal.realMax = obj.pmVal.comb.space(eMloc, 3);
-            elseif damSwitch == 1
-                obj.pmVal.realMax = obj.pmVal.comb.space(eMloc, 4:5);
-            end
-            
+            obj.pmVal.realMax = obj.pmVal.comb.space(eMaxLocReal, ...
+                end - obj.no.pm + 1:end);            
             obj.pmExpo.realMax = log10(obj.pmVal.realMax);
+            obj.pmVal.magicMax = obj.pmVal.comb.space(eMaxLocMagic, ...
+                end - obj.no.pm + 1:end);            
+            obj.pmExpo.magicMax = log10(obj.pmVal.magicMax);
         end
         %%
         function obj = storeErrorInfo(obj)

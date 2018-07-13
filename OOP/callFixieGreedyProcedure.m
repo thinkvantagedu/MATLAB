@@ -80,7 +80,7 @@ while fixie.err.max.val > fixie.err.lowBond
         sobolSwitch, haltonSwitch, latinSwitch, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
-    fixie.extractMaxPmInfo('original', 0);
+    fixie.extractMaxPmInfo('original');
     fixie.greedyInfoDisplay('original');
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
