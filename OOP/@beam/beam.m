@@ -67,7 +67,7 @@ classdef beam < handle
             obj.domLeng.i = domLengi;
             
             obj.pmVal.s.fix = 1;
-            obj.pmVal.comb.trial = trial;
+            obj.indicator.trial = trial;
             
             obj.no.inc = noIncl;
             obj.no.struct = noStruct;
@@ -365,6 +365,7 @@ classdef beam < handle
                 
                 obj.pmExpo.quasi.i = pmQuasi;
                 obj.pmVal.quasi.i = [pmIdx pmIdx 10 .^ pmQuasi(:, 3)];
+                
             end
             
         end
@@ -435,8 +436,7 @@ classdef beam < handle
                 pmQuasi = [pmIdx pmExpoInpt(pmIdx(:, 1), :)];
                 
                 obj.pmExpo.quasi.i = pmQuasi;
-                obj.pmVal.quasi.i = [10 .^ pmQuasi(:, 1) pmQuasi(:, 2)...
-                    10 .^ pmQuasi(:, 3) pmQuasi(:, 4)];
+                obj.pmVal.quasi.i = [pmQuasi(:, 1:3) 10 .^ pmQuasi(:, 4:5)];
                 
             end
             
@@ -458,7 +458,7 @@ classdef beam < handle
             
             eMaxLoc = obj.err.max.magicLoc;
             
-            redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
+            redInfo = {eMaxLoc obj.pmVal.realMax size(obj.phi.val, 2)};
             obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             
             obj.no.rb = size(obj.phi.val, 2);
@@ -487,7 +487,7 @@ classdef beam < handle
             
             eMaxLoc = obj.err.max.magicLoc;
             
-            redInfo = {eMaxLoc obj.pmVal.max size(obj.phi.val, 2)};
+            redInfo = {eMaxLoc obj.pmVal.realMax size(obj.phi.val, 2)};
             obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
             
             obj.no.rb = size(obj.phi.val, 2);
@@ -512,7 +512,7 @@ classdef beam < handle
             nRbOld = obj.no.rb;
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
-            pmValMax = obj.pmVal.max;
+            pmValMax = obj.pmVal.realMax;
             disMax = obj.dis.rbEnrich;
             % import system inputs.
             M = obj.mas.mtx;
@@ -559,7 +559,7 @@ classdef beam < handle
             eMaxCur = obj.err.rbRedRemain;
             redRatioOtpt = (eMaxPre - eMaxCur) / eMaxPre;
             
-            redInfo = {eMaxLoc obj.pmVal.max ...
+            redInfo = {eMaxLoc obj.pmVal.realMax ...
                 size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
             
             obj.err.store.redInfo(obj.countGreedy + 2, :) = redInfo;
@@ -610,7 +610,7 @@ classdef beam < handle
                     [], u, M, C, K, F, redRatio, 1, errType);
             end
             
-            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.trial ...
+            reductionInfo = {obj.indicator.trial obj.pmVal.trial ...
                 size(obj.phi.val, 2) 1 - obj.err.rbRedRemain ...
                 1 obj.err.rbRedRemain};
             obj.err.store.redInfo(2, :) = reductionInfo;
@@ -632,7 +632,7 @@ classdef beam < handle
             obj.no.store.rbAdd = [];
             obj.no.store.rb = [];
             obj.phi.val = obj.dis.trial;
-            reductionInfo = {obj.pmVal.comb.trial obj.pmVal.trial ...
+            reductionInfo = {obj.indicator.trial obj.pmVal.trial ...
                 size(obj.phi.val, 2)};
             obj.err.store.redInfo(2, :) = reductionInfo;
             
@@ -728,7 +728,7 @@ classdef beam < handle
                 case 'initial'
                     pmInp = obj.pmVal.trial;
                 case 'Greedy'
-                    pmInp = obj.pmVal.max;
+                    pmInp = obj.pmVal.realMax;
                 case 'verify'
                     pmInp = obj.pmVal.iter;
             end
@@ -780,7 +780,6 @@ classdef beam < handle
             % this method computes exact solutions at structurally
             % distributed samples.
             pmInp = obj.pmVal.quasi.i{obj.countGreedy + 1};
-            
             % use MATLAB Newmark code to obtain exact solutions.
             disStore = zeros(obj.no.dof, length(pmInp));
             K = sparse(obj.no.dof, obj.no.dof);
@@ -807,7 +806,7 @@ classdef beam < handle
                 case 'initial'
                     pmValInp = obj.pmVal.trial;
                 case 'Greedy'
-                    pmValInp = obj.pmVal.max;
+                    pmValInp = obj.pmVal.realMax;
             end
             % use MATLAB Newmark code to obtain exact solutions.
             K = sparse(obj.no.dof, obj.no.dof);
@@ -828,7 +827,7 @@ classdef beam < handle
         %%
         function obj = pmTrial(obj, damSwitch)
             % extract parameter information for trial point.
-            iTrial = obj.pmVal.comb.trial;
+            iTrial = obj.indicator.trial;
             if damSwitch == 0
                 obj.pmVal.trial = obj.pmVal.comb.space(iTrial, 3);
                 obj.pmLoc.trial = obj.pmVal.comb.space(iTrial, 2);
@@ -925,7 +924,10 @@ classdef beam < handle
         function obj = errPrepareRemainOriginal(obj)
             
             obj.err.store.max = [];
-            obj.err.store.magicLoc = obj.pmVal.comb.trial;
+            obj.err.store.magicLoc = obj.pmVal.comb.space...
+                (obj.indicator.trial, 2:obj.no.pm + 1);
+            obj.err.store.magicIdx = obj.pmVal.comb.space...
+                (obj.indicator.trial, 1);
             obj.err.store.realLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 6);
@@ -937,7 +939,8 @@ classdef beam < handle
         function obj = errPrepareRemainStatic(obj)
             
             obj.err.store.max = [];
-            obj.err.store.magicLoc = obj.pmVal.comb.trial;
+            obj.err.store.magicLoc = obj.pmVal.comb.space...
+                (obj.indicator.trial, 2:obj.no.pm + 1);
             obj.err.store.realLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 3);
@@ -2368,85 +2371,112 @@ classdef beam < handle
                     [eMaxValhhat, eMaxLocIdxhhat] = ...
                         max(obj.err.store.surf.hhat(:));
                     obj.err.max.val.hhat = eMaxValhhat;
-                    pmMaxLochhat = obj.pmVal.comb.space...
+                    eMaxLochhat = obj.pmVal.comb.space...
                         (eMaxLocIdxhhat, 2:obj.no.pm + 1);
                     
                     [eMaxValhat, eMaxLocIdxhat] = ...
                         max(obj.err.store.surf.hat(:));
                     obj.err.max.val.hat = eMaxValhat;
-                    pmMaxLochat = obj.pmVal.comb.space...
+                    eMaxLochat = obj.pmVal.comb.space...
                         (eMaxLocIdxhat, 2:obj.no.pm + 1);
                     
                     if damSwitch == 1
                         obj.err.max.locIdx = eMaxLocIdxhhat;
                     end
-                    obj.err.max.loc.hhat = pmMaxLochhat;
-                    obj.err.max.loc.hat = pmMaxLochat;
+                    obj.err.max.loc.hhat = eMaxLochhat;
+                    obj.err.max.loc.hat = eMaxLochat;
                     
                 case 'original'
                     % max error value and index from error surface.
-                    [eMaxVal, eMaxLocIdx] = max(obj.err.store.surf(:));
+                    [eMaxVal, eMaxIdx] = max(obj.err.store.surf(:));
                     % assign max eror value.
                     obj.err.max.val = eMaxVal;
                     % the (x or x-y) location of max error.
-                    pmMaxLoc = obj.pmVal.comb.space(eMaxLocIdx, ...
-                        2:obj.no.pm + 1);
-                    % this is the real max error location.
-                    obj.err.max.realLoc = pmMaxLoc;
-                    % this is the magic point location, if not Greedy, not
-                    % real location.
-                    magicLocStore = obj.pmVal.comb.space...
-                        (obj.err.store.magicLoc, 2:obj.no.pm + 1);
+                    eMaxLoc = obj.pmVal.comb.space(eMaxIdx, 2:obj.no.pm + 1);
                     
-                    if damSwitch == 0
+                    % this is the magic point information, only if Greedy,
+                    % magic info = real info.
+                    magicInfoStore = obj.pmVal.comb.space...
+                        (obj.err.store.magicIdx, :);
+                    magicLocStore = magicInfoStore(:, 2:obj.no.pm + 1);
+                    
+                    if randomSwitch == 1 || latinSwitch == 1 || ...
+                            sobolSwitch == 1 || haltonSwitch == 1
                         % check needed: is there repeated points in
                         % magicLocStore? If so, remove and add next point.
                         % the above is achieved in testRepeatPointRemove,
                         % but not developed here.
-                        if randomSwitch == 1 || latinSwitch == 1 || ...
-                                sobolSwitch == 1
-                            magicLocStore = [magicLocStore; ...
-                                obj.pmVal.quasi.i(obj.countGreedy + 1, 2)];
-                            % this is the check to ensure no repeat point.
-                            if length(magicLocStore) ~= ...
-                                    length(unique(magicLocStore))
-                                magicLocStore = [magicLocStore(1:end - 1); ...
-                                    obj.pmVal.quasi.i(obj.countGreedy + 2, 2)];
-                            end
+                        % applies to both damp and nondamp cases.
+                        % this is the check for 2 cases, only apply to
+                        % quasi cases, not to Greedy.
+                        nRep = obj.countGreedy + 1;
+                        lenStore = size(magicInfoStore, 1);
+                        if lenStore > 1 && damSwitch == 0
+                            checkRep = length(magicLocStore) == ...
+                                length(unique(magicLocStore));
                             
-                        elseif greedySwitch == 1
-                            magicLocStore = [magicLocStore; pmMaxLoc];
+                        elseif lenStore > 1 && damSwitch == 1
+                            checkRep = norm(magicLocStore(end, :) - ...
+                                magicLocStore(end - 1, :), 'fro');
+                            
+                        end
+                        % this is the check to ensure point 2 doesn't
+                        % repeat point 1.
+                        if lenStore > 1 && checkRep == 0
+                            % if repeat, skip next point.
+                            magicInfoStore = [magicInfoStore(1:end - 1, :); ...
+                                obj.pmVal.quasi.i(nRep, :)];
+                        else
+                            % if no repeat, use next point.
+                            magicInfoStore = [magicInfoStore; ...
+                                obj.pmVal.quasi.i(nRep, :)];
                         end
                         
-                    elseif damSwitch == 1
-                        if randomSwitch == 1 || latinSwitch == 1 || ...
-                                sobolSwitch == 1 || haltonSwitch == 1
-                            
-                            magicLocStore = [magicLocStore; ...
-                                obj.pmVal.quasi.i(obj.countGreedy + 1, [2, 4])];
-                            % this is the check to ensure point 2 doesn't
-                            % repeat point 1.
-                            if norm(magicLocStore(end, :) - ...
-                                    magicLocStore(end - 1, :), 'fro') == 0
-                                
-                                magicLocStore = ...
-                                    [magicLocStore(1:end - 1, :); ...
-                                    obj.pmVal.quasi.i(obj.countGreedy + 2, ...
-                                    [2, 4])];
-                                
-                            end
-                        elseif greedySwitch == 1
-                            magicLocStore = [magicLocStore; pmMaxLoc];
-                            obj.err.max.locIdx = eMaxLocIdx;
-                        end
+                    elseif greedySwitch == 1
+                        magicInfoStore = [magicInfoStore; ...
+                            obj.pmVal.comb.space(eMaxIdx, :)];
                     end
-                    obj.err.store.magicLoc = magicLocStore;
+                    
+                    magicLocStore = magicInfoStore(:, 2:obj.no.pm + 1);
+                    magicIdxStore = magicInfoStore(:, 1);
+                    
+                    obj.err.max.magicIdx = magicInfoStore(end, 1);
                     obj.err.max.magicLoc = magicLocStore(end, :);
+                    
+                    obj.err.max.realIdx = eMaxIdx;
+                    obj.err.max.realLoc = eMaxLoc;
+                    
+                    obj.err.store.magicIdx = magicIdxStore;
+                    obj.err.store.magicLoc = magicLocStore;
+                    
             end
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 obj.countGreedy = obj.countGreedy + 1;
             end
             
+        end
+        %%
+        function obj = extractMaxPmInfo(obj, type, damSwitch)
+            % when extracting maximum error information, values and
+            % locations of maximum error can be different, for example, use
+            % eDiff to decide maximum error location (eMaxPmLoc =
+            % obj.err.maxLoc.diff), and use ehat (obj.err.maxLoc.hat) to
+            % decide parameter value regarding maximum error.
+            
+            switch type
+                case 'original'
+                    eMloc = obj.err.max.magicIdx;
+                case 'hhat'
+                    eMloc = obj.err.max.loc.hhat;
+            end
+            
+            if damSwitch == 0
+                obj.pmVal.realMax = obj.pmVal.comb.space(eMloc, 3);
+            elseif damSwitch == 1
+                obj.pmVal.realMax = obj.pmVal.comb.space(eMloc, 4:5);
+            end
+            
+            obj.pmExpo.realMax = log10(obj.pmVal.realMax);
         end
         %%
         function obj = storeErrorInfo(obj)
@@ -2467,29 +2497,6 @@ classdef beam < handle
             obj.err.store.realLoc = [obj.err.store.realLoc; ...
                 obj.err.max.realLoc];
             
-        end
-        %%
-        function obj = extractMaxPmInfo(obj, type, damSwitch)
-            % when extracting maximum error information, values and
-            % locations of maximum error can be different, for example, use
-            % eDiff to decide maximum error location (eMaxPmLoc =
-            % obj.err.maxLoc.diff), and use ehat (obj.err.maxLoc.hat) to
-            % decide parameter value regarding maximum error.
-            
-            switch type
-                case 'original'
-                    eMloc = obj.err.max.magicLoc;
-                case 'hhat'
-                    eMloc = obj.err.max.loc.hhat;
-            end
-            
-            if damSwitch == 0
-                obj.pmVal.max = obj.pmVal.comb.space(eMloc, 3);
-            elseif damSwitch == 1
-                obj.pmVal.max = obj.pmVal.comb.space(eMaxLocIdx, 4:5);
-            end
-            
-            obj.pmExpo.max = log10(obj.pmVal.max);
         end
         %%
         function obj = localHrefinement(obj)

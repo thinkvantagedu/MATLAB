@@ -39,7 +39,7 @@ fixie.generateNodalFceStatic(nDofPerNode);
 % quantity of interest. Time is not varied in this case. 
 fixie.qoiSpaceTime(qoiSwitchSpace, 0);
 fixie.errPrepareRemainStatic;
-if any([greedySwitch randomSwitch sobolSwitch latinSwitch]) == 1
+if any([greedySwitch randomSwitch sobolSwitch latinSwitch haltonSwitch]) == 1
     % compute initial exact solution.
     % the exact solution is computed for SINGLE magic point.
     fixie.exactSolutionStatic('initial');
@@ -91,7 +91,8 @@ while fixie.err.max.val > fixie.err.lowBond
         disp('iterations reach maximum plot number')
         break
     end
-    if any([greedySwitch randomSwitch sobolSwitch latinSwitch]) == 1
+    if any([greedySwitch randomSwitch sobolSwitch ...
+            latinSwitch haltonSwitch]) == 1
         % compute initial exact solution.
         % the exact solution is computed for SINGLE magic point.
         fixie.exactSolutionStatic('Greedy');

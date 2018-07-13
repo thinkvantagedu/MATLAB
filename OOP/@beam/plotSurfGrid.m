@@ -6,24 +6,24 @@ switch typeSwitch
         eMax = obj.err.max.val;
         eLocStore = obj.err.store.realLoc;
         eSurf = obj.err.store.surf;
-        eLocMaxMagic = obj.err.max.realLoc;
+        eMaxLocReal = obj.err.max.realLoc;
     case 'hhat'
         eMax = obj.err.max.val.hhat;
         eLocStore = obj.err.store.loc.hhat;
         eSurf = obj.err.store.surf.hhat;
-        eLocMaxMagic = obj.err.max.loc.hhat;
+        eMaxLocReal = obj.err.max.loc.hhat;
     case 'hat'
         eMax = obj.err.max.val.hat;
         eLocStore = obj.err.store.loc.hat;
         eSurf = obj.err.store.surf.hat;
-        eLocMaxMagic = obj.err.max.loc.hat;
+        eMaxLocReal = obj.err.max.loc.hat;
 end
 
 if damSwitch == 0
     figure(1)
     % for single inclusion case, plot error response curve.
     loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 3);
-    txtMax = sprintf('[%d %.2g]', eLocMaxMagic, eMax);
+    txtMax = sprintf('[%d %.2g]', eMaxLocReal, eMax);
     text(obj.pmVal.comb.space(obj.err.max.realLoc, 3), ...
         eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     if obj.countGreedy > 1
@@ -50,8 +50,8 @@ elseif damSwitch == 1
     ex = obj.pmVal.i.space{:}(:, 2);
     ey = obj.pmVal.damp.space(:, 2);
     surf(ex, ey, eSurf');
-    txtMax = sprintf('[%d %d %.2g]', eLocMaxMagic, eMax);
-    text(obj.pmVal.max(1), obj.pmVal.max(2), eMax, ...
+    txtMax = sprintf('[%d %d %.2g]', eMaxLocReal, eMax);
+    text(obj.pmVal.realMax(1), obj.pmVal.realMax(2), eMax, ...
         txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
         'dataaspectratio', [length(ey) length(ex) 1])
