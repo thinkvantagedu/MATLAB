@@ -123,5 +123,5 @@ elseif randomSwitch == 1
     lineColor = 'k--';
 end
 
-fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
-fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);
+% fixie.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
+% fixie.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);

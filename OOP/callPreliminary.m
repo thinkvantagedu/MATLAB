@@ -59,7 +59,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 20;
+drawCol = 12;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -106,6 +106,6 @@ abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
 greedySwitch = 0; % Greedy procedure
 randomSwitch = 0; % pseudorandom
 structSwitch = 0; % uniform structure
-sobolSwitch = 1; % Sobol sequence, for 1 and 2 parameters.
+sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
 haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
-latinSwitch = 0; % Latin Hypercube
+latinSwitch = 1; % Latin Hypercube

@@ -527,7 +527,7 @@ classdef beam < handle
                 % here damping is the coefficient, not matrix.
                 K = obj.sti.mtxCell{1} * pmValMax(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmValMax(2) * K;
+                C = pmValMax(2) * obj.sti.mtxCell{1} * pmValMax(1);
             end
             F = obj.fce.val;
             if ratioSwitch == 0
@@ -561,7 +561,7 @@ classdef beam < handle
             eMaxCur = obj.err.rbRedRemain;
             redRatioOtpt = (eMaxPre - eMaxCur) / eMaxPre;
             
-            redInfo = {eMaxLoc obj.pmVal.realMax ...
+            redInfo = {eMaxLoc obj.pmVal.magicMax ...
                 size(obj.phi.val, 2) redRatioOtpt eMaxPre eMaxCur};
             
             obj.err.store.redInfo(obj.countGreedy + 2, :) = redInfo;
@@ -693,7 +693,7 @@ classdef beam < handle
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
-                            errPre = obj.err.store.realMax(obj.countGreedy);
+                            errPre = obj.err.store.magicMax(obj.countGreedy);
                         case 'hhat'
                             errPre = ...
                                 obj.err.store.max.hhat(obj.countGreedy);
@@ -705,10 +705,10 @@ classdef beam < handle
                 f = phiOtpt' * F;
                 dT = obj.time.step;
                 maxT = obj.time.max;
-                U0 = zeros(size(m, 1), 1);
-                V0 = zeros(size(m, 1), 1);
+                u0 = zeros(size(m, 1), 1);
+                v0 = zeros(size(m, 1), 1);
                 [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-                    (phiOtpt, m, c, k, f, 'average', dT, maxT, U0, V0);
+                    (phiOtpt, m, c, k, f, 'average', dT, maxT, u0, v0);
                 ur = phiOtpt * rv;
                 
                 urQoi = ur(obj.qoi.dof, obj.qoi.t);
@@ -917,9 +917,9 @@ classdef beam < handle
             obj.err.max = rmfield(obj.err.max, 'val');
             obj.err.max.val.hhat = 1;
             obj.err.store.redInfo = cell(1, 6);
-            reductionText = {'magic point' 'parameter value' ...
-                'no of vectors' 'reduction ratio' ...
-                'error before' 'error after'};
+            reductionText = {'magic point (mp)' 'mp parameter value' ...
+                'no of vectors' 'mp reduction ratio' ...
+                'mp error before' 'mp error after'};
             obj.err.store.redInfo(1, :) = reductionText;
             
         end
@@ -935,8 +935,9 @@ classdef beam < handle
             obj.err.store.realLoc = [];
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 6);
-            reductionText = {'magic point' 'parameter value' ...
-                'no of vectors' 'reduction ratio' 'error before' 'error after'};
+            reductionText = {'magic point (mp)' 'mp parameter value' ...
+                'no of vectors' 'mp reduction ratio' ...
+                'mp error before' 'mp error after'};
             obj.err.store.redInfo(1, :) = reductionText;
         end
         %%
