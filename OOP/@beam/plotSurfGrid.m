@@ -3,7 +3,7 @@ function obj = plotSurfGrid(obj, typeSwitch, lineColor, damSwitch)
 % The location of the maximum error is also marked on the surface.
 switch typeSwitch
     case 'original'
-        eMax = obj.err.max.val;
+        eMax = obj.err.max.realVal;
         eLocStore = obj.err.store.realLoc;
         eSurf = obj.err.store.surf;
         eMaxLocReal = obj.err.max.realLoc;

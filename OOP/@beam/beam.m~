@@ -82,7 +82,7 @@ classdef beam < handle
             obj.pmExpo.mid = domMid;
             
             obj.err.lowBond = errLowBond;
-            obj.err.max.val = errMaxValInit;
+            obj.err.max.realVal = errMaxValInit;
             obj.err.rbCtrl = errRbCtrl;
             obj.err.rbCtrlThres = errRbCtrlThres;
             obj.err.rbCtrlTrialNo = errRbCtrlTNo;
@@ -345,8 +345,9 @@ classdef beam < handle
                 end
                 pmStruct{1} = 0;
                 pmStruct = pmStruct';
-                obj.pmExpo.quasi.i = pmStruct;
-                obj.pmVal.quasi.i = cellfun(@(v) 10 .^ v, pmStruct, 'un', 0);
+                obj.err.store.quasiVal = pmStruct;
+                obj.err.store.quasiVal = ...
+                    cellfun(@(v) 10 .^ v, pmStruct, 'un', 0);
                 
             elseif randomSwitch == 1 || sobolSwitch == 1 || ...
                     haltonSwitch == 1|| latinSwitch == 1
@@ -364,7 +365,7 @@ classdef beam < handle
                 pmQuasi = [pmIdx pmIdx pmAll];
                 
                 obj.pmExpo.quasi.i = pmQuasi;
-                obj.pmVal.quasi.i = [pmIdx pmIdx 10 .^ pmQuasi(:, 3)];
+                obj.err.store.quasiVal = [pmIdx pmIdx 10 .^ pmQuasi(:, 3)];
                 
             end
             
@@ -436,7 +437,8 @@ classdef beam < handle
                 pmQuasi = [pmIdx pmExpoInpt(pmIdx(:, 1), :)];
                 
                 obj.pmExpo.quasi.i = pmQuasi;
-                obj.pmVal.quasi.i = [pmQuasi(:, 1:3) 10 .^ pmQuasi(:, 4:5)];
+                obj.err.store.quasiVal = ...
+                    [pmQuasi(:, 1:3) 10 .^ pmQuasi(:, 4:5)];
                 
             end
             
@@ -512,7 +514,7 @@ classdef beam < handle
             nRbOld = obj.no.rb;
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
-            pmValMax = obj.pmVal.realMax;
+            pmValMax = obj.pmVal.magicMax;
             disMax = obj.dis.rbEnrich;
             % import system inputs.
             M = obj.mas.mtx;
@@ -550,8 +552,8 @@ classdef beam < handle
             end
             switch errType
                 case 'original'
-                    eMaxPre = obj.err.store.max(obj.countGreedy);
-                    eMaxLoc = obj.err.max.realLoc;
+                    eMaxPre = obj.err.store.magicMax(obj.countGreedy);
+                    eMaxLoc = obj.err.max.magicLoc;
                 case 'hhat'
                     eMaxPre = obj.err.store.max.hhat(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc.hhat;
@@ -683,6 +685,7 @@ classdef beam < handle
                     phiOtpt = phiEnrich(:, 1:nEnrich);
                     errPre = 1;
                 elseif initSwitch == 0
+                    
                     phiOtpt = [phiInpt phiEnrich(:, 1:nEnrich)];
                     % if not initial iteration, the enriched basis needs to
                     % be orthogonalized.
@@ -690,7 +693,7 @@ classdef beam < handle
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
-                            errPre = obj.err.store.max(obj.countGreedy);
+                            errPre = obj.err.store.realMax(obj.countGreedy);
                         case 'hhat'
                             errPre = ...
                                 obj.err.store.max.hhat(obj.countGreedy);
@@ -728,7 +731,7 @@ classdef beam < handle
                 case 'initial'
                     pmInp = obj.pmVal.trial;
                 case 'Greedy'
-                    pmInp = obj.pmVal.realMax;
+                    pmInp = obj.pmVal.magicMax;
                 case 'verify'
                     pmInp = obj.pmVal.iter;
             end
@@ -779,7 +782,7 @@ classdef beam < handle
         function obj = exactSolutionStructStatic(obj, type)
             % this method computes exact solutions at structurally
             % distributed samples.
-            pmInp = obj.pmVal.quasi.i{obj.countGreedy + 1};
+            pmInp = obj.err.store.quasiVal{obj.countGreedy + 1};
             % use MATLAB Newmark code to obtain exact solutions.
             disStore = zeros(obj.no.dof, length(pmInp));
             K = sparse(obj.no.dof, obj.no.dof);
@@ -923,7 +926,8 @@ classdef beam < handle
         %%
         function obj = errPrepareRemainOriginal(obj)
             
-            obj.err.store.max = [];
+            obj.err.store.realMax = [];
+            obj.err.store.magicMax = [];
             obj.err.store.magicLoc = obj.pmVal.comb.space...
                 (obj.indicator.trial, 2:obj.no.pm + 1);
             obj.err.store.magicIdx = obj.pmVal.comb.space...
@@ -938,7 +942,8 @@ classdef beam < handle
         %%
         function obj = errPrepareRemainStatic(obj)
             
-            obj.err.store.max = [];
+            obj.err.store.realMax = [];
+            obj.err.store.magicMax = [];
             obj.err.store.magicLoc = obj.pmVal.comb.space...
                 (obj.indicator.trial, 2:obj.no.pm + 1);
             obj.err.store.magicIdx = obj.pmVal.comb.space...
@@ -2390,11 +2395,12 @@ classdef beam < handle
                     
                 case 'original'
                     % max error value and index from error surface.
-                    [eMaxVal, eMaxIdx] = max(obj.err.store.surf(:));
+                    [eMaxRealVal, eMaxRealIdx] = max(obj.err.store.surf(:));
                     % assign max eror value.
-                    obj.err.max.val = eMaxVal;
+                    obj.err.max.realVal = eMaxRealVal;
                     % the (x or x-y) location of max error.
-                    eMaxLoc = obj.pmVal.comb.space(eMaxIdx, 2:obj.no.pm + 1);
+                    eMaxLoc = obj.pmVal.comb.space...
+                        (eMaxRealIdx, 2:obj.no.pm + 1);
                     
                     % this is the magic point information, only if Greedy,
                     % magic info = real info.
@@ -2427,16 +2433,16 @@ classdef beam < handle
                         if lenStore > 1 && checkRep == 0
                             % if repeat, skip next point.
                             magicInfoStore = [magicInfoStore(1:end - 1, :); ...
-                                obj.pmVal.quasi.i(nRep, :)];
+                                obj.err.store.quasiVal(nRep, :)];
                         else
                             % if no repeat, use next point.
                             magicInfoStore = [magicInfoStore; ...
-                                obj.pmVal.quasi.i(nRep, :)];
+                                obj.err.store.quasiVal(nRep, :)];
                         end
                         
                     elseif greedySwitch == 1
                         magicInfoStore = [magicInfoStore; ...
-                            obj.pmVal.comb.space(eMaxIdx, :)];
+                            obj.pmVal.comb.space(eMaxRealIdx, :)];
                     end
                     
                     magicLocStore = magicInfoStore(:, 2:obj.no.pm + 1);
@@ -2445,12 +2451,13 @@ classdef beam < handle
                     obj.err.max.magicIdx = magicInfoStore(end, 1);
                     obj.err.max.magicLoc = magicLocStore(end, :);
                     
-                    obj.err.max.realIdx = eMaxIdx;
+                    obj.err.max.realIdx = eMaxRealIdx;
                     obj.err.max.realLoc = eMaxLoc;
                     
                     obj.err.store.magicIdx = magicIdxStore;
                     obj.err.store.magicLoc = magicLocStore;
-                    
+                    obj.err.max.magicVal = ...
+                        obj.err.store.surf(obj.err.max.magicIdx);
             end
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 obj.countGreedy = obj.countGreedy + 1;
@@ -2467,18 +2474,19 @@ classdef beam < handle
             
             switch type
                 case 'original'
-                    eMaxLocMagic = obj.err.max.magicIdx;
-                    eMaxLocReal = obj.err.realLoc;
+                    eMaxIdxMagic = obj.err.max.magicIdx;
+                    eMaxIdxReal = obj.err.max.realIdx;
                 case 'hhat'
-                    eMaxLocReal = obj.err.max.loc.hhat;
+                    eMaxIdxMagic = obj.err.max.loc.hhat;
+                    eMaxIdxReal = obj.err.max.loc.hhat;
             end
             
-            obj.pmVal.realMax = obj.pmVal.comb.space(eMaxLocReal, ...
+            obj.pmVal.realMax = obj.pmVal.comb.space(eMaxIdxReal, ...
                 end - obj.no.pm + 1:end);            
             obj.pmExpo.realMax = log10(obj.pmVal.realMax);
-            obj.pmVal.realMax = obj.pmVal.comb.space(eMaxLocReal, ...
+            obj.pmVal.magicMax = obj.pmVal.comb.space(eMaxIdxMagic, ...
                 end - obj.no.pm + 1:end);            
-            obj.pmExpo.realMax = log10(obj.pmVal.realMax);
+            obj.pmExpo.magicMax = log10(obj.pmVal.magicMax);
         end
         %%
         function obj = storeErrorInfo(obj)
@@ -2495,9 +2503,14 @@ classdef beam < handle
         %%
         function obj = storeErrorInfoOriginal(obj)
             
-            obj.err.store.max = [obj.err.store.max; obj.err.max.val];
+            obj.err.store.realMax = [obj.err.store.realMax; ...
+                obj.err.max.realVal];
             obj.err.store.realLoc = [obj.err.store.realLoc; ...
                 obj.err.max.realLoc];
+            obj.err.store.magicMax = [obj.err.store.magicMax; ...
+                obj.err.max.magicVal];
+            obj.err.store.magicLoc = [obj.err.store.magicLoc; ...
+                obj.err.max.magicLoc];
             
         end
         %%
@@ -2753,26 +2766,28 @@ classdef beam < handle
                         num2str(obj.err.max.magicLoc)));
                     disp(strcat('max error point location', {' = '}, ...
                         num2str(obj.err.max.realLoc)));
-                    disp(strcat('maximum relative error value', {' = '}, ...
-                        num2str(obj.err.max.val)));
+                    disp(strcat('relative error at magic point', ...
+                        {' = '}, num2str(obj.err.max.magicVal)));
+                    disp(strcat('relative error at max error point', ...
+                        {' = '}, num2str(obj.err.max.realVal)));
                 case 'hhat'
-                    disp(strcat('error in the error value', {' = '}, ...
+                    disp(strcat('error in the error', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
                     disp(strcat('max error point location', {' = '}, ...
                         num2str(obj.err.max.loc.hhat)));
-                    disp(strcat('maximum relative error value', {' = '}, ...
+                    disp(strcat('maximum relative error', {' = '}, ...
                         num2str(obj.err.max.val.hhat)));
                     
                 case 'hat'
-                    disp(strcat('error in the error value', {' = '}, ...
+                    disp(strcat('error in the error', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
                     disp(strcat('max error point location', {' = '}, ...
                         num2str(obj.err.max.loc.hat)));
-                    disp(strcat('maximum relative error value', {' = '}, ...
+                    disp(strcat('maximum relative error', {' = '}, ...
                         num2str(obj.err.max.val.hat)));
-                    disp(strcat('error in the error value', {' = '}, ...
+                    disp(strcat('error in the error', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...
                         num2str(obj.err.max.diffLoc), ', Greedy'));
             end

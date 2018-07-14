@@ -3,7 +3,7 @@ errx = obj.no.store.rb;
 
 switch errType
     case 'original'
-        erry = obj.err.store.max;
+        erry = obj.err.store.realMax;
     case 'hhat'
         erry = obj.err.store.max.hhat;
     case 'verify'

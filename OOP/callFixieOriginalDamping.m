@@ -62,7 +62,7 @@ fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'original', 1);
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
-while fixie.err.max.val > fixie.err.lowBond
+while fixie.err.max.realVal > fixie.err.lowBond
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.
@@ -98,7 +98,7 @@ while fixie.err.max.val > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-    fixie.plotSurfGrid('original', '-.k', 1);
+%     fixie.plotSurfGrid('original', '-.k', 1);
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.

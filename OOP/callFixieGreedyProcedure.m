@@ -50,7 +50,7 @@ end
 % compute initial reduced basis from trial solution.
 fixie.rbInitialStatic;
 fixie.reducedMatricesStatic;
-while fixie.err.max.val > fixie.err.lowBond
+while fixie.err.max.realVal > fixie.err.lowBond
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.
