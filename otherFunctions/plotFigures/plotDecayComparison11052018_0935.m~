@@ -12,8 +12,6 @@ load('errLatin2.mat', 'errLatin2')
 load('errLatin3.mat', 'errLatin3')
 load('errLatin4.mat', 'errLatin4')
 load('errLatin5.mat', 'errLatin5')
-load('errSobol.mat', 'errSobol')
-load('errStruct.mat', 'errStruct')
 
 nPhiIni = 10;
 nPhiAdd = 4;
@@ -34,7 +32,7 @@ xticks(errx);
 axis([0 nRb errOriMax(end) errOriMax(1)]);
 axis normal
 grid on
-legend({'Standard POD-Greedy', 'Proposed POD-Greedy'}, 'FontSize', 20);
+legend({'Standard', 'Proposed'}, 'FontSize', 20);
 set(gca,'fontsize',20)
 xlabel('Total number of basis vectors', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -50,7 +48,7 @@ hold on
 loglog(errPmLocPro, errProMax, 'r-+', 'MarkerSize', 10, 'LineWidth', 3)
 axis([10^-1 10^1 0 errOriMax(1)])
 grid on
-legend({'Standard POD-Greedy', 'Proposed POD-Greedy'}, 'FontSize', 20);
+legend({'Classical', 'Proposed'}, 'FontSize', 20);
 set(gca,'fontsize',20)
 xlabel('Parametric Domain', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -73,7 +71,7 @@ xticks(errx);
 axis([0 nRb errOriMax(end) errOriMax(1)]);
 axis normal
 grid on
-legend({'Proposed POD-Greedy', 'Pseudorandom'}, 'FontSize', 20);
+legend({'Proposed', 'Pseudorandom'}, 'FontSize', 20);
 set(gca,'fontsize',20)
 xlabel('Total number of basis vectors', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -96,37 +94,9 @@ xticks(errx);
 axis([0 nRb errOriMax(end) errOriMax(1)]);
 axis normal
 grid on
-legend({'Proposed POD-Greedy', 'Latin Hypercube'}, 'FontSize', 20);
+legend({'Proposed', 'Latin Hypercube'}, 'FontSize', 20);
 set(gca,'fontsize',20)
 xlabel('Total number of basis vectors', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
 
 %% proposed vs Sobol.
-errSobol = errSobol.store.realMax;
-figure(5)
-semilogy(errx, errProMax, 'r-^', 'MarkerSize', 10, 'lineWidth', 3);
-hold on
-semilogy(errx, errSobol, 'c-*', 'lineWidth', 1.5);
-xticks(errx);
-axis([0 nRb errOriMax(end) errOriMax(1)]);
-axis normal
-grid on
-legend({'Proposed POD-Greedy', 'Sobol'}, 'FontSize', 20);
-set(gca,'fontsize',20)
-xlabel('Total number of basis vectors', 'FontSize', 20);
-ylabel('Maximum relative error', 'FontSize', 20);
-
-%% proposed vs structure.
-errStruct = errStruct.store.realMax;
-figure(6)
-semilogy(errx, errProMax, 'r-^', 'MarkerSize', 10, 'lineWidth', 3);
-hold on
-semilogy(errx, errStruct, 'c-*', 'lineWidth', 1.5);
-xticks(errx);
-axis([0 nRb errOriMax(end) errOriMax(1)]);
-axis normal
-grid on
-legend({'Proposed POD-Greedy', 'Structure'}, 'FontSize', 20);
-set(gca,'fontsize',20)
-xlabel('Total number of basis vectors', 'FontSize', 20);
-ylabel('Maximum relative error', 'FontSize', 20);

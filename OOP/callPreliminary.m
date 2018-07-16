@@ -17,7 +17,7 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 17;
+domLengi = 9;
 damLeng = 17;
 damBond = [-1 1];
 
@@ -59,7 +59,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 12;
+drawCol = 11;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -92,7 +92,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
@@ -105,7 +105,7 @@ abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
 %% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
 greedySwitch = 0; % Greedy procedure
 randomSwitch = 0; % pseudorandom
-structSwitch = 0; % uniform structure
+structSwitch = 1; % uniform structure
 sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
 haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
-latinSwitch = 1; % Latin Hypercube
+latinSwitch = 0; % Latin Hypercube

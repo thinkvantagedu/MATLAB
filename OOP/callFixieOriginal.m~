@@ -56,7 +56,7 @@ elseif structSwitch == 1
 end
 % compute initial reduced basis from trial solution. There are different
 % approaches.
-fixie.rbInitialDynamic(nPhiInitial, reductionRatio, ratioSwitch, 'original', 0);
+fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'original', 0);
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
@@ -104,16 +104,9 @@ while fixie.err.max.realVal > fixie.err.lowBond
     end
     if any([greedySwitch randomSwitch sobolSwitch latinSwitch haltonSwitch]) ...
             == 1
-        fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
-        % rbEnrichment set the indicators.
-        fixie.rbEnrichmentDynamic(nPhiEnrich, reductionRatio, ratioSwitch, ...
-            'original', 0);
-    elseif structSwitch == 1
-        fixie.exactSolutionStructDynamic('Greedy');
-        % rbEnrichment set the indicators.
-        fixie.rbEnrichmentStructDynamic(nPhiEnrich, reductionRatio, ...
-            ratioSwitch, 'original');
-    end
+    fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
+    % rbEnrichment set the indicators.
+    fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'original', 0);
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     

@@ -451,11 +451,11 @@ classdef beam < handle
             % this method is applied to structured magic points.
             
             % new basis from error (phi * phi' * response).
-            phi_ = obj.dis.rbEnrich;
+            disStore = obj.dis.rbEnrichStore;
             nRbOld = obj.no.rb;
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
-            obj.GramSchmidtOOP(phi_);
+            obj.GramSchmidtOOP(disStore);
             obj.phi.val = obj.phi.otpt;
             
             eMaxLoc = obj.err.max.magicLoc;
@@ -501,21 +501,21 @@ classdef beam < handle
             obj.indicator.refine = 0;
         end
         %%
-        function obj = rbEnrichment(obj, nEnrich, redRatio, ratioSwitch, ...
-                errType, damSwitch)
+        function obj = rbEnrichmentDynamic(obj, nEnrich, redRatio, ...
+                ratioSwitch, errType, damSwitch)
             
             % this method add a new basis vector to current basis. New basis
             % vector = SVD(current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
             
             % new basis from error (phi * phi' * response).
-            rbErrFull = obj.dis.rbEnrich - ...
-                obj.phi.val * obj.phi.val' * obj.dis.rbEnrich;
+            pmValMax = obj.pmVal.magicMax;
+            disMax = obj.dis.rbEnrich;
+            phiInpt = obj.phi.val;
+            rbErrFull = disMax - phiInpt * phiInpt' * disMax;
             nRbOld = obj.no.rb;
             % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
             % happens when enrich.
-            pmValMax = obj.pmVal.magicMax;
-            disMax = obj.dis.rbEnrich;
             % import system inputs.
             M = obj.mas.mtx;
             
@@ -533,7 +533,7 @@ classdef beam < handle
             if ratioSwitch == 0
                 [leftVecAll, ~, ~] = svd(rbErrFull, 'econ');
                 phiEnrich = leftVecAll(:, 1:nEnrich);
-                phi_ = [obj.phi.val phiEnrich];
+                phi_ = [phiInpt phiEnrich];
                 obj.GramSchmidtOOP(phi_);
                 obj.phi.val = obj.phi.otpt;
                 obj.basisCompressionFixNoRedRatio(disMax, obj.phi.val, ...
@@ -542,7 +542,6 @@ classdef beam < handle
             elseif ratioSwitch == 1
                 phiInpt = obj.phi.val;
                 % generate initial projection error.
-                rbErrFull = disMax - phiInpt * phiInpt' * disMax;
                 [phiEnrich, ~, ~] = svd(rbErrFull, 'econ');
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
@@ -578,7 +577,51 @@ classdef beam < handle
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
         end
         %%
-        function obj = rbInitial(obj, nInit, redRatio, ratioSwitch, ...
+        function rbEnrichmentStructDynamic(obj, nEnrich, redRatio, ...
+                ratioSwitch, errType)
+            % damping does not apply in this case.
+            pmValMax = obj.pmVal.magicMax;
+            disStore = obj.dis.rbEnrich;
+            keyboard
+            disMax = obj.dis
+            phiInpt = obj.phi.val;
+            nRbOld = obj.no.rb;
+            % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
+            % happens when enrich.
+            rbErrFull = disStore - phiInpt * phiInpt' * disStore;
+            M = obj.mas.mtx;
+            C = obj.dam.mtx;
+            K = obj.sti.mtxCell{1} * pmValMax + obj.sti.mtxCell{2} * ...
+                obj.pmVal.s.fix;
+            F = obj.fce.val;
+            if ratioSwitch == 0
+                [leftVecAll, ~, ~] = svd(rbErrFull, 'econ');
+                phiEnrich = leftVecAll(:, 1:nEnrich);
+                phi_ = [phiInpt phiEnrich];
+                obj.GramSchmidtOOP(phi_);
+                obj.phi.val = obj.phi.otpt;
+                
+            elseif ratioSwitch == 1
+                
+            end
+            obj.GramSchmidtOOP(disStore);
+            obj.phi.val = obj.phi.otpt;
+            
+            eMaxLoc = obj.err.max.magicLoc;
+            
+            redInfo = {eMaxLoc obj.pmVal.realMax size(obj.phi.val, 2)};
+            obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
+            
+            obj.no.rb = size(obj.phi.val, 2);
+            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
+            obj.no.rbAdd = obj.no.rb - nRbOld;
+            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
+            
+            obj.indicator.enrich = 1;
+            obj.indicator.refine = 0;
+        end
+        %%
+        function obj = rbInitialDynamic(obj, nInit, redRatio, ratioSwitch, ...
                 errType, damSwitch)
             % initialize reduced basis, take n SVD vectors from initial
             % solution, nPhi is chosen by user.
@@ -781,7 +824,7 @@ classdef beam < handle
         %%
         function obj = exactSolutionStructStatic(obj, type)
             % this method computes exact solutions at structurally
-            % distributed samples.
+            % distributed samples for static cases.
             pmInp = obj.err.store.quasiVal{obj.countGreedy + 1};
             % use MATLAB Newmark code to obtain exact solutions.
             disStore = zeros(obj.no.dof, length(pmInp));
@@ -789,7 +832,7 @@ classdef beam < handle
             for iS = 1:length(pmInp)
                 K = K + obj.sti.mtxCell{1} * ...
                     pmInp(iS) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                % compute trial solution
+                % compute exact solution
                 U = K \ obj.fce.val;
                 disStore(:, iS) = disStore(:, iS) + U;
             end
@@ -798,7 +841,37 @@ classdef beam < handle
                     obj.dis.trial = U;
                     obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
                 case 'Greedy'
-                    obj.dis.rbEnrich = disStore;
+                    obj.dis.rbEnrich = U;
+                    obj.dis.rbEnrichStore = disStore;
+            end
+            
+        end
+        %%
+        function obj = exactSolutionStructDynamic(obj, type)
+            % this method computes exact solutions at structurally
+            % distributed samples for dynamic cases.
+            pmInp = obj.err.store.quasiVal{obj.countGreedy + 1};
+            % use MATLAB Newmark code to obtain exact solutions.
+            disStore = cell(1, length(pmInp));
+            K = sparse(obj.no.dof, obj.no.dof);
+            for iS = 1:length(pmInp)
+                K = K + obj.sti.mtxCell{1} * ...
+                    pmInp(iS) + obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = obj.dam.mtx;
+                M = obj.mas.mtx;
+                F = obj.fce.val;
+                % compute exact solution.
+                obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
+                disStore{iS} = obj.dis.full;
+            end
+            switch type
+                case 'initial'
+                    obj.dis.trial = obj.dis.full;
+                    obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
+                    obj.dis.norm.trial = norm(obj.dis.qoi.trial, 'fro');
+                case 'Greedy'
+                    obj.dis.rbEnrich = obj.dis.full;
+                    obj.dis.rbEnrichStore = cell2mat(disStore);
             end
             
         end

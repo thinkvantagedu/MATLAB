@@ -50,15 +50,14 @@ fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
 fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.errPrepareRemainOriginal;
 
 % compute initial exact solution.
 fixie.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 1);
 
-fixie.errPrepareRemainOriginal;
-
 % compute initial reduced basis from trial solution. There are different
 % approaches.
-fixie.rbInitial(nPhiInitial, reductionRatio, ratioSwitch, 'original', 1);
+fixie.rbInitialDynamic(nPhiInitial, reductionRatio, ratioSwitch, 'original', 1);
 fixie.reducedMatricesStatic;
 fixie.reducedMatricesDynamic;
 
@@ -108,7 +107,8 @@ while fixie.err.max.realVal > fixie.err.lowBond
     
     fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
     % rbEnrichment set the indicators.
-    fixie.rbEnrichment(nPhiEnrich, reductionRatio, ratioSwitch, 'original', 1);
+    fixie.rbEnrichmentDynamic(nPhiEnrich, reductionRatio, ratioSwitch, ...
+        'original', 1);
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     
