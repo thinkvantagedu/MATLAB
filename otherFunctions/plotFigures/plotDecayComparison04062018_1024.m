@@ -18,7 +18,7 @@ xticks(exp);
 axis([0 exh(end) + 2 0 eyp(1)]);
 axis normal
 grid on
-legend({'POD-Greedy', 'Halton'}, 'FontSize', 20);
+legend({'Standard POD-Greedy', 'Quasi-random (Halton)'}, 'FontSize', 20);
 set(gca,'fontsize',20);
 xlabel('N', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -37,7 +37,7 @@ xticks(exp);
 axis([0 exh(end) + 2 0 eyp(1)]);
 axis normal
 grid on
-legend({'POD-Greedy', 'Sobol'}, 'FontSize', 20);
+legend({'Standard POD-Greedy', 'Quasi-random (Sobol)'}, 'FontSize', 20);
 set(gca,'fontsize',20);
 xlabel('N', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -76,7 +76,7 @@ xticks(exp);
 axis([0 exh(end) + 2 0 eyp(1)]);
 axis normal
 grid on
-legend({'POD-Greedy', 'Pseudorandom'}, 'FontSize', 20);
+legend({'Standard POD-Greedy', 'Pseudorandom'}, 'FontSize', 20);
 set(gca,'fontsize',20);
 xlabel('N', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -116,7 +116,7 @@ xticks(exp);
 axis([0 exh(end) + 2 0 eyp(1)]);
 axis normal
 grid on
-legend({'POD-Greedy', 'Latin hypercube'}, 'FontSize', 20);
+legend({'Standard POD-Greedy', 'Latin hypercube'}, 'FontSize', 20);
 set(gca,'fontsize',20);
 xlabel('N', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);

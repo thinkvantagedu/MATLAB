@@ -81,8 +81,8 @@ while fixie.err.max.realVal > fixie.err.lowBond
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original');
-    fixie.greedyInfoDisplay('original');
     fixie.storeErrorInfoOriginal;
+    fixie.greedyInfoDisplay('original');
     fixie.errStoreAllSurfs('original');
     
     fixie.plotSurfGrid('original', 'b', 0);

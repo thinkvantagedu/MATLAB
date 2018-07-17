@@ -502,36 +502,61 @@ classdef beam < handle
         end
         %%
         function obj = rbEnrichmentDynamic(obj, nEnrich, redRatio, ...
-                ratioSwitch, errType, damSwitch)
+                ratioSwitch, errType, damSwitch, structSwitch)
             
             % this method add a new basis vector to current basis. New basis
             % vector = SVD(current exact solution -  previous approximation).
             % GramSchmidt is applied to the basis to ensure orthogonality.
             
             % new basis from error (phi * phi' * response).
-            pmValMax = obj.pmVal.magicMax;
-            disMax = obj.dis.rbEnrich;
             phiInpt = obj.phi.val;
-            rbErrFull = disMax - phiInpt * phiInpt' * disMax;
+            pmValMagicMax = obj.pmVal.magicMax;
+            pmValRealMax = obj.pmVal.realMax;
             nRbOld = obj.no.rb;
-            % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
-            % happens when enrich.
-            % import system inputs.
             M = obj.mas.mtx;
+            F = obj.fce.val;
+            
+            if structSwitch == 1 && damSwitch == 1
+                error('struct samples and damping do not co-exist.')
+            end
             
             if damSwitch == 0
-                K = obj.sti.mtxCell{1} * pmValMax + ...
+                K = obj.sti.mtxCell{1} * pmValMagicMax + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
             elseif damSwitch == 1
                 % here damping is the coefficient, not matrix.
-                K = obj.sti.mtxCell{1} * pmValMax(1) + ...
+                K = obj.sti.mtxCell{1} * pmValMagicMax(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmValMax(2) * obj.sti.mtxCell{1} * pmValMax(1);
+                C = pmValMagicMax(2) * obj.sti.mtxCell{1} * pmValMagicMax(1);
             end
-            F = obj.fce.val;
+            
+            if structSwitch == 0
+                % for other cases, the reduction is at magic point.
+                disMax = obj.dis.rbEnrich;
+                rbErrFull = disMax - phiInpt * phiInpt' * disMax;
+                
+            elseif structSwitch == 1 && damSwitch == 0
+                % for struct case, the reduction is at max error point
+                % because magic points are not single. 
+                K = obj.sti.mtxCell{1} * pmValRealMax + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = obj.dam.mtx;
+                obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
+                % displacement at last maximum error point.
+                disMax = obj.dis.full;
+                % stored displacements from structured magic point.
+                disStore = obj.dis.rbEnrichStore;
+                rbErrFull = disStore - phiInpt * phiInpt' * disStore;
+                
+            end
+            % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
+            % happens when enrich.
+            % import system inputs.
+            
+            
+            [leftVecAll, ~, ~] = svd(rbErrFull, 'econ');
             if ratioSwitch == 0
-                [leftVecAll, ~, ~] = svd(rbErrFull, 'econ');
                 phiEnrich = leftVecAll(:, 1:nEnrich);
                 phi_ = [phiInpt phiEnrich];
                 obj.GramSchmidtOOP(phi_);
@@ -540,19 +565,23 @@ classdef beam < handle
                     M, C, K, F);
                 
             elseif ratioSwitch == 1
-                phiInpt = obj.phi.val;
                 % generate initial projection error.
-                [phiEnrich, ~, ~] = svd(rbErrFull, 'econ');
                 % iteratively enrich basis until RB error tolerance is
                 % satisfied. Output is obj.phi.val and obj.err.rbRedRemain.
-                obj.basisCompressionRvIterate(disMax, phiInpt, phiEnrich, ...
-                    M, C, K, F, redRatio, 0, errType);
+                
+                obj.basisCompressionRvIterate(disMax, phiInpt, leftVecAll, ...
+                    M, C, K, F, redRatio, 0, errType, structSwitch);
                 
             end
             switch errType
                 case 'original'
-                    eMaxPre = obj.err.store.magicMax(obj.countGreedy);
-                    eMaxLoc = obj.err.max.magicLoc;
+                    if structSwitch == 0
+                        eMaxPre = obj.err.store.magicMax(obj.countGreedy);
+                        eMaxLoc = obj.err.max.magicLoc;
+                    elseif structSwitch == 1
+                        eMaxPre = obj.err.store.realMax(obj.countGreedy);
+                        eMaxLoc = obj.err.max.realLoc;
+                    end
                 case 'hhat'
                     eMaxPre = obj.err.store.max.hhat(obj.countGreedy);
                     eMaxLoc = obj.err.max.loc.hhat;
@@ -575,50 +604,6 @@ classdef beam < handle
             
             obj.vel.re.inpt = sparse(obj.no.rb, 1);
             obj.dis.re.inpt = sparse(obj.no.rb, 1);
-        end
-        %%
-        function rbEnrichmentStructDynamic(obj, nEnrich, redRatio, ...
-                ratioSwitch, errType)
-            % damping does not apply in this case.
-            pmValMax = obj.pmVal.magicMax;
-            disStore = obj.dis.rbEnrich;
-            keyboard
-            disMax = obj.dis
-            phiInpt = obj.phi.val;
-            nRbOld = obj.no.rb;
-            % rbErrFull = obj.dis.rbEnrich; % this is wrong as singularity
-            % happens when enrich.
-            rbErrFull = disStore - phiInpt * phiInpt' * disStore;
-            M = obj.mas.mtx;
-            C = obj.dam.mtx;
-            K = obj.sti.mtxCell{1} * pmValMax + obj.sti.mtxCell{2} * ...
-                obj.pmVal.s.fix;
-            F = obj.fce.val;
-            if ratioSwitch == 0
-                [leftVecAll, ~, ~] = svd(rbErrFull, 'econ');
-                phiEnrich = leftVecAll(:, 1:nEnrich);
-                phi_ = [phiInpt phiEnrich];
-                obj.GramSchmidtOOP(phi_);
-                obj.phi.val = obj.phi.otpt;
-                
-            elseif ratioSwitch == 1
-                
-            end
-            obj.GramSchmidtOOP(disStore);
-            obj.phi.val = obj.phi.otpt;
-            
-            eMaxLoc = obj.err.max.magicLoc;
-            
-            redInfo = {eMaxLoc obj.pmVal.realMax size(obj.phi.val, 2)};
-            obj.err.store.redInfo(obj.countGreedy + 1, :) = redInfo;
-            
-            obj.no.rb = size(obj.phi.val, 2);
-            obj.no.store.rb = [obj.no.store.rb; obj.no.rb];
-            obj.no.rbAdd = obj.no.rb - nRbOld;
-            obj.no.store.rbAdd = [obj.no.store.rbAdd; obj.no.rbAdd];
-            
-            obj.indicator.enrich = 1;
-            obj.indicator.refine = 0;
         end
         %%
         function obj = rbInitialDynamic(obj, nInit, redRatio, ratioSwitch, ...
@@ -651,8 +636,8 @@ classdef beam < handle
                     M, C, K, F);
             elseif ratioSwitch == 1
                 % compute obj.phi.val;
-                obj.basisCompressionRvIterate(disTrial, ...
-                    [], u, M, C, K, F, redRatio, 1, errType);
+                obj.basisCompressionRvIterate(disTrial, [], u, M, C, K, F, ...
+                    redRatio, 1, errType, 0);
             end
             
             reductionInfo = {obj.indicator.trial obj.pmVal.trial ...
@@ -714,7 +699,7 @@ classdef beam < handle
         %%
         function obj = basisCompressionRvIterate...
                 (obj, disInpt, phiInpt, phiEnrich, M, C, K, F, ...
-                redRatio, initSwitch, errType)
+                redRatio, initSwitch, errType, structSwitch)
             % this method generates reduced basis iteratively with
             % evaluating RB errorat the magic point. Output is obj.phi.val and
             % obj.err.rbRedRemain.
@@ -725,6 +710,7 @@ classdef beam < handle
                 if initSwitch == 1
                     % if initial enrichment, phiEnrich is the input
                     % displacement.
+%                     keyboard
                     phiOtpt = phiEnrich(:, 1:nEnrich);
                     errPre = 1;
                 elseif initSwitch == 0
@@ -736,7 +722,13 @@ classdef beam < handle
                     phiOtpt = obj.phi.otpt;
                     switch errType
                         case 'original'
-                            errPre = obj.err.store.magicMax(obj.countGreedy);
+                            if structSwitch == 0
+                                errPre = obj.err.store.magicMax...
+                                    (obj.countGreedy);
+                            elseif structSwitch == 1
+                                errPre = obj.err.store.realMax...
+                                    (obj.countGreedy);
+                            end
                         case 'hhat'
                             errPre = ...
                                 obj.err.store.max.hhat(obj.countGreedy);
@@ -850,7 +842,13 @@ classdef beam < handle
         function obj = exactSolutionStructDynamic(obj, type)
             % this method computes exact solutions at structurally
             % distributed samples for dynamic cases.
-            pmInp = obj.err.store.quasiVal{obj.countGreedy + 1};
+            switch type
+                case 'initial'
+                    pmInp = obj.pmVal.trial;
+                case 'Greedy'
+                    pmInp = obj.err.store.quasiVal{obj.countGreedy + 1};
+            end
+            
             % use MATLAB Newmark code to obtain exact solutions.
             disStore = cell(1, length(pmInp));
             K = sparse(obj.no.dof, obj.no.dof);
@@ -867,10 +865,9 @@ classdef beam < handle
             switch type
                 case 'initial'
                     obj.dis.trial = obj.dis.full;
-                    obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof);
+                    obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, obj.qoi.t);
                     obj.dis.norm.trial = norm(obj.dis.qoi.trial, 'fro');
                 case 'Greedy'
-                    obj.dis.rbEnrich = obj.dis.full;
                     obj.dis.rbEnrichStore = cell2mat(disStore);
             end
             
@@ -2478,9 +2475,9 @@ classdef beam < handle
                     
                     % this is the magic point information, only if Greedy,
                     % magic info = real info.
-                    magicInfoStore = obj.pmVal.comb.space...
-                        (obj.err.store.magicIdx, :);
-                    magicLocStore = magicInfoStore(:, 2:obj.no.pm + 1);
+                    nRep = obj.countGreedy + 1;
+                    magicIdxStore = obj.err.store.magicIdx;
+                    
                     
                     if randomSwitch == 1 || latinSwitch == 1 || ...
                             sobolSwitch == 1 || haltonSwitch == 1
@@ -2489,40 +2486,39 @@ classdef beam < handle
                         % the above is achieved in testRepeatPointRemove,
                         % but not developed here.
                         % applies to both damp and nondamp cases.
-                        % this is the check for 2 cases, only apply to
-                        % quasi cases, not to Greedy.
-                        nRep = obj.countGreedy + 1;
-                        lenStore = size(magicInfoStore, 1);
+                        % only apply to quasi cases, not to Greedy.
+                        
+                        magicIdxStore = [magicIdxStore; ...
+                            obj.err.store.quasiVal(nRep, 1)];
+                        
+                        lenStore = size(magicIdxStore, 1);
                         if lenStore > 1 && damSwitch == 0
-                            checkRep = length(magicLocStore) == ...
-                                length(unique(magicLocStore));
+                            checkRep = length(magicIdxStore) == ...
+                                length(unique(magicIdxStore));
                             
                         elseif lenStore > 1 && damSwitch == 1
-                            checkRep = norm(magicLocStore(end, :) - ...
-                                magicLocStore(end - 1, :), 'fro');
+                            checkRep = norm(magicIdxStore(end, :) - ...
+                                magicIdxStore(end - 1, :), 'fro');
                             
                         end
                         % this is the check to ensure point 2 doesn't
                         % repeat point 1.
                         if lenStore > 1 && checkRep == 0
                             % if repeat, skip next point.
-                            magicInfoStore = [magicInfoStore(1:end - 1, :); ...
-                                obj.err.store.quasiVal(nRep, :)];
-                        else
-                            % if no repeat, use next point.
-                            magicInfoStore = [magicInfoStore; ...
-                                obj.err.store.quasiVal(nRep, :)];
+                            magicIdxStore = [magicIdxStore(1:end - 1, :); ...
+                                obj.err.store.quasiVal(nRep + 1, 1)];
+                            
                         end
                         
                     elseif greedySwitch == 1
-                        magicInfoStore = [magicInfoStore; ...
-                            obj.pmVal.comb.space(eMaxRealIdx, :)];
+                        magicIdxStore = [magicIdxStore; ...
+                            obj.pmVal.comb.space(eMaxRealIdx, 1)];
                     end
                     
-                    magicLocStore = magicInfoStore(:, 2:obj.no.pm + 1);
-                    magicIdxStore = magicInfoStore(:, 1);
+                    magicLocStore = obj.pmVal.comb.space...
+                        (magicIdxStore, 2:obj.no.pm + 1);
                     
-                    obj.err.max.magicIdx = magicInfoStore(end, 1);
+                    obj.err.max.magicIdx = magicIdxStore(end);
                     obj.err.max.magicLoc = magicLocStore(end, :);
                     
                     obj.err.max.realIdx = eMaxRealIdx;
@@ -2532,6 +2528,7 @@ classdef beam < handle
                     obj.err.store.magicLoc = magicLocStore;
                     obj.err.max.magicVal = ...
                         obj.err.store.surf(obj.err.max.magicIdx);
+                    
             end
             if obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 obj.countGreedy = obj.countGreedy + 1;
@@ -2583,9 +2580,6 @@ classdef beam < handle
                 obj.err.max.realLoc];
             obj.err.store.magicMax = [obj.err.store.magicMax; ...
                 obj.err.max.magicVal];
-            obj.err.store.magicLoc = [obj.err.store.magicLoc; ...
-                obj.err.max.magicLoc];
-            
         end
         %%
         function obj = localHrefinement(obj)
@@ -2830,20 +2824,29 @@ classdef beam < handle
             end
         end
         %%
-        function obj = greedyInfoDisplay(obj, type)
+        function obj = greedyInfoDisplay(obj, type, structSwitch)
             % this method displays maximum error value and
             % informations regarding Greedy iterations.
             
             switch type
                 case 'original'
-                    disp(strcat('magic point location', {' = '}, ...
-                        num2str(obj.err.max.magicLoc)));
+                    if structSwitch == 1
+                        disp(strcat('magic points location', {' = '}, ...
+                            num2str(obj.err.store.quasiVal{obj.countGreedy})));
+                        disp(strcat('relative error at last magic point', ...
+                            {' = '}, num2str(obj.err.store.magicMax)));
+                    else
+                        disp(strcat('magic points location', {' = '}, ...
+                            num2str(obj.err.store.magicLoc')));
+                        disp(strcat('relative error at last magic point', ...
+                            {' = '}, num2str(obj.err.max.magicVal)));
+                    end
+                    
                     disp(strcat('max error point location', {' = '}, ...
                         num2str(obj.err.max.realLoc)));
-                    disp(strcat('relative error at magic point', ...
-                        {' = '}, num2str(obj.err.max.magicVal)));
                     disp(strcat('relative error at max error point', ...
                         {' = '}, num2str(obj.err.max.realVal)));
+                    
                 case 'hhat'
                     disp(strcat('error in the error', {' = '}, ...
                         num2str(obj.refinement.condition), {' at sample '}, ...

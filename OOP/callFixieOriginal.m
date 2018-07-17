@@ -91,8 +91,8 @@ while fixie.err.max.realVal > fixie.err.lowBond
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original');
-    fixie.greedyInfoDisplay('original');
     fixie.storeErrorInfoOriginal;
+    fixie.greedyInfoDisplay('original', structSwitch);
     fixie.errStoreAllSurfs('original');
     
 %     fixie.plotSurfGrid('original', '-.k', 0);
@@ -105,15 +105,12 @@ while fixie.err.max.realVal > fixie.err.lowBond
     if any([greedySwitch randomSwitch sobolSwitch latinSwitch haltonSwitch]) ...
             == 1
         fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 0);
-        % rbEnrichment set the indicators.
-        fixie.rbEnrichmentDynamic(nPhiEnrich, reductionRatio, ratioSwitch, ...
-            'original', 0);
     elseif structSwitch == 1
         fixie.exactSolutionStructDynamic('Greedy');
-        % rbEnrichment set the indicators.
-        fixie.rbEnrichmentStructDynamic(nPhiEnrich, reductionRatio, ...
-            ratioSwitch, 'original');
     end
+    % rbEnrichment set the indicators.
+    fixie.rbEnrichmentDynamic(nPhiEnrich, reductionRatio, ratioSwitch, ...
+        'original', 0, structSwitch);
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     

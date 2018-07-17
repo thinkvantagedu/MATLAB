@@ -67,7 +67,7 @@ figure(3)
 h1 = semilogy(errx, errOriMax, 'b-o', 'MarkerSize', 10, 'lineWidth', 3);
 hold on
 h4 = semilogy(errx, errSobolMax, 'r-*', 'lineWidth', 1.5);
-legend([h1, h4], {'Greedy', 'Quasi-random'});
+legend([h1, h4], {'Greedy', 'Quasi-random (Sobol)'});
 set(gca, 'YScale', 'log')
 xticks(errx);
 axis([0 errx(end) + 1 errOriMax(end) errOriMax(1)]);

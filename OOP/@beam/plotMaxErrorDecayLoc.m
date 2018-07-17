@@ -13,6 +13,7 @@ end
 
 figure
 if damSwitch == 0
+
     loglog(errx, erry, color, 'LineWidth', width);
     hold on
     axis([10 ^ obj.domBond.i{:}(1) 10 ^ obj.domBond.i{:}(2) 0 erry(1)])

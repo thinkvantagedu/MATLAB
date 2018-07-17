@@ -111,7 +111,7 @@ xticks(errx);
 axis([0 nRb errOriMax(end) errOriMax(1)]);
 axis normal
 grid on
-legend({'Proposed POD-Greedy', 'Sobol'}, 'FontSize', 20);
+legend({'Proposed POD-Greedy', 'Quasi-random (Sobol)'}, 'FontSize', 20);
 set(gca,'fontsize',20)
 xlabel('Total number of basis vectors', 'FontSize', 20);
 ylabel('Maximum relative error', 'FontSize', 20);
@@ -121,7 +121,7 @@ errStruct = errStruct.store.realMax;
 figure(6)
 semilogy(errx, errProMax, 'r-^', 'MarkerSize', 10, 'lineWidth', 3);
 hold on
-semilogy(errx, errStruct, 'c-*', 'lineWidth', 1.5);
+semilogy(errx, errStruct, 'm-+', 'lineWidth', 1.5);
 xticks(errx);
 axis([0 nRb errOriMax(end) errOriMax(1)]);
 axis normal
