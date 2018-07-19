@@ -5,29 +5,27 @@ p1 = 1;
 p2 = 5;
 xco = [p1; p2];
 % define 2 matrices.
-m1 = rand(10, 1);
-m2 = rand(10, 1);
-yco1 = {m1; m2};
+u1 = [1 2 3 4]';
+u2 = [4 3 2 1]';
+yco1 = {u1; u2};
 % output location.
-p = 2.5;
+p = 5;
 
 % case 1: interpolate matrix then mTm.
-o1 = lagrange(xco, yco1, p, 'matrix');
-mtm1 = o1' * o1;
+cf = lagrange(p, {p1; p2});
+uotpt1 = u1 * cf(1) + u2 * cf(2);
+utu1 = uotpt1' * uotpt1;
 
 % case 2: mTm then interpolate.
-m1t = m1' * m1;
-m2t = m2' * m2;
-yco2 = {m1t; m2t};
-mtm2 = lagrange(xco, yco2, p, 'matrix');
+u1tu1 = u1' * u1;
+u2tu2 = u2' * u2;
+u1tu2 = u1' * u2;
+cftcf = num2cell(cf * cf');
+utu2cell = {u1tu1 u1tu2; u1tu2' u2tu2};
+uotpt2 = cell2mat(cellfun(@(u, v) u * v, utu2cell, cftcf, 'un', 0)); 
+utu2 = sum(uotpt2(:));
 
-% extra test: norm first and itpl first. 
-% case 3: norm first then itpl.
-nm1 = norm(m1, 'fro');
-nm2 = norm(m2, 'fro');
-
-yco3 = [nm1; nm2];
-o3 = lagrange(xco, yco3, p, 'scalar');
-
-% case 4: itpl first then norm.
-o4 = norm(o1, 'fro');
+% case 3: approximate with uiTui only.
+utu3cell = {u1tu1 0; 0 u2tu2};
+uotpt3 = cell2mat(cellfun(@(u, v) u * v, utu3cell, cftcf, 'un', 0)); 
+utu3 = sum(uotpt3(:));

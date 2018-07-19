@@ -984,7 +984,7 @@ classdef beam < handle
                 obj.err.store.surf.hat = obj.err.setZ.mInc;
             end
             % initialise maximum error
-            obj.err.max = rmfield(obj.err.max, 'val');
+            obj.err.max = rmfield(obj.err.max, 'realVal');
             obj.err.max.val.hhat = 1;
             obj.err.store.redInfo = cell(1, 6);
             reductionText = {'magic point (mp)' 'mp parameter value' ...
@@ -1908,7 +1908,7 @@ classdef beam < handle
             obj.resp.rvpmStore(iIter) = {rvpmCol};
         end
         %%
-        function obj = inpolyItplExpo(obj, type)
+        function obj = inpolyItplExpo(obj, type, uiTujSwitch)
             % this method interpolates within 2 points (1D) or 1 polygon (2D).
             % nBlk is the number of pm blocks in current iteration.
             % pmBlk is the pm blocks.
@@ -1946,20 +1946,30 @@ classdef beam < handle
                         % this is the Lagrange coefficient matrix, 2 by 2
                         % for linear interpolations.
                         coefOtpt = lagrange(pmIter, pmCell);
+                        
                         cfcfT_ = coefOtpt * coefOtpt';
                         
                         uiCell = cell(2, 2);
                         for iut = 1:2
                             uiCell{iut, iut} = uiTui{iut};
                         end
-                        uiCell{1, 2} = uiTuj{:};
-                        uiCell{2, 1} = uiTuj{:}';
                         
-                        uTu = zeros(size(uiCell{2}));
-                        for iut = 1:4
-                            uTu = uTu + uiCell{iut} * cfcfT_(iut);
+                        if uiTujSwitch == 1
+                            % if turn on uiTuj, both uiTui and uiTuj are used.
+                            
+                            uiCell{1, 2} = uiTuj{:};
+                            uiCell{2, 1} = uiTuj{:}';
+                            
+                            uTu = zeros(size(uiCell{2}));
+                            for iut = 1:4
+                                uTu = uTu + uiCell{iut} * cfcfT_(iut);
+                            end
+                        elseif uiTujSwitch == 0
+                            % if shut off uiTuj, only uiTui is used here.
+                            
                         end
                         obj.err.itpl.otpt = uTu;
+                        keyboard
                     end
                     
                 elseif obj.no.pm == 2
@@ -2137,7 +2147,7 @@ classdef beam < handle
         end
         %%
         function obj = conditionalItplProdRvPm(obj, iIter, ...
-                rvSVDswitch, damSwitch)
+                rvSVDswitch, damSwitch, uiTujSwitch)
             % this method considers the interpolation condition and enrichment
             % condition to efficiently perform interpolation.
             
@@ -2154,8 +2164,8 @@ classdef beam < handle
             % not real values (inpolyItplVal), somehow this performs
             % better (tested).
             if obj.no.block.hat == 1
-                obj.inpolyItplExpo('hhat');
-                obj.inpolyItplExpo('hat');
+                obj.inpolyItplExpo('hhat', uiTujSwitch);
+                obj.inpolyItplExpo('hat', uiTujSwitch);
                 obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
@@ -2170,7 +2180,7 @@ classdef beam < handle
             elseif obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % hat surface needs to be interpolated everywhere.
                 obj.err.store.surf.hat(iIter) = 0;
-                obj.inpolyItplExpo('hat');
+                obj.inpolyItplExpo('hat', uiTujSwitch);
                 
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.errStoreSurfs('hat', damSwitch);
@@ -2184,7 +2194,7 @@ classdef beam < handle
                     % to obtain hhat at refined points.
                 elseif any(obj.indicator.inBlock) == 1
                     obj.err.store.surf.hhat(iIter) = 0;
-                    obj.inpolyItplExpo('hhat');
+                    obj.inpolyItplExpo('hhat', uiTujSwitch);
                     obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
                     obj.errStoreSurfs('hhat', damSwitch);
                 end
@@ -2205,7 +2215,7 @@ classdef beam < handle
                     % only interpolate and modify the refined part of hhat
                     % block, should be very fast.
                     obj.err.store.surf.hhat(iIter) = 0;
-                    obj.inpolyItplExpo('add');
+                    obj.inpolyItplExpo('add', uiTujSwitch);
                     obj.rvPmErrProdSum('add', rvSVDswitch, iIter);
                     obj.errStoreSurfs('hhat', damSwitch);
                 end
@@ -2477,9 +2487,8 @@ classdef beam < handle
                     % magic info = real info.
                     nRep = obj.countGreedy + 1;
                     magicIdxStore = obj.err.store.magicIdx;
-%                     magicInfoStore = obj.pmVal.comb.space(magicIdxStore, :);
-                    magicIdxStore = [magicIdxStore; ...
-                                obj.err.store.quasiVal(nRep, 1)];
+                    
+                    
                     if randomSwitch == 1 || latinSwitch == 1 || ...
                             sobolSwitch == 1 || haltonSwitch == 1
                         % check needed: is there repeated points in
@@ -2488,6 +2497,9 @@ classdef beam < handle
                         % but not developed here.
                         % applies to both damp and nondamp cases.
                         % only apply to quasi cases, not to Greedy.
+                        
+                        magicIdxStore = [magicIdxStore; ...
+                            obj.err.store.quasiVal(nRep, 1)];
                         
                         lenStore = size(magicIdxStore, 1);
                         if lenStore > 1 && damSwitch == 0
@@ -2504,7 +2516,7 @@ classdef beam < handle
                         if lenStore > 1 && checkRep == 0
                             % if repeat, skip next point.
                             magicIdxStore = [magicIdxStore(1:end - 1, :); ...
-                                obj.err.store.quasiVal(nRep, 1)];
+                                obj.err.store.quasiVal(nRep + 1, 1)];
                             
                         end
                         
@@ -2872,8 +2884,8 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-            qoiT = [10 20 30 40 50]';
-            %             qoiT = [3 5 7]';
+%             qoiT = [10 20 30 40 50]';
+            qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';

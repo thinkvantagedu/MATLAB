@@ -42,10 +42,10 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 129;
+trial = 1;
 
 %% error informations.
-errLowBond = 1e-10;
+errLowBond = 1e-20;
 errMaxValInit = 1;
 errRbCtrl = 1;
 errRbCtrlThres = 0.01;
@@ -72,7 +72,7 @@ nQoiT = 2;
 %% error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.6;
+reductionRatio = 0.8;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
@@ -97,15 +97,16 @@ ratioSwitch = 0;
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
-
+% uiTujSwitch shuts uiTuj off to increase speed.
+uiTujSwitch = 0;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
 
 %% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
-greedySwitch = 0; % Greedy procedure
+greedySwitch = 1; % Greedy procedure
 randomSwitch = 0; % pseudorandom
 structSwitch = 0; % uniform structure
 sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
 haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
-latinSwitch = 1; % Latin Hypercube
+latinSwitch = 0; % Latin Hypercube

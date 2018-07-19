@@ -24,7 +24,7 @@ if damSwitch == 0
     % for single inclusion case, plot error response curve.
     loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 3);
     txtMax = sprintf('[%d %.2g]', eMaxLocReal, eMax);
-    text(obj.pmVal.comb.space(obj.err.max.realLoc, 3), ...
+    text(obj.pmVal.comb.space(eMaxLocReal, 3), ...
         eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
     if obj.countGreedy > 1
         

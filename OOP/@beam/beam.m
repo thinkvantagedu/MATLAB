@@ -538,7 +538,7 @@ classdef beam < handle
                 
             elseif structSwitch == 1 && damSwitch == 0
                 % for struct case, the reduction is at max error point
-                % because magic points are not single. 
+                % because magic points are not single.
                 K = obj.sti.mtxCell{1} * pmValRealMax + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
@@ -710,7 +710,6 @@ classdef beam < handle
                 if initSwitch == 1
                     % if initial enrichment, phiEnrich is the input
                     % displacement.
-%                     keyboard
                     phiOtpt = phiEnrich(:, 1:nEnrich);
                     errPre = 1;
                 elseif initSwitch == 0
@@ -984,7 +983,7 @@ classdef beam < handle
                 obj.err.store.surf.hat = obj.err.setZ.mInc;
             end
             % initialise maximum error
-            obj.err.max = rmfield(obj.err.max, 'val');
+            obj.err.max = rmfield(obj.err.max, 'realVal');
             obj.err.max.val.hhat = 1;
             obj.err.store.redInfo = cell(1, 6);
             reductionText = {'magic point (mp)' 'mp parameter value' ...
@@ -1908,7 +1907,7 @@ classdef beam < handle
             obj.resp.rvpmStore(iIter) = {rvpmCol};
         end
         %%
-        function obj = inpolyItplExpo(obj, type)
+        function obj = inpolyItplExpo(obj, type, uiTujSwitch)
             % this method interpolates within 2 points (1D) or 1 polygon (2D).
             % nBlk is the number of pm blocks in current iteration.
             % pmBlk is the pm blocks.
@@ -1946,18 +1945,29 @@ classdef beam < handle
                         % this is the Lagrange coefficient matrix, 2 by 2
                         % for linear interpolations.
                         coefOtpt = lagrange(pmIter, pmCell);
+                        
                         cfcfT_ = coefOtpt * coefOtpt';
                         
                         uiCell = cell(2, 2);
                         for iut = 1:2
                             uiCell{iut, iut} = uiTui{iut};
                         end
-                        uiCell{1, 2} = uiTuj{:};
-                        uiCell{2, 1} = uiTuj{:}';
+                        uTu = zeros(size(uiCell{1}));
                         
-                        uTu = zeros(size(uiCell{2}));
-                        for iut = 1:4
-                            uTu = uTu + uiCell{iut} * cfcfT_(iut);
+                        if uiTujSwitch == 1
+                            % if turn on uiTuj, both uiTui and uiTuj are used.
+                            
+                            uiCell{1, 2} = uiTuj{:};
+                            uiCell{2, 1} = uiTuj{:}';
+                            
+                            for iut = 1:4
+                                uTu = uTu + uiCell{iut} * cfcfT_(iut);
+                            end
+                        elseif uiTujSwitch == 0
+                            % if shut off uiTuj, only uiTui is used here.
+                            for iut = 1:2
+                                uTu = uTu + uiCell{iut, iut} * cfcfT_(iut, iut);
+                            end
                         end
                         obj.err.itpl.otpt = uTu;
                     end
@@ -2137,7 +2147,7 @@ classdef beam < handle
         end
         %%
         function obj = conditionalItplProdRvPm(obj, iIter, ...
-                rvSVDswitch, damSwitch)
+                rvSVDswitch, damSwitch, uiTujSwitch)
             % this method considers the interpolation condition and enrichment
             % condition to efficiently perform interpolation.
             
@@ -2154,8 +2164,8 @@ classdef beam < handle
             % not real values (inpolyItplVal), somehow this performs
             % better (tested).
             if obj.no.block.hat == 1
-                obj.inpolyItplExpo('hhat');
-                obj.inpolyItplExpo('hat');
+                obj.inpolyItplExpo('hhat', uiTujSwitch);
+                obj.inpolyItplExpo('hat', uiTujSwitch);
                 obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.err.store.surf.hhat(iIter) = 0;
@@ -2170,7 +2180,7 @@ classdef beam < handle
             elseif obj.indicator.refine == 0 && obj.indicator.enrich == 1
                 % hat surface needs to be interpolated everywhere.
                 obj.err.store.surf.hat(iIter) = 0;
-                obj.inpolyItplExpo('hat');
+                obj.inpolyItplExpo('hat', uiTujSwitch);
                 
                 obj.rvPmErrProdSum('hat', rvSVDswitch, iIter);
                 obj.errStoreSurfs('hat', damSwitch);
@@ -2184,7 +2194,7 @@ classdef beam < handle
                     % to obtain hhat at refined points.
                 elseif any(obj.indicator.inBlock) == 1
                     obj.err.store.surf.hhat(iIter) = 0;
-                    obj.inpolyItplExpo('hhat');
+                    obj.inpolyItplExpo('hhat', uiTujSwitch);
                     obj.rvPmErrProdSum('hhat', rvSVDswitch, iIter);
                     obj.errStoreSurfs('hhat', damSwitch);
                 end
@@ -2205,7 +2215,7 @@ classdef beam < handle
                     % only interpolate and modify the refined part of hhat
                     % block, should be very fast.
                     obj.err.store.surf.hhat(iIter) = 0;
-                    obj.inpolyItplExpo('add');
+                    obj.inpolyItplExpo('add', uiTujSwitch);
                     obj.rvPmErrProdSum('add', rvSVDswitch, iIter);
                     obj.errStoreSurfs('hhat', damSwitch);
                 end
@@ -2553,10 +2563,10 @@ classdef beam < handle
             end
             
             obj.pmVal.realMax = obj.pmVal.comb.space(eMaxIdxReal, ...
-                end - obj.no.pm + 1:end);            
+                end - obj.no.pm + 1:end);
             obj.pmExpo.realMax = log10(obj.pmVal.realMax);
             obj.pmVal.magicMax = obj.pmVal.comb.space(eMaxIdxMagic, ...
-                end - obj.no.pm + 1:end);            
+                end - obj.no.pm + 1:end);
             obj.pmExpo.magicMax = log10(obj.pmVal.magicMax);
         end
         %%

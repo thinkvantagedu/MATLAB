@@ -192,9 +192,9 @@ for iGre = 1:fixie.countGreedy
         
     end
     fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'r-^');
+    fixie.verifyPlotSurf(iGre, 'r-^');
 end
 
 %%
-fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
-fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
+% fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
+% fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
