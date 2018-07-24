@@ -2395,14 +2395,14 @@ classdef beam < handle
             end
         end
         %%
-        function obj = verifyPlotSurf(obj, iGre, plotColor)
+        function obj = verifyPlotSurf(obj, iGre, lineColor)
             % this method plots the response surface for verification
             % purpose.
             
             if obj.no.pm == 1
                 ex = obj.pmVal.i.space{:}(:, 2);
                 ez = obj.err.store.allSurf.verify{iGre};
-                semilogy(ex, ez, plotColor);
+                loglog(ex, ez, lineColor, 'LineWidth', 2);
                 hold on
                 grid on
             elseif obj.no.pm == 2
@@ -2884,8 +2884,8 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-            qoiT = [10 20 30 40 50]';
-            %             qoiT = [3 5 7]';
+%             qoiT = [10 20 30 40 50]';
+            qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';

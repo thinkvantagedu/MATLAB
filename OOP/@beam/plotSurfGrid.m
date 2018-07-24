@@ -22,24 +22,24 @@ end
 if damSwitch == 0
     figure(1)
     % for single inclusion case, plot error response curve.
-    loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 3);
-    txtMax = sprintf('[%d %.2g]', eMaxLocReal, eMax);
-    text(obj.pmVal.comb.space(eMaxLocReal, 3), ...
-        eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
-    if obj.countGreedy > 1
+    loglog(obj.pmVal.i.space{:}(:, 2), eSurf, lineColor, 'LineWidth', 2);
+%     txtMax = sprintf('[%d %.2g]', eMaxLocReal, eMax);
+%     text(obj.pmVal.comb.space(eMaxLocReal, 3), ...
+%         eMax, txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
+%     if obj.countGreedy > 1
         
         % location of previous maximum error.
-        eLocPrev = num2cell(eLocStore(obj.countGreedy - 1, :));
+%         eLocPrev = num2cell(eLocStore(obj.countGreedy - 1, :));
         % switch to index.
-        eLocIdx = sub2ind(size(eSurf), eLocPrev{:});
+%         eLocIdx = sub2ind(size(eSurf), eLocPrev{:});
         % value of previous maximum error location on current response surface.
-        eValPrevMaxCurrent = eSurf(eLocIdx);
-        pmValPrev = obj.pmVal.i.space{:}(eLocPrev{:}, 2);
-        txtPrevMax = sprintf('[%d %.2g]', eLocPrev{1}, eValPrevMaxCurrent);
-        text(pmValPrev, eValPrevMaxCurrent, txtPrevMax, ...
-            'color', '[1 0 1]', 'Fontsize', 20);
-        axis tight
-    end
+%         eValPrevMaxCurrent = eSurf(eLocIdx);
+%         pmValPrev = obj.pmVal.i.space{:}(eLocPrev{:}, 2);
+%         txtPrevMax = sprintf('[%d %.2g]', eLocPrev{1}, eValPrevMaxCurrent);
+%         text(pmValPrev, eValPrevMaxCurrent, txtPrevMax, ...
+%             'color', '[1 0 1]', 'Fontsize', 20);
+%         axis tight
+%     end
     
     ylabel('Maximum relative error')
     hold on

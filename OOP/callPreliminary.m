@@ -17,7 +17,7 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 129;
+domLengi = 33;
 damLeng = 17;
 damBond = [-1 1];
 
@@ -33,7 +33,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 4.9;
+tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -42,7 +42,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 129;
+trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -55,13 +55,13 @@ errRbCtrlTNo = 1;
 cntInit = 0;
 
 %% refinement threshold. ==========
-refiThres = 0.25;
+refiThres = 0.002;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 11;
-nPhiInitial = 10;
-nPhiEnrich = 4;
+drawCol = 1;
+nPhiInitial = 1;
+nPhiEnrich = 3;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -72,13 +72,13 @@ nQoiT = 2;
 %% error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.6;
+reductionRatio = 0.8;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 30; 
+nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -92,13 +92,13 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
 % uiTujSwitch shuts uiTuj off to increase speed.
-uiTujSwitch = 0;
+uiTujSwitch = 1;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
