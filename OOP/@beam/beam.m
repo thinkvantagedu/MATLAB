@@ -2884,8 +2884,8 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-%             qoiT = [10 20 30 40 50]';
-            qoiT = [3 5 7]';
+            qoiT = [10 20 30 40 50]';
+%             qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -3284,6 +3284,50 @@ classdef beam < handle
             % no.refBlk records the no of block being refined, being used
             % in uiTujDamping.
             obj.no.refBlk = iRec;
+            
+        end
+        %%
+        function obj = refinedInit(obj)
+            % this method outputs refined initial sample set, nhhat = 5 and
+            % nhat = 3;
+            % hhat.
+            obj.pmExpo.hhat = [1 2 3 4 5; -1 1 0 -0.5 0.5]';
+            obj.pmExpo.temp.inpt = obj.pmExpo.hhat;
+            obj.gridtoBlockwithIndx;
+            obj.pmExpo.block.hhat = obj.pmExpo.temp.otpt;
+            obj.pmVal.hhat = [obj.pmExpo.hhat(:, 1) ...
+                10 .^ obj.pmExpo.hhat(:, 2)];
+            pmValhhat = cell(length(obj.pmExpo.block.hhat), 1);
+            for ip = 1:length(pmValhhat)
+                
+                pmValhhat{ip}(:, 1) = obj.pmExpo.block.hhat{ip}(:, 1);
+                pmValhhat{ip}(:, 2:obj.no.pm + 1) = ...
+                    10 .^ obj.pmExpo.block.hhat{ip}(:, 2:obj.no.pm + 1);
+                
+            end
+            obj.no.pre.hhat = 5;
+            obj.no.block.hhat = 4;
+            
+            % hat.
+            obj.pmExpo.hat = [1 2 3; -1 1 0]';
+            obj.pmExpo.temp.inpt = obj.pmExpo.hat;
+            obj.gridtoBlockwithIndx;
+            obj.pmExpo.block.hat = obj.pmExpo.temp.otpt;
+            obj.pmVal.hat = [obj.pmExpo.hat(:, 1) ...
+                10 .^ obj.pmExpo.hat(:, 2)];
+            pmValhat = cell(length(obj.pmExpo.block.hat), 1);
+            for ip = 1:length(pmValhat)
+                
+                pmValhat{ip}(:, 1) = obj.pmExpo.block.hat{ip}(:, 1);
+                pmValhat{ip}(:, 2:obj.no.pm + 1) = ...
+                    10 .^ obj.pmExpo.block.hat{ip}(:, 2:obj.no.pm + 1);
+                
+            end
+            obj.no.pre.hat = 3;
+            obj.no.block.hat = 2;
+            
+            obj.no.block.add = 2;
+            obj.pmExpo.block.add = obj.pmExpo.block.hhat;
         end
         %%
         function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)

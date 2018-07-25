@@ -538,7 +538,7 @@ classdef beam < handle
                 
             elseif structSwitch == 1 && damSwitch == 0
                 % for struct case, the reduction is at max error point
-                % because magic points are not single. 
+                % because magic points are not single.
                 K = obj.sti.mtxCell{1} * pmValRealMax + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
@@ -710,7 +710,6 @@ classdef beam < handle
                 if initSwitch == 1
                     % if initial enrichment, phiEnrich is the input
                     % displacement.
-%                     keyboard
                     phiOtpt = phiEnrich(:, 1:nEnrich);
                     errPre = 1;
                 elseif initSwitch == 0
@@ -1953,6 +1952,7 @@ classdef beam < handle
                         for iut = 1:2
                             uiCell{iut, iut} = uiTui{iut};
                         end
+                        uTu = zeros(size(uiCell{1}));
                         
                         if uiTujSwitch == 1
                             % if turn on uiTuj, both uiTui and uiTuj are used.
@@ -1960,16 +1960,16 @@ classdef beam < handle
                             uiCell{1, 2} = uiTuj{:};
                             uiCell{2, 1} = uiTuj{:}';
                             
-                            uTu = zeros(size(uiCell{2}));
                             for iut = 1:4
                                 uTu = uTu + uiCell{iut} * cfcfT_(iut);
                             end
                         elseif uiTujSwitch == 0
                             % if shut off uiTuj, only uiTui is used here.
-                            
+                            for iut = 1:2
+                                uTu = uTu + uiCell{iut, iut} * cfcfT_(iut, iut);
+                            end
                         end
                         obj.err.itpl.otpt = uTu;
-                        keyboard
                     end
                     
                 elseif obj.no.pm == 2
@@ -2395,14 +2395,14 @@ classdef beam < handle
             end
         end
         %%
-        function obj = verifyPlotSurf(obj, iGre, plotColor)
+        function obj = verifyPlotSurf(obj, iGre, lineColor)
             % this method plots the response surface for verification
             % purpose.
             
             if obj.no.pm == 1
                 ex = obj.pmVal.i.space{:}(:, 2);
                 ez = obj.err.store.allSurf.verify{iGre};
-                semilogy(ex, ez, plotColor);
+                loglog(ex, ez, lineColor, 'LineWidth', 2);
                 hold on
                 grid on
             elseif obj.no.pm == 2
@@ -2563,10 +2563,10 @@ classdef beam < handle
             end
             
             obj.pmVal.realMax = obj.pmVal.comb.space(eMaxIdxReal, ...
-                end - obj.no.pm + 1:end);            
+                end - obj.no.pm + 1:end);
             obj.pmExpo.realMax = log10(obj.pmVal.realMax);
             obj.pmVal.magicMax = obj.pmVal.comb.space(eMaxIdxMagic, ...
-                end - obj.no.pm + 1:end);            
+                end - obj.no.pm + 1:end);
             obj.pmExpo.magicMax = log10(obj.pmVal.magicMax);
         end
         %%
@@ -3284,6 +3284,28 @@ classdef beam < handle
             % no.refBlk records the no of block being refined, being used
             % in uiTujDamping.
             obj.no.refBlk = iRec;
+            
+        end
+        %%
+        function obj = refinedInit(obj)
+            % this method outputs refined initial sample set, nhhat = 5 and
+            % nhat = 3;
+            obj.pmExpo.hhat = [1 2 3 4 5; -1 1 0 -0.5 0.5]';
+            obj.pmExpo.temp.inpt = obj.pmExpo.hhat;
+            obj.gridtoBlockwithIndx;
+            obj.pmExpo.block.hhat = obj.pmExpo.temp.otpt;
+            obj.pmVal.hhat = [obj.pmExpo.hhat(:, 1) ...
+                10 .^ obj.pmExpo.hhat(:, 2)];
+            pmValhhat = cell(length(obj.pmExpo.block.hhat), 1);
+            for ip = 1:length(pmValhhat)
+                
+                pmValhhat{ip}(:, 1) = obj.pmExpo.block.hhat{ip}(:, 1);
+                pmValhhat{ip}(:, 2:obj.no.pm + 1) = ...
+                    10 .^ obj.pmExpo.block.hhat{ip}(:, 2:obj.no.pm + 1);
+                
+            end
+            obj.no.pre.hhat = 5;
+            keyboard
         end
         %%
         function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)

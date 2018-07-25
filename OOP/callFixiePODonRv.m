@@ -49,6 +49,13 @@ fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 % initialise interpolation samples.
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
+% set up refined initial samples, nhhat = 5 and nhat = 3.
+refSwitch = 0;
+if refSwitch == 1
+    uiTujSwitch = 0;
+    disp('refine initial sample set')
+    fixie.refinedInit;
+end
 % prepare essential storage for error and responses.
 fixie.otherPrepare(nRespSVD);
 fixie.errPrepareRemainProp;
@@ -69,11 +76,11 @@ fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName, 0);
 
 %% main while loop.
 while fixie.err.max.val.hhat > fixie.err.lowBond
-%     if fixie.countGreedy == drawRow * drawCol
-%         % put here to stop any uncessary computations.
-%         disp('iterations reach maximum plot number')
-%         break
-%     end
+    if fixie.countGreedy == drawRow * drawCol
+        % put here to stop any uncessary computations.
+        disp('iterations reach maximum plot number')
+        break
+    end
     %% Greedy OFFLINE.
     % disp('offline start')
     fixie.errPrepareSetZero;
@@ -150,8 +157,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat', 0);
         fixie.errStoreAllSurfs('hhat');
         %%
-        fixie.plotSurfGrid('hhat', 'k->', 0);
-        fixie.plotSurfGrid('hat', 'r-<', 0);
+%         fixie.plotSurfGrid('hhat', 'k->', 0);
+%         fixie.plotSurfGrid('hat', 'r-<', 0);
         %%
         if fixie.countGreedy == drawRow * drawCol
             % put here to stop any uncessary computations.
@@ -172,7 +179,6 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.localHrefinement;
         
         fixie.respfromFce(respSVDswitch, AbaqusSwitch, trialName, 0);
-%         keyboard
     end
     
 end
@@ -198,7 +204,7 @@ end
 legend({'$\hat{\hat{e}}$ (slave)', '$\hat{e}$ (master)', ...
     '$e$ (classical)'}, ...
     'Interpreter','latex', 'FontSize', 20)
-% 
-% %%
-% fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
-% fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
+
+%%
+fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
+fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
