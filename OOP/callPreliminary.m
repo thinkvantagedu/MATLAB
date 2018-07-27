@@ -92,7 +92,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.

@@ -50,10 +50,10 @@ fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
 % set up refined initial samples, nhhat = 5 and nhat = 3.
-refSwitch = 0;
+refSwitch = 1;
 if refSwitch == 1
     uiTujSwitch = 0;
-    disp('refine initial sample set')
+    disp('initial sample set is refined')
     fixie.refinedInit;
 end
 % prepare essential storage for error and responses.
@@ -198,12 +198,12 @@ for iGre = 1:fixie.countGreedy
         
     end
     fixie.verifyExtractMaxErr(iGre);
-    fixie.verifyPlotSurf(iGre, 'b-^');
+%     fixie.verifyPlotSurf(iGre, 'b-^');
     
 end
-legend({'$\hat{\hat{e}}$ (slave)', '$\hat{e}$ (master)', ...
-    '$e$ (classical)'}, ...
-    'Interpreter','latex', 'FontSize', 20)
+% legend({'$\hat{\hat{e}}$ (slave)', '$\hat{e}$ (master)', ...
+%     '$e$ (classical)'}, ...
+%     'Interpreter','latex', 'FontSize', 20)
 
 %%
 fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
