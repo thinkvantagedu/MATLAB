@@ -59,7 +59,7 @@ refiThres = 0.25;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 18;
+drawCol = 5;
 nPhiInitial = 10;
 nPhiEnrich = 4;
 
@@ -78,7 +78,7 @@ reductionRatio = 0.8;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 30; 
+nRespSVD = 40; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -92,7 +92,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 0;
+ratioSwitch = 1;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
@@ -106,7 +106,7 @@ abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
 %% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
 greedySwitch = 0; % Greedy procedure
 randomSwitch = 0; % pseudorandom
-structSwitch = 0; % uniform structure
+structSwitch = 1; % uniform structure
 sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
 haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
-latinSwitch = 1; % Latin Hypercube
+latinSwitch = 0; % Latin Hypercube

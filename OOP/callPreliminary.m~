@@ -17,7 +17,7 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 9;
+domLengi = 129;
 damLeng = 17;
 damBond = [-1 1];
 

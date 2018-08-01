@@ -206,5 +206,5 @@ end
 %     'Interpreter','latex', 'FontSize', 20)
 
 %%
-fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
-fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);
+% fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0);
+% fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 0);

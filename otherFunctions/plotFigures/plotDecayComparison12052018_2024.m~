@@ -1,11 +1,11 @@
 clear; clc; clf;
-cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=1/;
+cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=65/;
 plotData;
 load('errOriginalStore80.mat', 'errOriginalStore80')
 load('nouiTuj/errProposedNouiTujN30Redu80.mat', ...
-    'errProposedNouiTujN30')
-load('nouiTuj/errProposedNouiTujN40InitRefRedu80.mat', ...
-    'errProposedNouiTujN40InitRefRedu80')
+    'errProposedNouiTujN30Redu80')
+load('nouiTuj/errProposedNouiTujN30InitRefRedu80.mat', ...
+    'errProposedNouiTujN30InitRefRedu80')
 load('errRandom1_80.mat', 'errRandom1_80')
 load('errRandom2_80.mat', 'errRandom2_80')
 load('errRandom3_80.mat', 'errRandom3_80')
@@ -17,15 +17,15 @@ load('errLatin3_80.mat', 'errLatin3_80')
 load('errLatin4_80.mat', 'errLatin4_80')
 load('errLatin5_80.mat', 'errLatin5_80')
 load('errSobol80.mat', 'errSobol80')
-load('errStruct80.mat', 'errStruct80')
+load('errStruct80.mat', 'errSobol80')
 
 %% plot decay value curve.
 errxOri = [errOriginalStore80.store.redInfo{2:end, 3}];
 errOriMax = errOriginalStore80.store.realMax;
-errxPro = [errProposedNouiTujN30.store.redInfo{2:end, 3}];
-errProMax = errProposedNouiTujN30.store.max.verify;
-errxRef = [errProposedNouiTujN40InitRefRedu80.store.redInfo{2:end, 3}];
-errProRef = errProposedNouiTujN40InitRefRedu80.store.max.verify;
+errxPro = [errProposedNouiTujN30Redu80.store.redInfo{2:end, 3}];
+errProMax = errProposedNouiTujN30Redu80.store.max.verify;
+errxRef = [errProposedNouiTujN30InitRefRedu80.store.redInfo{2:end, 3}];
+errProRef = errProposedNouiTujN30InitRefRedu80.store.max.verify;
 
 figure(1)
 semilogy(errxOri, errOriMax, 'b-o', 'MarkerSize', msAll, 'lineWidth', lwAll);
@@ -33,13 +33,13 @@ hold all
 semilogy(errxPro, errProMax, 'r-^', 'MarkerSize', msAll, 'lineWidth', lwAll);
 semilogy(errxRef, errProRef, 'color', royalGreen, 'Marker', 'v', ...
     'MarkerSize', msAll, 'lineWidth', lwAll);
-ylim([errOriMax(end) errOriMax(1)])
+ylim([errProMax(end) errProMax(1)])
 
 legend({stStr, proStr, proRefStr}, 'FontSize', fsAll);
 ax1 = gca;
 ax1.XColor = 'b';
 ax1.XTick = errxOri;
-xlimr = 85;
+xlimr = 80;
 ax1.XLim = [0 xlimr];
 xlabel('N (standard)', 'FontSize', 15);
 ylabel('Maximum relative error', 'FontSize', fsAll);
@@ -57,24 +57,24 @@ xlabel(sprintf('N (proposed with  initial refinement)'), 'FontSize', 15);
 set(gca,'fontsize', fsAll - 5)
 grid on
 
-%% plot decay location curve.
-figure(2)
-pmSpaceOri = logspace(-1, 1, 129);
-pmSpacePro = logspace(-1, 1, 129);
-errPmLocOri = pmSpaceOri(errOriginalStore80.store.realLoc);
-errPmLocPro = pmSpacePro(errProposedNouiTujN30.store.loc.verify(:, 1));
-errPmLocRef = pmSpacePro(errProposedNouiTujN40InitRefRedu80.store.loc.verify(:, 1));
-loglog(errPmLocOri, errOriMax, 'b-o', 'MarkerSize', msAll, 'LineWidth', lwAll)
-hold on
-loglog(errPmLocPro, errProMax, 'r-^', 'MarkerSize', msAll, 'LineWidth', lwAll)
-loglog(errPmLocPro, errProRef, 'color', royalGreen, 'Marker', 'v', ...
-    'MarkerSize', msAll, 'lineWidth', lwAll)
-axis([10^-1 10^1 0 errOriMax(1)])
-grid on
-legend({stStr, proStr, proRefStr}, 'FontSize', fsAll);
-set(gca,'fontsize',fsAll)
-xlabel('Young''s modulus', 'FontSize', fsAll);
-ylabel('Maximum relative error', 'FontSize', fsAll);
+% %% plot decay location curve.
+% figure(2)
+% pmSpaceOri = logspace(-1, 1, 129);
+% pmSpacePro = logspace(-1, 1, 129);
+% errPmLocOri = pmSpaceOri(errOriginalStore80.store.realLoc);
+% errPmLocPro = pmSpacePro(errProposedNouiTujN30Redu80.store.loc.verify(:, 1));
+% errPmLocRef = pmSpacePro(errProposedNouiTujN30InitRefRedu80.store.loc.verify(:, 1));
+% loglog(errPmLocOri, errOriMax, 'b-o', 'MarkerSize', msAll, 'LineWidth', lwAll)
+% hold on
+% loglog(errPmLocPro, errProMax, 'r-^', 'MarkerSize', msAll, 'LineWidth', lwAll)
+% loglog(errPmLocPro, errProRef, 'color', royalGreen, 'Marker', 'v', ...
+%     'MarkerSize', msAll, 'lineWidth', lwAll)
+% axis([10^-1 10^1 0 errOriMax(1)])
+% grid on
+% legend({stStr, proStr, proRefStr}, 'FontSize', fsAll);
+% set(gca,'fontsize',fsAll)
+% xlabel('Young''s modulus', 'FontSize', fsAll);
+% ylabel('Maximum relative error', 'FontSize', fsAll);
 
 % %% proposed vs pseudorandom.
 % errRanMax1 = errRandom1_80.store.realMax;
@@ -96,7 +96,7 @@ ylabel('Maximum relative error', 'FontSize', fsAll);
 % semilogy(errRanx3, errRanMax3, 'k-.', 'lineWidth', lwOther);
 % semilogy(errRanx4, errRanMax4, 'k-.', 'lineWidth', lwOther);
 % semilogy(errRanx5, errRanMax5, 'k-.', 'lineWidth', lwOther);
-% axis([0 120 errProRef(end) errProRef(1)]);
+% axis([0 128 errProRef(end) errProRef(1)]);
 % axis normal
 % grid on
 % legend({proRefStr, 'Pseudorandom'}, 'FontSize', fsAll);
@@ -141,27 +141,26 @@ ylabel('Maximum relative error', 'FontSize', fsAll);
 % hold on
 % semilogy(errSobolx, errSobolMax, 'c-*', 'lineWidth', lwOther);
 % 
-% axis([0 120 errProRef(end) errProRef(1)]);
+% axis([0 117 errProRef(end) errProRef(1)]);
 % axis normal
 % grid on
 % legend({proRefStr, 'Quasi-random (Sobol)'}, 'FontSize', fsAll);
 % set(gca,'fontsize', fsAll)
 % xlabel(xLab, 'FontSize', fsAll);
 % ylabel(yLab, 'FontSize', fsAll);
+%% proposed vs struct.
+errStructMax = errStruct80.store.realMax;
+errStructx = [errStruct80.store.redInfo{2:end, 3}];
+figure(6)
+semilogy(errxRef, errProRef, 'color', royalGreen, 'Marker', 'v', ...
+    'MarkerSize', msAll, 'lineWidth', lwAll);
+hold on
+semilogy(errStructx, errStructMax, 'm-+', 'lineWidth', lwOther);
 
-% %% proposed vs struct.
-% errStructMax = errStruct80.store.realMax;
-% errStructx = [errStruct80.store.redInfo{2:end, 3}];
-% figure(6)
-% semilogy(errxRef, errProRef, 'color', royalGreen, 'Marker', 'v', ...
-%     'MarkerSize', msAll, 'lineWidth', lwAll);
-% hold on
-% semilogy(errStructx, errStructMax, 'm-+', 'lineWidth', lwOther);
-% 
-% axis([0 120 errProRef(end) errProRef(1)]);
-% axis normal
-% grid on
-% legend({proRefStr, 'Structure'}, 'FontSize', fsAll);
-% set(gca,'fontsize', fsAll)
-% xlabel(xLab, 'FontSize', fsAll);
-% ylabel(yLab, 'FontSize', fsAll);
+axis([0 120 errProRef(end) errProRef(1)]);
+axis normal
+grid on
+legend({proRefStr, 'Quasi-random (Sobol)'}, 'FontSize', fsAll);
+set(gca,'fontsize', fsAll)
+xlabel(xLab, 'FontSize', fsAll);
+ylabel(yLab, 'FontSize', fsAll);
