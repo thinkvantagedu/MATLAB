@@ -528,7 +528,7 @@ classdef beam < handle
                 % here damping is the coefficient, not matrix.
                 K = obj.sti.mtxCell{1} * pmValMagicMax(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmValMagicMax(2) * obj.sti.mtxCell{1} * pmValMagicMax(1);
+                C = pmValMagicMax(2) * obj.sti.mtxCell{1};
             end
             
             if structSwitch == 0
@@ -625,7 +625,7 @@ classdef beam < handle
             elseif damSwitch == 1
                 K = obj.sti.mtxCell{1} * pmTrial(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmTrial(2) * obj.sti.mtxCell{1} * pmTrial(1);
+                C = pmTrial(2) * obj.sti.mtxCell{1};
             end
             F = obj.fce.val;
             
@@ -782,7 +782,7 @@ classdef beam < handle
                 elseif damSwitch == 1
                     K = K + obj.sti.mtxCell{1} * pmInp(1) + ...
                         obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                    C = pmInp(2) * obj.sti.mtxCell{1} * pmInp(1);
+                    C = pmInp(2) * obj.sti.mtxCell{1};
                 end
                 F = obj.fce.val;
                 % compute trial solution
@@ -1297,8 +1297,8 @@ classdef beam < handle
                     elseif damSwitch == 1
                         K = K + obj.sti.mtxCell{1} * pmValInp(iPre, 2) + ...
                             obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                        C = pmValInp(iPre, 3) * obj.sti.mtxCell{1} * ...
-                            pmValInp(iPre, 2);
+                        C = pmValInp(iPre, 3) * obj.sti.mtxCell{1};
+                        
                     end
                     
                     F = obj.fce.val;
@@ -1391,8 +1391,8 @@ classdef beam < handle
                                         pmInp(iPre, 2) + ...
                                         obj.sti.mtxCell{2} * ...
                                         obj.pmVal.s.fix;
-                                    C = obj.sti.mtxCell{1} * ...
-                                        pmInp(iPre, 2) * pmInp(iPre, 3);
+                                    C = pmInp(iPre, 3) * obj.sti.mtxCell{1};
+                                    
                                 end
                                 F = impPass;
                                 obj = NewmarkBetaReducedMethodOOP...
@@ -1777,7 +1777,7 @@ classdef beam < handle
             elseif damSwitch == 1
                 k = obj.sti.re.mtxCell{1} * pmIter(1) + ...
                     obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
-                c = pmIter(2) * obj.sti.re.mtxCell{1} * pmIter(1);
+                c = pmIter(2) * obj.sti.re.mtxCell{1};
             end
             f = phiInpt' * obj.fce.val;
             dT = obj.time.step;
@@ -1847,7 +1847,7 @@ classdef beam < handle
                 pmSlct = repmat([1; 1; pmPass; 1], obj.no.t_step * ...
                     obj.no.rb, 1);
             elseif damSwitch == 1
-                pmSlct = repmat([1; pmPass(2) * pmPass(1); pmPass(1); 1], ...
+                pmSlct = repmat([1; pmPass(2); pmPass(1); 1], ...
                     obj.no.t_step * obj.no.rb, 1);
             end
             pmSlct = [1; pmSlct];
@@ -1973,7 +1973,15 @@ classdef beam < handle
                     end
                     
                 elseif obj.no.pm == 2
-                    
+                    if uiTujSwitch == 1
+                        switch type
+                            case {'hhat',  'add'}
+                                euiTuj = obj.err.pre.uiTuj.hhat;
+                            case 'hat'
+                                euiTuj = obj.err.pre.uiTuj.hat;
+                        end
+                        uiTuj = euiTuj{iB}(:, 1:5);
+                    end
                     if inpolygon(pmIter(1), pmIter(2), pmBlkCell{:}) == 1
                         
                         xl = min(pmBlk{iB}(:, 2));
@@ -1983,14 +1991,14 @@ classdef beam < handle
                         
                         [gridx, gridy] = meshgrid([xl xr], [yl yr]);
                         
-                        uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
-                        uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 1:5);
-                        
                         % for the 2d case, the order of the samples isn't
                         % clockwise, but pointing downwards. Has to shift
                         % here. For uiTuj, shift when computing in
                         % uiTujDamping.
+                        uiTui = ehats(pmBlk{iB}(:, 1), 1:3);
                         uiTui = uiTui([1 2 4 3], :);
+                        
+                        % interpolation coefficients.
                         cf1d = lagrange(pmIter(1), {gridx(1) gridx(3)});
                         cf2d = lagrange(pmIter(2), {gridy(1) gridy(2)});
                         cf12 = cf1d * cf2d';
@@ -2007,15 +2015,18 @@ classdef beam < handle
                                 else
                                     cfcfT_(iu, ju) = cfcfT_(iu, ju) + ...
                                         2 * cfcf(iu, ju);
-                                    uiCell{iu, ju} = uiTuj{iu, ju + 1};
+                                    if uiTujSwitch == 1
+                                        uiCell{iu, ju} = uiTuj{iu, ju + 1};
+                                    end
                                 end
                             end
                         end
                         cfcfT = num2cell(cfcfT_);
                         uTu_ = cellfun(@(u, v) u * v, cfcfT, uiCell, 'un', 0);
-                        uTu = sum(cat(3,uTu_{:}),3);
+                        uTu = sum(cat(3, uTu_{:}), 3);
                         uTu = (uTu + uTu') / 2;
                         obj.err.itpl.otpt = uTu;
+                        
                     end
                 else
                     disp('dimension > 2')
@@ -2023,116 +2034,6 @@ classdef beam < handle
                 % non-diag entries of uiCell are not symmetric, but
                 % once sum all cells of uiCell becomes symmetric.
                 % output is full symmetric matrix.
-                
-            end
-            switch type
-                case 'hhat'
-                    obj.err.itpl.hhat = obj.err.itpl.otpt;
-                case 'hat'
-                    obj.err.itpl.hat = obj.err.itpl.otpt;
-                case 'add'
-                    obj.err.itpl.add = obj.err.itpl.otpt;
-            end
-            
-        end
-        %%
-        function obj = inpolyItplVal(obj, type)
-            % this method interpolates within 2 points (1D) or 1 polygon (2D).
-            % nBlk is the number of pm blocks in current iteration.
-            % pmBlk is the pm blocks.
-            % this is for the real values case [10^-1, 10^1].
-            switch type
-                case 'hhat'
-                    nBlk = length(obj.pmVal.block.hhat);
-                    pmBlk = obj.pmVal.block.hhat;
-                    ehats = obj.err.pre.hhat;
-                case 'hat'
-                    nBlk = length(obj.pmVal.block.hat);
-                    pmBlk = obj.pmVal.block.hat;
-                    ehats = obj.err.pre.hat;
-                case 'add' % this is the number of the newly divided blocks.
-                    nBlk = 2 ^ obj.no.inc;
-                    pmBlk = obj.pmVal.block.add;
-                    ehats = obj.err.pre.hhat;
-            end
-            
-            for iB = 1:nBlk
-                % pmIter is the single expo pm value for current iteration.
-                pmIter = obj.pmVal.iter;
-                % pmBlkCell is the cell block of itpl pm domain values.
-                pmBlkDom = pmBlk{iB}(:, 2:obj.no.pm + 1);
-                pmBlkCell = mat2cell(pmBlkDom, size(pmBlkDom, 1), ...
-                    ones(size(pmBlkDom, 2), 1));
-                
-                % generate x-y (1 inclusion) or x-y-z (2 inclusions) domain.
-                if obj.no.pm == 1
-                    if inBetweenTwoPoints(pmIter, pmBlkCell{:}) == 1
-                        switch type
-                            case {'hhat', 'hat'}
-                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
-                                uiTuj = ehats(pmBlk{iB}(1, 1), 4);
-                            case 'add'
-                                % pmBlk is the added block now, there are 2
-                                % blocks in 1D case.
-                                pmAdd = pmBlk{iB};
-                                uiTui = ehats(pmAdd(:, 1), 3);
-                                uiTuj = ehats(pmAdd(1, 1), 4);
-                        end
-                        pmCell = num2cell(cell2mat(pmBlkCell));
-                        % this is the Lagrange coefficient matrix, 2 by 2
-                        % for linear interpolations.
-                        coefOtpt = lagrange(pmIter, pmCell);
-                        cfcfT = coefOtpt * coefOtpt';
-                        
-                        uiCell = cell(2, 2);
-                        for iut = 1:2
-                            uiCell{iut, iut} = uiTui{iut};
-                        end
-                        uiCell{1, 2} = uiTuj{:};
-                        uiCell{2, 1} = uiTuj{:}';
-                        
-                        uTuOtpt = zeros(size(uiCell{2}));
-                        for iut = 1:4
-                            uTuOtpt = uTuOtpt + uiCell{iut} * cfcfT(iut);
-                        end
-                        % non-diag entries of uiCell are not symmetric, but
-                        % once sum all cells of uiCell becomes symmetric.
-                        obj.err.itpl.otpt = uTuOtpt;
-                    end
-                    
-                elseif obj.no.pm == 2
-                    
-                    if inpolygon(pmIter(1), pmIter(2), pmBlkCell{:}) == 1
-                        
-                        xl = min(pmBlk{iB}(:, 2));
-                        xr = max(pmBlk{iB}(:, 2));
-                        yl = min(pmBlk{iB}(:, 3));
-                        yr = max(pmBlk{iB}(:, 3));
-                        
-                        [gridxVal, gridyVal] = meshgrid([xl xr], [yl yr]);
-                        gridx = 10 .^ gridxVal;
-                        gridy = 10 .^ gridyVal;
-                        
-                        switch type
-                            case 'hhat'
-                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
-                                uiTuj = obj.err.pre.uiTuj.hhat{iB}(:, 3:5);
-                            case 'hat'
-                                uiTui = ehats(pmBlk{iB}(:, 1), 3);
-                                uiTuj = obj.err.pre.uiTuj.hat{iB}(:, 3:5);
-                            case 'add'
-                                % pmBlk is the added block now.
-                                pmAdd = pmBlk{iB};
-                        end
-                        
-                        gridz = [gridzVal(1) gridzVal(2); ...
-                            gridzVal(4) gridzVal(3)];
-                        % interpolate in 2D.
-                        obj.LagItpl2Dmtx(gridx, gridy, gridz);
-                    end
-                else
-                    disp('dimension > 2')
-                end
                 
             end
             switch type
@@ -2256,6 +2157,7 @@ classdef beam < handle
                         obj.err.norm(1) = ePreDiag(iIter);
                     case 'hat'
                         obj.err.norm(2) = ePreDiag(iIter);
+                        
                 end
                 
             end
@@ -2656,7 +2558,7 @@ classdef beam < handle
             elseif damSwitch == 1
                 K = K + obj.sti.mtxCell{1} * pmIter(1) + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
-                C = pmIter(2) * obj.sti.mtxCell{1} * pmIter(1);
+                C = pmIter(2) * obj.sti.mtxCell{1};
             end
             
             F = obj.fce.val - ...
@@ -2884,8 +2786,8 @@ classdef beam < handle
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
             qoiDof = obj.node.dof.inc';
-            qoiT = [10 20 30 40 50]';
-%             qoiT = [3 5 7]';
+%             qoiT = [10 20 30 40 50]';
+            qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';

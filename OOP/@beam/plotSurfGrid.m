@@ -52,7 +52,7 @@ elseif damSwitch == 1
     surf(ex, ey, eSurf');
     txtMax = sprintf('[%d %d %.2g]', eMaxLocReal, eMax);
     text(obj.pmVal.realMax(1), obj.pmVal.realMax(2), eMax, ...
-        txtMax, 'color', '[0 0 0]', 'Fontsize', 20);
+        txtMax, 'color', '[0 0 0]', 'Fontsize', 30);
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
         'dataaspectratio', [length(ey) length(ex) 1])
     shading interp
@@ -67,4 +67,4 @@ end
 xlabel('Youngs Modulus')
 
 grid on
-set(gca,'fontsize',20)
+set(gca,'fontsize',30)

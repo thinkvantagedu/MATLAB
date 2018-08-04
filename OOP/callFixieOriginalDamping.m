@@ -1,5 +1,5 @@
 % this is the original callFixie with damping.
-% 
+
 clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
@@ -93,7 +93,7 @@ while fixie.err.max.realVal > fixie.err.lowBond
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original');    
-    fixie.greedyInfoDisplay('original');
+    fixie.greedyInfoDisplay('original', structSwitch);
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
@@ -108,7 +108,7 @@ while fixie.err.max.realVal > fixie.err.lowBond
     fixie.exactSolutionDynamic('Greedy', AbaqusSwitch, trialName, 1);
     % rbEnrichment set the indicators.
     fixie.rbEnrichmentDynamic(nPhiEnrich, reductionRatio, ratioSwitch, ...
-        'original', 1);
+        'original', 1, structSwitch);
     fixie.reducedMatricesStatic;
     fixie.reducedMatricesDynamic;
     

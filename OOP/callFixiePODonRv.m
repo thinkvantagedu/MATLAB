@@ -1,5 +1,6 @@
 % this is the implemented callFixie without damping.
-clear; clc; clf;
+
+clear; clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 1;
 callPreliminary;
@@ -50,7 +51,7 @@ fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
 fixie.initHatPm;
 fixie.refineGridLocalwithIdx('initial');
 % set up refined initial samples, nhhat = 5 and nhat = 3.
-refSwitch = 1;
+refSwitch = 0;
 if refSwitch == 1
     uiTujSwitch = 0;
     disp('initial sample set is refined')
@@ -82,7 +83,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         break
     end
     %% Greedy OFFLINE.
-    % disp('offline start')
+    % disp('POD-Greedy offline start')
     fixie.errPrepareSetZero;
     
     % OFFLINE POD.
@@ -122,10 +123,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.uiTuj;
     end
     
-    % disp('offline end')
+    % disp('POD-Greedy offline end')
     
     %% Greedy ONLINE.
-    % disp('online start')
+    % disp('POD-Greedy online start')
     % multiply the output with pm and interpolate.
     for iIter = 1:nIter
         
@@ -137,7 +138,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
             sprintf('Greedy Online stage progress: %d of %d', iIter, nIter));
         
     end
-    % disp('online end')
+    % disp('POD-Greedy online end')
     
     %% extract error information.
     fixie.errStoreSurfs('diff', 0);
@@ -157,8 +158,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat', 0);
         fixie.errStoreAllSurfs('hhat');
         %%
-%         fixie.plotSurfGrid('hhat', 'k->', 0);
-%         fixie.plotSurfGrid('hat', 'r-<', 0);
+        %         fixie.plotSurfGrid('hhat', 'k->', 0);
+        %         fixie.plotSurfGrid('hat', 'r-<', 0);
         %%
         if fixie.countGreedy == drawRow * drawCol
             % put here to stop any uncessary computations.
@@ -198,7 +199,7 @@ for iGre = 1:fixie.countGreedy
         
     end
     fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'b-^');
+    %     fixie.verifyPlotSurf(iGre, 'b-^');
     
 end
 % legend({'$\hat{\hat{e}}$ (slave)', '$\hat{e}$ (master)', ...
