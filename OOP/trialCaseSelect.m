@@ -125,5 +125,19 @@ switch trialName
         locEndCons = {'elset=Set-root'};
         noIncl = 1;
         
+    case 'ONERA_M6_3683nodes'
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/3683nodes/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/airfoil/3683nodes/';
+        end
+        INPname = strcat(route, 'ONERA_M6_3683nodes.inp');
+        mas = strcat(route, 'ONERA_M6_3683nodes_MASS1.mtx');
+        sti1 = strcat(route, 'ONERA_M6_3683nodes_I1S0_STIF1.mtx');
+        stis = strcat(route, 'ONERA_M6_3683nodes_I0S1_STIF1.mtx');
+        sti = {sti1; stis};
+        locStartCons = {'nset=Set-root'};
+        locEndCons = {'elset=Set-root'};
+        noIncl = 1;
 end
 end

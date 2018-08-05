@@ -186,7 +186,7 @@ classdef beam < handle
             
         end
         %%
-        function obj = readINPgeoMultiInc(obj)
+        function obj = readINPgeoMultiInc(obj, nDofPerNode)
             % read INP file, extract node and element informations,
             % read random number of inclusions.
             % outputs are cells.
@@ -289,8 +289,14 @@ classdef beam < handle
             obj.no.incNode = cellfun(@(v) size(v, 1), obj.node.inc, 'un', 0);
             obj.no.incNode = (cell2mat(obj.no.incNode))';
             nodeNoInc = obj.node.inc{:}(:, 1);
-            dofInc = [nodeNoInc * 2 - 1 nodeNoInc * 2];
+            if nDofPerNode == 2
+                dofInc = [nodeNoInc * nDofPerNode - 1 nodeNoInc * nDofPerNode];
+            elseif nDofPerNode == 3
+                dofInc = [nodeNoInc * nDofPerNode - 2 ...
+                    nodeNoInc * nDofPerNode - 1 nodeNoInc * nDofPerNode];
+            end
             obj.node.dof.inc = sort(dofInc(:));
+            
         end
         %%
         function obj = generatePmSpaceSingleDim(obj, randomSwitch, ...

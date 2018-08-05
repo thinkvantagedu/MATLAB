@@ -24,7 +24,7 @@ fixie.readMasMTX2DOF(nDofPerNode);
 fixie.readINPconsFixie(nDofPerNode);
 
 % read geometric information.
-fixie.readINPgeoMultiInc;
+fixie.readINPgeoMultiInc(nDofPerNode);
 
 % generate parameter space.
 fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
