@@ -9,14 +9,14 @@ qt = canti.qoi.t;
 Ki = canti.sti.mtxCell{1};
 Ks = canti.sti.mtxCell{2};
 
-pmi = 10;
+pmi = canti.pmVal.trial(1);
 pms = 1;
 
 K = Ki * pmi + Ks * pms;
 
 M = canti.mas.mtx;
 
-pmc = 10;
+pmc = 0.1;
 C = pmc * Ki;
 
 F = canti.fce.val;
@@ -46,7 +46,7 @@ v0 = zeros(nr, 1);
     (phi, m, c, k, f, 'average', dT, maxT, u0, u0);
 Ur = phi * alu;
 % overall error (no qoi) is normal and very small, thus problem is in qoi.
-err = norm(U - Ur, 'fro') / norm(canti.dis.trial, 'fro');
+errAll = norm(U - Ur, 'fro') / norm(canti.dis.trial, 'fro');
 
 Uq = U(qd, qt);
 Urq = Ur(qd, qt);
@@ -58,4 +58,3 @@ R = F - M * phi * ala - C * phi * alv - K * phi * alu;
 [~, ~, ~, Uresi, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
     (phiz, M, C, K, R, 'average', dT, maxT, U0, V0);
 errResi = norm(Uresi, 'fro') / norm(canti.dis.trial, 'fro');
-errResiq = norm(Uresi(qd, qt), 'fro') / norm(canti.dis.qoi.trial, 'fro');

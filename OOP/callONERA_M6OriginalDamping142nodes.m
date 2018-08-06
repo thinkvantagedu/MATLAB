@@ -1,13 +1,13 @@
 % this is the original callONERA_M6 with damping.
 % 
 clear; clc;
-trialName = 'ONERA_M6';
+trialName = 'ONERA_M6_142nodes';
 rvSVDswitch = 0;
 callPreliminary;
 noPm = 2;
 nConsEnd = 1;
 nDofPerNode = 3;
-fNode = 16;
+fNode = 15;
 tic
 %% trial solution
 % use subclass: fixbeam to create beam.
@@ -123,5 +123,5 @@ elseif randomSwitch == 1
     lineColor = 'k--';
 end
 
-% canti.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
-% canti.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);
+canti.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
+canti.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);

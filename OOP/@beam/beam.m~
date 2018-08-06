@@ -324,10 +324,6 @@ classdef beam < handle
                 nodeTip = obj.node.all(nodeTip, :);
                 obj.node.tip = nodeTip;
                 obj.no.node.tip = size(obj.node.tip, 1);
-                nodeNoTip = nodeTip(:, 1);
-                dofTip = [nodeNoTip * nDofPerNode - 2 ...
-                    nodeNoTip * nDofPerNode - 1 nodeNoTip * nDofPerNode];
-                obj.node.dof.tip = sort(dofTip(:));
             end
         end
         %%
@@ -2823,10 +2819,10 @@ classdef beam < handle
         function obj = qoiSpaceTime(obj, qoiSwitchSpace, qoiSwitchTime)
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
-%             qoiDof = obj.node.dof.inc';
-            qoiDof = obj.node.dof.tip';
-            qoiT = [10 20 30 40 50]';
-%             qoiT = [3 5 7]';
+            qoiDof = obj.node.dof.inc';
+            
+%             qoiT = [10 20 30 40 50]';
+            qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -2846,7 +2842,7 @@ classdef beam < handle
             end
             disp(strcat...
                 ('time step number = ', {' '}, num2str(obj.no.t_step), ...
-                ', qoi space = the wing tip surface, qoi time = ', ...
+                ', qoi space = the inclusion, qoi time = ', ...
                 {' '}, num2str(obj.qoi.t')))
             
         end

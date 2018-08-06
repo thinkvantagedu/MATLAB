@@ -125,21 +125,6 @@ switch trialName
         locEndCons = {'elset=Set-root'};
         noIncl = 1;
         
-    case 'ONERA_M6_142nodes'
-        if lin == 1
-            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/142nodes_seed35/';
-        elseif lin == 0
-            route = '/Users/kevin/GoogleDrive/AbaqusModels/airfoil/142nodes_seed35/';
-        end
-        INPname = strcat(route, 'ONERA_M6_142nodes.inp');
-        mas = strcat(route, 'ONERA_M6_142nodes_MASS1.mtx');
-        sti1 = strcat(route, 'ONERA_M6_142nodes_I1S0_STIF1.mtx');
-        stis = strcat(route, 'ONERA_M6_142nodes_I0S1_STIF1.mtx');
-        sti = {sti1; stis};
-        locStartCons = {'nset=Set-root'};
-        locEndCons = {'elset=Set-root'};
-        noIncl = 1;
-        
     case 'ONERA_M6_3683nodes'
         if lin == 1
             route = '/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/3683nodes_seed6/';
@@ -154,7 +139,6 @@ switch trialName
         locStartCons = {'nset=Set-root'};
         locEndCons = {'elset=Set-root'};
         noIncl = 1;
-        
     case 'ONERA_M6_6317nodes'
         if lin == 1
             route = '/home/xiaohan/Desktop/Temp/AbaqusModels/airfoil/6317nodes_seed5/';
@@ -162,9 +146,9 @@ switch trialName
             route = '/Users/kevin/GoogleDrive/AbaqusModels/airfoil/6317nodes_seed5/';
         end
         INPname = strcat(route, 'ONERA_M6_6317nodes.inp');
-        mas = strcat(route, 'ONERA_M6_6317nodes_MASS1.mtx');
-        sti1 = strcat(route, 'ONERA_M6_6317nodes_I1S0_STIF1.mtx');
-        stis = strcat(route, 'ONERA_M6_6317nodes_I0S1_STIF1.mtx');
+        mas = strcat(route, 'ONERA_M6_3683nodes_MASS1.mtx');
+        sti1 = strcat(route, 'ONERA_M6_3683nodes_I1S0_STIF1.mtx');
+        stis = strcat(route, 'ONERA_M6_3683nodes_I0S1_STIF1.mtx');
         sti = {sti1; stis};
         locStartCons = {'nset=Set-root'};
         locEndCons = {'elset=Set-root'};
