@@ -49,7 +49,7 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime, nDofPerNode);
 
 % initialise interpolation samples.
 fixie.initHatPm;
@@ -185,23 +185,23 @@ end
 toc
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % All Greedy iterations are included here.
-% fixie.verifyPrepare;
-% for iGre = 1:fixie.countGreedy
-%     fixie.verifyExtractBasis(iGre);
-%     for iIter = 1:nIter
-%
-%         fixie.pmIter(iIter, 1);
-%
-%         fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 1);
-%         fixie.verifyExactError(iGre, iIter);
-%         CmdWinTool('statusText', ...
-%             sprintf('verification stage progress: %d of %d', iIter, nIter));
-%
-%     end
-%     fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'r-^');
-% end
-%
-% %%
+fixie.verifyPrepare;
+for iGre = 1:fixie.countGreedy
+    fixie.verifyExtractBasis(iGre);
+    for iIter = 1:nIter
+
+        fixie.pmIter(iIter, 1);
+
+        fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 1);
+        fixie.verifyExactError(iGre, iIter);
+        CmdWinTool('statusText', ...
+            sprintf('verification stage progress: %d of %d', iIter, nIter));
+
+    end
+    fixie.verifyExtractMaxErr(iGre);
+    fixie.verifyPlotSurf(iGre, 'r-^');
+end
+
+%%
 % fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0); % randomSwitch
 % fixie.plotMaxErrorDecayLoc('verify', 'b-*', 2, 1); % damSwitch

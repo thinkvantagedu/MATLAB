@@ -45,7 +45,7 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime, nDofPerNode);
 
 % initialise interpolation samples.
 fixie.initHatPm;

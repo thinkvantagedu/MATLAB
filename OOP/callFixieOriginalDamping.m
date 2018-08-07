@@ -49,7 +49,7 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime, nDofPerNode);
 fixie.errPrepareRemainOriginal;
 
 % compute initial exact solution.
@@ -97,7 +97,7 @@ while fixie.err.max.realVal > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-%     fixie.plotSurfGrid('original', '-.k', 1);
+    fixie.plotSurfGrid('original', '-.k', 1);
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.

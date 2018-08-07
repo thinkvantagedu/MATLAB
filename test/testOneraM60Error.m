@@ -9,14 +9,14 @@ qt = canti.qoi.t;
 Ki = canti.sti.mtxCell{1};
 Ks = canti.sti.mtxCell{2};
 
-pmi = 10;
+pmi = 1;
 pms = 1;
 
 K = Ki * pmi + Ks * pms;
 
 M = canti.mas.mtx;
 
-pmc = 10;
+pmc = 1;
 C = pmc * Ki;
 
 F = canti.fce.val;

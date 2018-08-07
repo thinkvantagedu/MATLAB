@@ -194,6 +194,7 @@ classdef beam < handle
             lineElem = [];
             lineInc = [];
             lineTip = [];
+            lineBackEdge = [];
             nInc = obj.no.inc;
             
             % read INP file line by line
@@ -235,6 +236,14 @@ classdef beam < handle
                 if strncmpi(tline, tipNline, length(tipNline)) == 1 || ...
                         strncmpi(tline, tipEline, length(tipEline)) == 1
                     lineTip = [lineTip; lineNo];
+                end
+                % wing back edge.
+                bEdgeNline = '*Nset, nset=Set-backEdge';
+                bEdgeEline = '*Elset, elset=Set-backEdge';
+                
+                if strncmpi(tline, bEdgeNline, length(bEdgeNline)) == 1 || ...
+                        strncmpi(tline, bEdgeEline, length(bEdgeEline)) == 1
+                    lineBackEdge = [lineBackEdge; lineNo];
                 end
             end
             
@@ -324,6 +333,32 @@ classdef beam < handle
                 nodeTip = obj.node.all(nodeTip, :);
                 obj.node.tip = nodeTip;
                 obj.no.node.tip = size(obj.node.tip, 1);
+                nodeNoTip = nodeTip(:, 1);
+                dofTip = [nodeNoTip * nDofPerNode - 2 ...
+                    nodeNoTip * nDofPerNode - 1 nodeNoTip * nDofPerNode];
+                obj.node.dof.tip = sort(dofTip(:));
+            end
+            
+            % nodal info of wing back edge.
+            if isempty(lineBackEdge) ~= 1
+                % there is only 1 wing tip.
+                txtBedge = strtext((lineBackEdge(1) : lineBackEdge(2) - 2), :);
+                trimBedge = strtrim(txtBedge); % delete spaces in heads and tails.
+                trimBedgeCell = {};
+                for j = 1:size(trimBedge, 1)
+                    
+                    trimBedgeCell(j) = {str2num(trimBedge(j, :))};
+                    
+                end
+                trimBedgeCell = cellfun(@(v) v(:), trimBedgeCell, 'Un', 0);
+                nodeBedge = cell2mat(trimBedgeCell(:));
+                nodeBedge = obj.node.all(nodeBedge, :);
+                obj.node.backEdge = nodeBedge;
+                obj.no.node.backEdge = size(obj.node.backEdge, 1);
+                nodeNoBedge = nodeBedge(:, 1);
+                dofBedge = [nodeNoBedge * nDofPerNode - 2 ...
+                    nodeNoBedge * nDofPerNode - 1 nodeNoBedge * nDofPerNode];
+                obj.node.dof.backEdge = sort(dofBedge(:));
             end
         end
         %%
@@ -744,6 +779,7 @@ classdef beam < handle
                 if initSwitch == 1
                     % if initial enrichment, phiEnrich is the input
                     % displacement.
+                    keyboard
                     phiOtpt = phiEnrich(:, 1:nEnrich);
                     errPre = 1;
                 elseif initSwitch == 0
@@ -2344,7 +2380,7 @@ classdef beam < handle
             elseif obj.no.pm == 2
                 figure
                 ex = obj.pmVal.i.space{:}(:, 2);
-                ey = obj.pmVal.damp.space(:, 3);
+                ey = obj.pmVal.damp.space(:, 2);
                 eSurf = obj.err.store.surf.verify;
                 surf(ex, ey, eSurf');
                 set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
@@ -2537,7 +2573,7 @@ classdef beam < handle
             elseif obj.no.pm == 2
                 maxDiffLoc = obj.err.max.diffLoc;
                 pmMaxDist = obj.pmExpo.i{:}(maxDiffLoc(1));
-                cfMaxDist = obj.pmExpo.damp.space(maxDiffLoc(2), 3);
+                cfMaxDist = obj.pmExpo.damp.space(maxDiffLoc(2), 2);
                 obj.pmExpo.maxDist = {pmMaxDist cfMaxDist};
             end
             
@@ -2816,11 +2852,17 @@ classdef beam < handle
             end
         end
         %%
-        function obj = qoiSpaceTime(obj, qoiSwitchSpace, qoiSwitchTime)
+        function obj = qoiSpaceTime(obj, qoiSwitchSpace, qoiSwitchTime, ...
+                nDofPerNode)
             % this method choose equally spaced number of time steps, number
             % depends on nQoiT.
-            qoiDof = obj.node.dof.inc';
-            
+            if nDofPerNode == 2
+                % 2d case, qoi = inclusion.
+                qoiDof = obj.node.dof.inc';
+            elseif nDofPerNode == 3
+                % 3d case, qoi = wing tip.
+                qoiDof = obj.node.dof.tip';
+            end
 %             qoiT = [10 20 30 40 50]';
             qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
@@ -2840,10 +2882,17 @@ classdef beam < handle
                 obj.qoi.t = qoiT;
                 
             end
-            disp(strcat...
-                ('time step number = ', {' '}, num2str(obj.no.t_step), ...
-                ', qoi space = the inclusion, qoi time = ', ...
-                {' '}, num2str(obj.qoi.t')))
+            if nDofPerNode == 2
+                disp(strcat...
+                    ('time step number = ', {' '}, num2str(obj.no.t_step), ...
+                    ', qoi space = the inclusion, qoi time = ', ...
+                    {' '}, num2str(obj.qoi.t')))
+            elseif nDofPerNode == 3
+                disp(strcat...
+                    ('time step number = ', {' '}, num2str(obj.no.t_step), ...
+                    ', qoi space = the wing tip surface, qoi time = ', ...
+                    {' '}, num2str(obj.qoi.t')))
+            end
             
         end
         %%

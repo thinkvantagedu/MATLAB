@@ -49,7 +49,7 @@ canti.disInpt;
 canti.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-canti.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+canti.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime, nDofPerNode);
 canti.errPrepareRemainOriginal;
 
 % compute initial exact solution.
@@ -123,5 +123,5 @@ elseif randomSwitch == 1
     lineColor = 'k--';
 end
 
-canti.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
-canti.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);
+% canti.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
+% canti.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);
