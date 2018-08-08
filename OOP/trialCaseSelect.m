@@ -169,5 +169,47 @@ switch trialName
         locStartCons = {'nset=Set-root'};
         locEndCons = {'elset=Set-root'};
         noIncl = 1;
+    case 'Ibeam_882nodes'
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/Ibeam/882nodes_seed60/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/Ibeam/882nodes_seed60/';
+        end
+        INPname = strcat(route, '882nodes_seed60.inp');
+        mas = strcat(route, '882nodes_seed60_MASS1.mtx');
+        sti1 = strcat(route, '882nodes_seed60_I1S0_STIF1.mtx');
+        stis = strcat(route, '882nodes_seed60_I0S1_STIF1.mtx');
+        sti = {sti1; stis};
+        locStartCons = {'nset=Set-root'};
+        locEndCons = {'elset=Set-root'};
+        noIncl = 1;
+    case 'Ibeam_3146nodes'
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/Ibeam/3146nodes_seed25/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/Ibeam/3146nodes_seed25/';
+        end
+        INPname = strcat(route, '3146nodes_seed25.inp');
+        mas = strcat(route, '3146nodes_seed25_MASS1.mtx');
+        sti1 = strcat(route, '3146nodes_seed25_I1S0_STIF1.mtx');
+        stis = strcat(route, '3146nodes_seed25_I0S1_STIF1.mtx');
+        sti = {sti1; stis};
+        locStartCons = {'nset=Set-root'};
+        locEndCons = {'elset=Set-root'};
+        noIncl = 1;
+    case 'Ibeam_8295nodes'
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/Ibeam/8295nodes_seed15/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/Ibeam/8295nodes_seed15/';
+        end
+        INPname = strcat(route, '8295nodes_seed15.inp');
+        mas = strcat(route, '8295nodes_seed15_MASS1.mtx');
+        sti1 = strcat(route, '8295nodes_seed15_I1S0_STIF1.mtx');
+        stis = strcat(route, '8295nodes_seed15_I0S1_STIF1.mtx');
+        sti = {sti1; stis};
+        locStartCons = {'nset=Set-root'};
+        locEndCons = {'elset=Set-root'};
+        noIncl = 1;
 end
 end

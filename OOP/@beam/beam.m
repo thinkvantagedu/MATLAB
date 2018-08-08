@@ -195,6 +195,7 @@ classdef beam < handle
             lineInc = [];
             lineTip = [];
             lineBackEdge = [];
+            lineCS = [];
             nInc = obj.no.inc;
             
             % read INP file line by line
@@ -244,6 +245,14 @@ classdef beam < handle
                 if strncmpi(tline, bEdgeNline, length(bEdgeNline)) == 1 || ...
                         strncmpi(tline, bEdgeEline, length(bEdgeEline)) == 1
                     lineBackEdge = [lineBackEdge; lineNo];
+                end
+                % I beam tip cross section.
+                bCSNline = '*Nset, nset=Set-tipCs';
+                bCSEline = '*Elset, elset=Set-tipCs';
+                
+                if strncmpi(tline, bCSNline, length(bCSNline)) == 1 || ...
+                        strncmpi(tline, bCSEline, length(bCSEline)) == 1
+                    lineCS = [lineCS; lineNo];
                 end
             end
             
@@ -359,6 +368,28 @@ classdef beam < handle
                 dofBedge = [nodeNoBedge * nDofPerNode - 2 ...
                     nodeNoBedge * nDofPerNode - 1 nodeNoBedge * nDofPerNode];
                 obj.node.dof.backEdge = sort(dofBedge(:));
+            end
+            
+            % nodal info of I beam tip cross section.
+            if isempty(lineCS) ~= 1
+                % there is only 1 wing tip.
+                txtCS = strtext((lineCS(1) : lineCS(2) - 2), :);
+                trimCS = strtrim(txtCS); % delete spaces in heads and tails.
+                trimCSCell = {};
+                for j = 1:size(trimCS, 1)
+                    
+                    trimCSCell(j) = {str2num(trimCS(j, :))};
+                    
+                end
+                trimCSCell = cellfun(@(v) v(:), trimCSCell, 'Un', 0);
+                nodeCS = cell2mat(trimCSCell(:));
+                nodeCS = obj.node.all(nodeCS, :);
+                obj.node.cs = nodeCS;
+                obj.no.node.cs = size(obj.node.cs, 1);
+                nodeNoCS = nodeCS(:, 1);
+                dofCS = [nodeNoCS * nDofPerNode - 2 ...
+                    nodeNoCS * nDofPerNode - 1 nodeNoCS * nDofPerNode];
+                obj.node.dof.cs = sort(dofCS(:));
             end
         end
         %%
@@ -779,7 +810,6 @@ classdef beam < handle
                 if initSwitch == 1
                     % if initial enrichment, phiEnrich is the input
                     % displacement.
-                    keyboard
                     phiOtpt = phiEnrich(:, 1:nEnrich);
                     errPre = 1;
                 elseif initSwitch == 0
@@ -2784,7 +2814,9 @@ classdef beam < handle
                         obj.err.max.diffLoc = [mDx mDy];
                     end
                     obj.refinement.condition = abs(obj.err.max.diffVal / ...
-                        obj.dis.norm.trial);
+                        obj.dis.norm.trial); % here ||U0|| is used because using 
+                    % ||max(ehhat)|| will result in increasing eine values.
+                    
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1
@@ -2861,7 +2893,9 @@ classdef beam < handle
                 qoiDof = obj.node.dof.inc';
             elseif nDofPerNode == 3
                 % 3d case, qoi = wing tip.
-                qoiDof = obj.node.dof.backEdge';
+%                 qoiDof = obj.node.dof.backEdge';
+%                 qoiDof = obj.node.dof.tip';
+                qoiDof = obj.node.dof.cs';
             end
             qoiT = [10 20 30 40 50]';
 %             qoiT = [3 5 7]';

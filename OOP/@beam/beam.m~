@@ -2784,7 +2784,7 @@ classdef beam < handle
                         obj.err.max.diffLoc = [mDx mDy];
                     end
                     obj.refinement.condition = abs(obj.err.max.diffVal / ...
-                        obj.dis.norm.trial);
+                        obj.dis.norm.trial); % here ||||
                     % if refine continue at a different point, cease
                     % refinement to prevent too many refinements.
                     if refCeaseSwitch == 1
@@ -2861,10 +2861,12 @@ classdef beam < handle
                 qoiDof = obj.node.dof.inc';
             elseif nDofPerNode == 3
                 % 3d case, qoi = wing tip.
-                qoiDof = obj.node.dof.tip';
+%                 qoiDof = obj.node.dof.backEdge';
+%                 qoiDof = obj.node.dof.tip';
+                qoiDof = obj.node.dof.inc';
             end
-%             qoiT = [10 20 30 40 50]';
-            qoiT = [3 5 7]';
+            qoiT = [10 20 30 40 50]';
+%             qoiT = [3 5 7]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';

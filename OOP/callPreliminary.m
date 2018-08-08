@@ -72,13 +72,13 @@ nQoiT = 2;
 %% error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.9;
+reductionRatio = 0.8;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 10; 
+nRespSVD = 30; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
