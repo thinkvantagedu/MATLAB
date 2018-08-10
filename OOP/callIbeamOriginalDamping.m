@@ -1,7 +1,8 @@
 % this is the original callONERA_M6 with damping.
 % 
 clear; clc;
-trialName = 'Ibeam_8295nodes';
+% trialName = 'Ibeam_8295nodes';
+trialName = 'Ibeam_882nodes';
 rvSVDswitch = 0;
 callPreliminary;
 noPm = 2;

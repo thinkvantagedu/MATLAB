@@ -642,9 +642,16 @@ classdef beam < handle
                 K = obj.sti.mtxCell{1} * pmValRealMax + ...
                     obj.sti.mtxCell{2} * obj.pmVal.s.fix;
                 C = obj.dam.mtx;
-                obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
+                
+                dT = obj.time.step;
+                maxT = obj.time.max;
+                U0 = zeros(size(K, 1), 1);
+                V0 = zeros(size(K, 1), 1);
+                phiInpt = eye(obj.no.dof);
+                % compute trial solution.
                 % displacement at last maximum error point.
-                disMax = obj.dis.full;
+                [~, ~, ~, disMax, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                    (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
                 % stored displacements from structured magic point.
                 disStore = obj.dis.rbEnrichStore;
                 rbErrFull = disStore - phiInpt * phiInpt' * disStore;
@@ -786,11 +793,11 @@ classdef beam < handle
             f = phiInpt' * F;
             dT = obj.time.step;
             maxT = obj.time.max;
-            U0 = zeros(size(m, 1), 1);
-            V0 = zeros(size(m, 1), 1);
-            [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-                (phiInpt, m, c, k, f, 'average', dT, maxT, U0, V0);
-            ur = phiInpt * rv;
+            u0 = zeros(size(m, 1), 1);
+            v0 = zeros(size(m, 1), 1);
+            [rvDis, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                (phiInpt, m, c, k, f, 'average', dT, maxT, u0, v0);
+            ur = phiInpt * rvDis;
             urQoi = ur(obj.qoi.dof, obj.qoi.t);
             obj.err.rbRedRemain = norm(disQoiInpt - urQoi, 'fro') / ...
                 obj.dis.norm.trial;
@@ -841,9 +848,9 @@ classdef beam < handle
                 maxT = obj.time.max;
                 u0 = zeros(size(m, 1), 1);
                 v0 = zeros(size(m, 1), 1);
-                [rv, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                [rvDis, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
                     (phiOtpt, m, c, k, f, 'average', dT, maxT, u0, v0);
-                ur = phiOtpt * rv;
+                ur = phiOtpt * rvDis;
                 
                 urQoi = ur(obj.qoi.dof, obj.qoi.t);
                 errRb = norm(disQoiInpt - urQoi, 'fro') / obj.dis.norm.trial;
@@ -885,9 +892,15 @@ classdef beam < handle
                     C = pmInp(2) * obj.sti.mtxCell{1};
                 end
                 F = obj.fce.val;
-                % compute trial solution
-                obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
-                
+                dT = obj.time.step;
+                maxT = obj.time.max;
+                U0 = zeros(size(K, 1), 1);
+                V0 = zeros(size(K, 1), 1);
+                phiInpt = eye(obj.no.dof);
+                % compute trial solution.
+                [~, ~, ~, disOtpt, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                    (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
+            
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
                 obj.abaqusStrInfo(trialName);
@@ -897,18 +910,19 @@ classdef beam < handle
                 % input parameter 0 indicates the force is not modified.
                 obj.abaqusJob(trialName, pmI, pmS, 0, 0);
                 obj.abaqusOtpt;
+                disOtpt = obj.dis.full;
             end
             
             switch type
                 case 'initial'
-                    obj.dis.trial = obj.dis.full;
+                    obj.dis.trial = disOtpt;
                     obj.dis.qoi.trial = obj.dis.trial(obj.qoi.dof, ...
                         obj.qoi.t);
                     obj.dis.norm.trial = norm(obj.dis.qoi.trial, 'fro');
                 case 'Greedy'
-                    obj.dis.rbEnrich = obj.dis.full;
+                    obj.dis.rbEnrich = disOtpt;
                 case 'verify'
-                    obj.dis.verify = obj.dis.full;
+                    obj.dis.verify = disOtpt;
             end
             
         end
@@ -957,9 +971,16 @@ classdef beam < handle
                 C = obj.dam.mtx;
                 M = obj.mas.mtx;
                 F = obj.fce.val;
+                dT = obj.time.step;
+                maxT = obj.time.max;
+                U0 = zeros(size(K, 1), 1);
+                V0 = zeros(size(K, 1), 1);
+                phiInpt = eye(obj.no.dof);
+                % compute trial solution.
+                [~, ~, ~, disOtpt, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                    (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
                 % compute exact solution.
-                obj.NewmarkBetaReducedMethodOOP(M, C, K, F);
-                disStore{iS} = obj.dis.full;
+                disStore{iS} = disOtpt;
             end
             switch type
                 case 'initial'
@@ -1402,7 +1423,14 @@ classdef beam < handle
                     end
                     
                     F = obj.fce.val;
-                    obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
+                    dT = obj.time.step;
+                    maxT = obj.time.max;
+                    U0 = zeros(size(K, 1), 1);
+                    V0 = zeros(size(K, 1), 1);
+                    phiInpt = eye(obj.no.dof);
+                    % compute trial solution.
+                    [~, ~, ~, disOtpt, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                        (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
                 elseif AbaqusSwitch == 1
                     % use Abaqus to obtain exact solutions.
                     pmI = pmValInp(iPre, 2:obj.no.inc + 1);
@@ -1412,13 +1440,14 @@ classdef beam < handle
                     % modifying force, use original inp file).
                     obj.abaqusJob(trialName, pmI, pmS, 0, 0);
                     obj.abaqusOtpt;
+                    disOtpt = obj.dis.full;
                 end
                 if respSVDswitch == 0
-                    dis_ = obj.dis.full(obj.qoi.dof, obj.qoi.t);
+                    dis_ = disOtpt(obj.qoi.dof, obj.qoi.t);
                     obj.resp.store.fce.hhat{nEx + iPre} = {dis_(:)};
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
-                    [uFcel, uFceSig, uFcer] = svd(obj.dis.full, 'econ');
+                    [uFcel, uFceSig, uFcer] = svd(disOtpt, 'econ');
                     uFcel = uFcel(:, 1:obj.no.respSVD);
                     uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
                     uFcer = uFcer(:, 1:obj.no.respSVD);
@@ -1430,20 +1459,7 @@ classdef beam < handle
             end
             
         end
-        %%
-        function obj = impInitStep(obj, nrb, i_phy)
-            
-            impInit = sparse(obj.no.dof, obj.no.t_step);
-            impStep = sparse(obj.no.dof, obj.no.t_step);
-            impInit(:, 1) = impInit(:, 1) + ...
-                obj.asemb.imp.cel{i_phy}(:, nrb);
-            impStep(:, 2) = impStep(:, 2) + ...
-                obj.asemb.imp.cel{i_phy}(:, nrb);
-            
-            obj.asemb.imp.apply(1) = {impInit};
-            obj.asemb.imp.apply(2) = {impStep};
-            
-        end
+        
         %%
         function obj = respTdiffComputation(obj, respSVDswitch, ...
                 AbaqusSwitch, trialName, damSwitch)
@@ -1495,8 +1511,16 @@ classdef beam < handle
                                     
                                 end
                                 F = impPass;
-                                obj = NewmarkBetaReducedMethodOOP...
-                                    (obj, M, C, K, F);
+                                dT = obj.time.step;
+                                maxT = obj.time.max;
+                                U0 = zeros(size(K, 1), 1);
+                                V0 = zeros(size(K, 1), 1);
+                                phiInpt = eye(obj.no.dof);
+                                % compute trial solution.
+                                [~, ~, ~, disOtpt, ~, ~, ~, ~] = ...
+                                    NewmarkBetaReducedMethod...
+                                    (phiInpt, M, C, K, F, 'average', ...
+                                    dT, maxT, U0, V0);
                                 
                             elseif AbaqusSwitch == 1
                                 % use Abaqus to obtain exact solutions.
@@ -1508,6 +1532,7 @@ classdef beam < handle
                                 obj.abaqusJob(trialName, pmI, pmS, ...
                                     1, 'impulse');
                                 obj.abaqusOtpt;
+                                disOtpt = obj.dis.full;
                             end
                             if respSVDswitch == 0
                                 if obj.indicator.enrich == 1 && ...
@@ -1519,9 +1544,9 @@ classdef beam < handle
                                 end
                                 obj.resp.store.tDiff...
                                     (iPreRef, iPhy, iTdiff, iRb) = ...
-                                    {obj.dis.full};
+                                    {disOtpt};
                             elseif respSVDswitch == 1
-                                disSVD = full(obj.dis.full);
+                                disSVD = full(disOtpt);
                                 [ul, usig, ur] = svd(disSVD, 'econ');
                                 ul = ul(:, 1:obj.no.respSVD);
                                 usig = usig(1:obj.no.respSVD, ...
@@ -2666,7 +2691,14 @@ classdef beam < handle
                 C * obj.phi.val * obj.vel.re.reVar - ...
                 K * obj.phi.val * obj.dis.re.reVar;
             if AbaqusSwitch == 0
-                obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, F);
+                dT = obj.time.step;
+                maxT = obj.time.max;
+                U0 = zeros(size(K, 1), 1);
+                V0 = zeros(size(K, 1), 1);
+                phiInpt = eye(obj.no.dof);
+                % compute trial solution.
+                [~, ~, ~, disOtpt, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                    (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
                 pmI = obj.pmVal.iter;
@@ -2676,8 +2708,9 @@ classdef beam < handle
                 % modified.
                 obj.abaqusJob(trialName, pmI, pmS, 1, 'residual');
                 obj.abaqusOtpt;
+                disOtpt = obj.dis.full;
             end
-            obj.dis.resi = obj.dis.full;
+            obj.dis.resi = disOtpt;
             
             obj.dis.qoi.resi = obj.dis.resi(obj.qoi.dof, obj.qoi.t);
             
@@ -2897,8 +2930,9 @@ classdef beam < handle
 %                 qoiDof = obj.node.dof.tip';
                 qoiDof = obj.node.dof.cs';
             end
-            qoiT = [10 20 30 40 50]';
-%             qoiT = [3 5 7]';
+%             qoiT = [10 20 30 40 50]';
+            qoiT = [3 5 7]';
+%             qoiT = [20 40 60 80]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -2927,7 +2961,10 @@ classdef beam < handle
                     ', qoi space = the wing tip surface, qoi time = ', ...
                     {' '}, num2str(obj.qoi.t')))
             end
-            
+            % the following is not suitable for standard, due to residual
+            % based force. 
+%             obj.time.max = obj.time.step * (qoiT(end) - 1);
+%             obj.fce.val = obj.fce.val(:, 1:qoiT(end));
         end
         %%
         function obj = NewmarkBetaMethod(obj, mas, dam, sti, fce, ...
@@ -3349,64 +3386,7 @@ classdef beam < handle
             obj.no.block.add = 2;
             obj.pmExpo.block.add = obj.pmExpo.block.hhat;
         end
-        %%
-        function obj = NewmarkBetaReducedMethodOOP(obj, M, C, K, fce)
-            
-            beta = 1/4; gamma = 1/2; % al = alpha
-            
-            %% pass struct to constants
-            
-            t = 0 : obj.time.step : (obj.time.max);
-            
-            a0 = 1 / (beta * obj.time.step ^ 2);
-            a1 = gamma / (beta * obj.time.step);
-            a2 = 1 / (beta * obj.time.step);
-            a3 = 1/(2 * beta) - 1;
-            a4 = gamma / beta - 1;
-            a5 = gamma * obj.time.step/(2 * beta) - obj.time.step;
-            a6 = obj.time.step - gamma * obj.time.step;
-            a7 = gamma * obj.time.step;
-            
-            dis0 = obj.dis.inpt;
-            vel0 = obj.vel.inpt;
-            
-            obj.dis.val = zeros(length(K), length(t));
-            obj.dis.val(:, 1) = obj.dis.val(:, 1) + dis0;
-            obj.vel.val = zeros(length(K), length(t));
-            obj.vel.val(:, 1) = obj.vel.val(:, 1) + vel0;
-            obj.acc.val = zeros(length(K), length(t));
-            obj.acc.val(:, 1) = obj.acc.val(:, 1) + M \ (fce(:, 1) - ...
-                C * obj.vel.val(:, 1) - K * obj.dis.val(:, 1));
-            
-            Khat = K + a0 * M + a1 * C;
-            
-            for in = 1 : length(t) - 1
-                
-                dFhat = fce(:, in+1) + M * (a0 * obj.dis.val(:, in) + ...
-                    a2 * obj.vel.val(:, in) + a3 * obj.acc.val(:, in)) + ...
-                    C * (a1 * obj.dis.val(:, in) + a4 * obj.vel.val(:, in) + ...
-                    a5 * obj.acc.val(:, in));
-                dU_r = Khat \ dFhat;
-                dA_r = a0 * dU_r - a0 * obj.dis.val(:, in) - ...
-                    a2 * obj.vel.val(:, in) - a3 * obj.acc.val(:, in);
-                dV_r = obj.vel.val(:, in) + ...
-                    a6 * obj.acc.val(:, in) + a7 * dA_r;
-                obj.acc.val(:, in+1) = dA_r;
-                obj.vel.val(:, in+1) = dV_r;
-                obj.dis.val(:, in+1) = dU_r;
-                
-            end
-            
-            obj.acc.full = obj.acc.val;
-            obj.vel.full = obj.vel.val;
-            obj.dis.full = obj.dis.val;
-            for iCons = 1:length(obj.no.cons)
-                obj.acc.full(obj.cons.dof{iCons}, :) = 0;
-                obj.vel.full(obj.cons.dof{iCons}, :) = 0;
-                obj.dis.full(obj.cons.dof{iCons}, :) = 0;
-            end
-            
-        end
+        
         %%
         function obj = abaqusStrInfo(obj, trialName)
             % this method defines the string infos, prepare to modify the
