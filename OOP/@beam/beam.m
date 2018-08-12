@@ -1331,7 +1331,7 @@ classdef beam < handle
             switch timeType
                 case 'allTime'
                     obj.resp.store.pm.hhat = cell(obj.no.pre.hhat, ...
-                        obj.no.phy, obj.no.t_step, obj.no.rb);
+                        obj.no.phy, obj.no.tMax, obj.no.rb);
                 case 'partTime'
                     obj.resp.store.pm.hhat = cell(obj.no.pre.hhat, ...
                         obj.no.phy, 2, obj.no.rb);
@@ -1448,9 +1448,10 @@ classdef beam < handle
                 elseif respSVDswitch == 1
                     % if SVD is not on-the-fly, comment this.
                     [uFcel, uFceSig, uFcer] = svd(disOtpt, 'econ');
-                    uFcel = uFcel(:, 1:obj.no.respSVD);
-                    uFceSig = uFceSig(1:obj.no.respSVD, 1:obj.no.respSVD);
-                    uFcer = uFcer(:, 1:obj.no.respSVD);
+                    nSVD = min(obj.no.respSVD, obj.no.tMax);
+                    uFcel = uFcel(:, 1:nSVD);
+                    uFceSig = uFceSig(1:nSVD, 1:nSVD);
+                    uFcer = uFcer(:, 1:nSVD);
                     uFcel = uFcel(obj.qoi.dof, :);
                     uFcer = uFcer(obj.qoi.t, :);
                     obj.resp.store.fce.hhat{nEx + iPre} = ...
@@ -1492,7 +1493,9 @@ classdef beam < handle
                         % obj.indicator.tDiff works in abaqusJob.
                         obj.indicator.tDiff = iTdiff;
                         for iRb = nRbInit:nRb
-                            impPass = obj.imp.store.mtx{iPhy, iTdiff, iRb};
+                            impPassQoI = obj.imp.store.mtx{iPhy, iTdiff, iRb}...
+                                (:, 1:obj.qoi.t(end));
+                            
                             if AbaqusSwitch == 0
                                 M = obj.mas.mtx;
                                 K = sparse(obj.no.dof, obj.no.dof);
@@ -1510,9 +1513,10 @@ classdef beam < handle
                                     C = pmInp(iPre, 3) * obj.sti.mtxCell{1};
                                     
                                 end
-                                F = impPass;
+                                F = impPassQoI;
                                 dT = obj.time.step;
-                                maxT = obj.time.max;
+%                                 maxT = obj.time.max;
+                                maxT = obj.time.step * (obj.qoi.t(end) - 1);
                                 U0 = zeros(size(K, 1), 1);
                                 V0 = zeros(size(K, 1), 1);
                                 phiInpt = eye(obj.no.dof);
@@ -1548,10 +1552,10 @@ classdef beam < handle
                             elseif respSVDswitch == 1
                                 disSVD = full(disOtpt);
                                 [ul, usig, ur] = svd(disSVD, 'econ');
-                                ul = ul(:, 1:obj.no.respSVD);
-                                usig = usig(1:obj.no.respSVD, ...
-                                    1:obj.no.respSVD);
-                                ur = ur(:, 1:obj.no.respSVD);
+                                nSVD = min(obj.no.respSVD, obj.no.tMax);
+                                ul = ul(:, 1:nSVD);
+                                usig = usig(1:nSVD, 1:nSVD);
+                                ur = ur(:, 1:nSVD);
                                 if obj.indicator.enrich == 1 && ...
                                         obj.indicator.refine == 0
                                     iPreRef = iPre;
@@ -1573,7 +1577,7 @@ classdef beam < handle
             % this method shifts the responses in time.
             for iPre = 1:obj.no.pre.hhat
                 for iPhy = 1:obj.no.phy
-                    for iT = 1:obj.no.t_step
+                    for iT = 1:obj.no.tMax
                         for iRb = 1:obj.no.rb
                             if iT == 1
                                 % conditions for quantity of interest
@@ -1618,13 +1622,14 @@ classdef beam < handle
                                     % vectors, if recast the displacements,
                                     % fro norm of the recast should match
                                     % original displacements.
+                                    nSVD = min(obj.no.respSVD, obj.no.tMax);
                                     storePmZeros = ...
-                                        zeros(obj.no.respSVD, iT - 2);
+                                        zeros(nSVD, iT - 2);
                                     store_ = obj.resp.store.tDiff...
                                         {iPre, iPhy, 2, iRb}{3};
                                     store_ = store_';
                                     storePmNonZeros = store_...
-                                        (:, 1:obj.no.t_step - iT + 2);
+                                        (:, 1:obj.no.tMax - iT + 2);
                                     storePmL = obj.resp.store.tDiff...
                                         {iPre, iPhy, 2, iRb}{1};
                                     storePmSig = obj.resp.store.tDiff...
@@ -1644,6 +1649,62 @@ classdef beam < handle
                     end
                 end
             end
+        end
+        %%
+        function obj = reshapeRespStore(obj)
+            % all lu11, rd22 blocks are symmetric, thus triangulated. Use triu when
+            % case 1: respSVDswitch == 0, case 2: respSVDswitch == 1 
+            % and enrich (inherit).
+            if obj.indicator.enrich == 1 && obj.indicator.refine == 0
+                nPre = obj.no.pre.hhat;
+                nEx = 0;
+                nRb = obj.no.rb;
+                nAdd = obj.no.rbAdd;
+            elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
+                nPre = obj.no.itplAdd;
+                nEx = obj.no.itplEx;
+                nRb = 0;
+                nAdd = 0;
+            end
+            obj.no.newVec = obj.no.phy * obj.no.rbAdd * obj.no.tMax;
+            
+            for iPre = 1:nPre
+                % define index and pm values for pre-computed eTe 
+                % and stored responses.
+                obj.err.pre.hhat(nEx + iPre, 1) = {nEx + iPre};
+                obj.err.pre.hhat{nEx + iPre, 2} = ...
+                    num2str((obj.pmExpo.hhat(nEx + iPre, 2:obj.no.pm + 1)));
+                obj.resp.store.all(nEx + iPre, 1) = {nEx + iPre};
+                obj.resp.store.all{nEx + iPre, 2} = ...
+                    num2str((obj.pmExpo.hhat(nEx + iPre, 2:obj.no.pm + 1)));
+                % pass needed responses in to be processed.
+                respPmPass = obj.resp.store.pm.hhat(nEx + iPre, :, :, ...
+                    nRb - nAdd + 1:end);
+                respCol = reshape(respPmPass, [1, numel(respPmPass)]);
+                % if enrich + initial iteration, force resp combines 
+                % ordinary resp;
+                % elseif enrich, ordinary resp only; elseif refine, force 
+                % resp combines ordinary resp.
+                if obj.indicator.enrich == 1 && obj.indicator.refine == 0
+                    if obj.countGreedy == 0
+                        respCol = [obj.resp.store.fce.hhat(iPre) ...
+                            cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
+                            respCol, 'un', 0)];
+                    else
+                        respCol = cellfun(@(x) ...
+                            cellfun(@uminus, x, 'un', 0), respCol, 'un', 0);
+                    end
+                elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
+                    respCol = [obj.resp.store.fce.hhat(nEx + iPre) ...
+                        cellfun(@(x) cellfun(@uminus, x, 'un', 0), ...
+                        respCol, 'un', 0)];
+                end
+                
+                obj.resp.store.all{nEx + iPre, 3} = ...
+                    [obj.resp.store.all{nEx + iPre, 3} respCol];
+                
+            end
+            
         end
         %%
         function obj = uiTujSort(obj, respStoreInpt, rvSVDswitch, respSVDswitch)
@@ -1973,7 +2034,7 @@ classdef beam < handle
                     obj.no.rb, 1);
             elseif damSwitch == 1
                 pmSlct = repmat([1; pmPass(2); pmPass(1); 1], ...
-                    obj.no.t_step * obj.no.rb, 1);
+                    obj.no.tMax * obj.no.rb, 1);
             end
             pmSlct = [1; pmSlct];
             if rvSVDswitch == 0
@@ -1996,9 +2057,9 @@ classdef beam < handle
             % size of original rv is nr * nt.
             % if rvSVDswitch = 1, there is no need to find the nonzero
             % elements.
-            rvAcc = obj.acc.re.reVar;
-            rvVel = obj.vel.re.reVar;
-            rvDis = obj.dis.re.reVar;
+            rvAcc = obj.acc.re.reVar(:, 1:obj.no.tMax);
+            rvVel = obj.vel.re.reVar(:, 1:obj.no.tMax);
+            rvDis = obj.dis.re.reVar(:, 1:obj.no.tMax);
             
             rvAccRow = rvAcc';
             rvAccRow = rvAccRow(:);
@@ -2021,7 +2082,6 @@ classdef beam < handle
             elseif rvSVDswitch == 1
                 obj.pmVal.rvCol = rvAllCol;
             end
-            
         end
         %%
         function obj = rvpmColStore(obj, iIter)
@@ -2932,7 +2992,7 @@ classdef beam < handle
             end
 %             qoiT = [10 20 30 40 50]';
             qoiT = [3 5 7]';
-%             qoiT = [20 40 60 80]';
+%             qoiT = [20 40 60]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -2948,8 +3008,13 @@ classdef beam < handle
             elseif qoiSwitchSpace == 1 && qoiSwitchTime == 1
                 obj.qoi.dof = qoiDof;
                 obj.qoi.t = qoiT;
-                
             end
+            if qoiSwitchTime == 0
+                obj.no.tMax = obj.no.t_step;
+            elseif qoiSwitchTime == 1
+                obj.no.tMax = qoiT(end);
+            end
+                
             if nDofPerNode == 2
                 disp(strcat...
                     ('time step number = ', {' '}, num2str(obj.no.t_step), ...

@@ -23,7 +23,7 @@ if obj.countGreedy == 0
     nVecNew = 0;
 else
     % number of newly added response vectors.
-    nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
+    nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.tMax;
 end
 
 for iPre = 1:nPointPre
@@ -60,7 +60,6 @@ for iPre = 1:nPointPre
     % next iteration. bool is the boolean vector for reTriangularise. 
     [bool, vecTrans_] = upperTriangleIntoVector(uTrans_);
     obj.err.pre.hhat(nPointEx + iPre, 5) = {vecTrans_};
-    
     % project full eTe.
     uTrans = obj.resp.rv.L' * reConstruct(uTrans_) * obj.resp.rv.L;
     obj.err.pre.hhat(nPointEx + iPre, 3) = {uTrans};
