@@ -1,8 +1,8 @@
 % this is the implemented callONERA_M6 with damping.
 
 clear; clc;
-% trialName = 'Ibeam_8295nodes';
-trialName = 'Ibeam_882nodes';
+trialName = 'Ibeam_8295nodes';
+% trialName = 'Ibeam_3146nodes';
 rvSVDswitch = 1;
 callPreliminary;
 noPm = 2;
@@ -184,8 +184,8 @@ while canti.err.max.val.hhat > canti.err.lowBond
     
 end
 toc
-%% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
-% All Greedy iterations are included here.
+% %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
+% % All Greedy iterations are included here.
 % canti.verifyPrepare;
 % for iGre = 1:canti.countGreedy
 %     canti.verifyExtractBasis(iGre);
@@ -200,9 +200,9 @@ toc
 % 
 %     end
 %     canti.verifyExtractMaxErr(iGre);
-%     canti.verifyPlotSurf(iGre, 'r-^');
+% %     canti.verifyPlotSurf(iGre, 'r-^');
 % end
 
-%%
+%
 % canti.plotMaxErrorDecayVal('verify', 'b-*', 2, 0); % randomSwitch
 % canti.plotMaxErrorDecayLoc('verify', 'b-*', 2, 1); % damSwitch

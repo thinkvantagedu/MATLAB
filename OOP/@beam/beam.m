@@ -1422,15 +1422,17 @@ classdef beam < handle
                         
                     end
                     
-                    F = obj.fce.val;
+                    F = obj.fce.val(:, 1:obj.no.tMax);
                     dT = obj.time.step;
-                    maxT = obj.time.max;
+                    % exact solution only computes qoiT(max) steps.
+                    maxT = dT * (obj.no.tMax - 1);
                     U0 = zeros(size(K, 1), 1);
                     V0 = zeros(size(K, 1), 1);
                     phiInpt = eye(obj.no.dof);
                     % compute trial solution.
-                    [~, ~, ~, disOtpt, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                    [~, ~, ~, disOtpt, ~, ~, ~, ~] = NBRM...
                         (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
+                    
                 elseif AbaqusSwitch == 1
                     % use Abaqus to obtain exact solutions.
                     pmI = pmValInp(iPre, 2:obj.no.inc + 1);
@@ -1513,16 +1515,14 @@ classdef beam < handle
                                     C = pmInp(iPre, 3) * obj.sti.mtxCell{1};
                                     
                                 end
-                                F = impPassQoI;
+                                F = impPassQoI(:, 1:obj.no.tMax);
                                 dT = obj.time.step;
-%                                 maxT = obj.time.max;
-                                maxT = obj.time.step * (obj.qoi.t(end) - 1);
+                                maxT = dT * (obj.no.tMax - 1);
                                 U0 = zeros(size(K, 1), 1);
                                 V0 = zeros(size(K, 1), 1);
                                 phiInpt = eye(obj.no.dof);
                                 % compute trial solution.
-                                [~, ~, ~, disOtpt, ~, ~, ~, ~] = ...
-                                    NewmarkBetaReducedMethod...
+                                [~, ~, ~, disOtpt, ~, ~, ~, ~] = NBRM...
                                     (phiInpt, M, C, K, F, 'average', ...
                                     dT, maxT, U0, V0);
                                 
@@ -2991,8 +2991,8 @@ classdef beam < handle
                 qoiDof = obj.node.dof.cs';
             end
 %             qoiT = [10 20 30 40 50]';
-            qoiT = [3 5 7]';
-%             qoiT = [20 40 60]';
+%             qoiT = [3 5 7]';
+            qoiT = (45:55)';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -3023,7 +3023,7 @@ classdef beam < handle
             elseif nDofPerNode == 3
                 disp(strcat...
                     ('time step number = ', {' '}, num2str(obj.no.t_step), ...
-                    ', qoi space = the wing tip surface, qoi time = ', ...
+                    ', qoi space = the I beam tip surface, qoi time = ', ...
                     {' '}, num2str(obj.qoi.t')))
             end
             % the following is not suitable for standard, due to residual
