@@ -2757,7 +2757,7 @@ classdef beam < handle
                 V0 = zeros(size(K, 1), 1);
                 phiInpt = eye(obj.no.dof);
                 % compute trial solution.
-                [~, ~, ~, disOtpt, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                [~, ~, ~, disOtpt, ~, ~, ~, ~] = NBRM...
                     (phiInpt, M, C, K, F, 'average', dT, maxT, U0, V0);
             elseif AbaqusSwitch == 1
                 % use Abaqus to obtain exact solutions.
@@ -2991,8 +2991,8 @@ classdef beam < handle
                 qoiDof = obj.node.dof.cs';
             end
 %             qoiT = [10 20 30 40 50]';
-%             qoiT = [3 5 7]';
-            qoiT = (45:55)';
+            qoiT = [3 5 7]';
+%             qoiT = (45:55)';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -3668,6 +3668,12 @@ classdef beam < handle
                 obj.dis.full = cell2mat(disVecStore');
                 obj.dis.full = [zeros(obj.no.dof, 1) obj.dis.full];
             end
+            
+        end
+        %%
+        function obj = savePhi(obj)
+            % this method saves phi into err.
+            obj.err.phi = obj.phi;
             
         end
         %%

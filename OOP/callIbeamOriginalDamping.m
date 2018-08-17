@@ -1,4 +1,4 @@
-% this is the original callONERA_M6 with damping.
+% this is the original callIbeam with damping.
 % 
 clear; clc;
 % trialName = 'Ibeam_8295nodes';
@@ -98,7 +98,7 @@ while canti.err.max.realVal > canti.err.lowBond
     canti.storeErrorInfoOriginal;
     canti.errStoreAllSurfs('original');
     
-    canti.plotSurfGrid('original', '-.k', 1);
+%     canti.plotSurfGrid('original', '-.k', 1);
     
     if canti.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.
@@ -115,14 +115,15 @@ while canti.err.max.realVal > canti.err.lowBond
     
 end
 toc
+canti.savePhi;
 %%
-if randomSwitch == 0
-    lineWidth = 2;
-    lineColor = 'b-*';
-elseif randomSwitch == 1
-    lineWidth = 1;
-    lineColor = 'k--';
-end
+% if randomSwitch == 0
+%     lineWidth = 2;
+%     lineColor = 'b-*';
+% elseif randomSwitch == 1
+%     lineWidth = 1;
+%     lineColor = 'k--';
+% end
 
 % canti.plotMaxErrorDecayVal('original', lineColor, lineWidth, randomSwitch);
 % canti.plotMaxErrorDecayLoc('original', lineColor, lineWidth, 1);

@@ -1,8 +1,8 @@
-% this is the implemented callONERA_M6 with damping.
+% this is the implemented callIbeam with damping.
 
 clear; clc;
-trialName = 'Ibeam_8295nodes';
-% trialName = 'Ibeam_3146nodes';
+% trialName = 'Ibeam_8295nodes';
+trialName = 'Ibeam_3146nodes';
 rvSVDswitch = 1;
 callPreliminary;
 noPm = 2;
@@ -157,7 +157,7 @@ while canti.err.max.val.hhat > canti.err.lowBond
         canti.storeErrorInfo;
         canti.errStoreAllSurfs('hhat');
         
-        canti.plotSurfGrid('hhat', 'b-.', 1);
+%         canti.plotSurfGrid('hhat', 'b-.', 1);
 %         canti.plotSurfGrid('hat', 'r--', 1);
         
         if canti.countGreedy == drawRow * drawCol
@@ -184,6 +184,7 @@ while canti.err.max.val.hhat > canti.err.lowBond
     
 end
 toc
+canti.savePhi;
 % %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % % All Greedy iterations are included here.
 % canti.verifyPrepare;
