@@ -61,7 +61,7 @@ canti.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 1);
 canti.rbInitialDynamic(nPhiInitial, reductionRatio, ratioSwitch, 'original', 1);
 canti.reducedMatricesStatic;
 canti.reducedMatricesDynamic;
-
+keyboard
 while canti.err.max.realVal > canti.err.lowBond
     
     if canti.countGreedy == drawRow * drawCol
