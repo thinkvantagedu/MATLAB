@@ -2991,8 +2991,8 @@ classdef beam < handle
                 qoiDof = obj.node.dof.cs';
             end
 %             qoiT = [10 20 30 40 50]';
-            qoiT = [3 5 7]';
-%             qoiT = (45:55)';
+%             qoiT = [3 5 7]';
+            qoiT = (45:55)';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';

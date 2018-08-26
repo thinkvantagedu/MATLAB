@@ -11,7 +11,7 @@ h = barh(tall, 'stacked');
 set(h, {'facecolor'}, {'b'; 'y'})
 axis normal
 grid on
-legend('POD-Greedy offline', 'POD-Greedy online')
+legend('Basis generation', 'Parameter sweep')
 set(gca,'fontsize', fsAll)
 set(gca,'xscale','log')
 xlabel('Execution time (seconds)', 'FontSize', fsAll)

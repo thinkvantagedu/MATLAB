@@ -1,6 +1,6 @@
 % this is the implemented callIbeam with damping.
 
-clear; clc;
+% clear; clc;
 % trialName = 'Ibeam_8295nodes';
 trialName = 'Ibeam_3146nodes';
 rvSVDswitch = 1;

@@ -17,8 +17,8 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 5;
-damLeng = 3;
+% domLengi = 3;
+% damLeng = 3;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -33,7 +33,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
+tMax = 9.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -42,7 +42,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+% trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -58,10 +58,10 @@ cntInit = 0;
 refiThres = 10;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
-drawRow = 1;
-drawCol = 2;
-nPhiInitial = 2;
-nPhiEnrich = 2;
+% drawRow = 1;
+% drawCol = 20;
+% nPhiInitial = 4;
+% nPhiEnrich = 4;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -78,7 +78,7 @@ reductionRatio = 0.8;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 10; 
+nRespSVD = 20; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 

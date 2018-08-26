@@ -1,6 +1,6 @@
 % this is the original callIbeam with damping.
 % 
-clear; clc;
+% clear; clc;
 % trialName = 'Ibeam_8295nodes';
 trialName = 'Ibeam_3146nodes';
 rvSVDswitch = 0;
@@ -61,7 +61,7 @@ canti.exactSolutionDynamic('initial', AbaqusSwitch, trialName, 1);
 canti.rbInitialDynamic(nPhiInitial, reductionRatio, ratioSwitch, 'original', 1);
 canti.reducedMatricesStatic;
 canti.reducedMatricesDynamic;
-keyboard
+
 while canti.err.max.realVal > canti.err.lowBond
     
     if canti.countGreedy == drawRow * drawCol
