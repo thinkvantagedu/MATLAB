@@ -182,9 +182,10 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
     end
     
 end
+fixie.savePhi;
 toc
-%% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
-% All Greedy iterations are included here.
+% %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
+% % All Greedy iterations are included here.
 % fixie.verifyPrepare;
 % for iGre = 1:fixie.countGreedy
 %     fixie.verifyExtractBasis(iGre);
@@ -199,7 +200,7 @@ toc
 % 
 %     end
 %     fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'r-^');
+% %     fixie.verifyPlotSurf(iGre, 'r-^');
 % end
 
 %%

@@ -20,7 +20,7 @@ if obj.countGreedy == 0
     nVecNew = 0;
 else
     % number of nre response vectors.
-    nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
+    nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.tMax;
     uiTujImporthhat = sortrows(obj.err.pre.hhat, 2);
     uiTujImporthhat = uiTujImporthhat(:, 6);
     uiTujImporthat = sortrows(obj.err.pre.hat, 2);

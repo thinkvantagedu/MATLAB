@@ -17,8 +17,8 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-% domLengi = 3;
-% damLeng = 3;
+domLengi = 17;
+damLeng = 17;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -33,7 +33,7 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 9.9;
+tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -42,7 +42,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-% trial = 1;
+trial = 289;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -58,10 +58,10 @@ cntInit = 0;
 refiThres = 10;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
-% drawRow = 1;
-% drawCol = 20;
-% nPhiInitial = 4;
-% nPhiEnrich = 4;
+drawRow = 1;
+drawCol = 10;
+nPhiInitial = 2;
+nPhiEnrich = 2;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -72,13 +72,13 @@ nQoiT = 2;
 %% error reductions.
 % reduction ratio: ||u-ur||_F / ||u0||_F, compare against the previous
 % maximum error.
-reductionRatio = 0.8;
+reductionRatio = 0.6;
 % error tolerance for method: rbCtrlInitial.
 % rbCtrlThres = 0.01;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 20; 
+nRespSVD = 10; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -98,7 +98,7 @@ AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
 % uiTujSwitch shuts uiTuj off to increase speed.
-uiTujSwitch = 0;
+uiTujSwitch = 1;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];

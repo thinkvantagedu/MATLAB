@@ -26,7 +26,7 @@ if obj.countGreedy == 0
     nVecNew = 0;
 else
     % number of nre response vectors.
-    nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.t_step;
+    nVecNew = obj.no.phy * obj.no.rbAdd * obj.no.tMax;
 end
 
 % for hhat, responses need to be chosen based on enrich or refine.

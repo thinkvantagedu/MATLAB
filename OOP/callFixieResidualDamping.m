@@ -79,7 +79,9 @@ while fixie.err.max.realVal > fixie.err.lowBond
         
         fixie.reducedVar(1);
         
-        fixie.residualfromForce(AbaqusSwitch, trialName, 1);
+        fixie.residual0(1);
+        
+        fixie.residualAsError(1);
         
         fixie.errStoreSurfs('original', 1);
         
@@ -97,7 +99,7 @@ while fixie.err.max.realVal > fixie.err.lowBond
     fixie.storeErrorInfoOriginal;
     fixie.errStoreAllSurfs('original');
     
-    fixie.plotSurfGrid('original', '-.k', 1);
+%     fixie.plotSurfGrid('original', '-.k', 1);
     
     if fixie.countGreedy == drawRow * drawCol
         % put here to stop any uncessary computations.

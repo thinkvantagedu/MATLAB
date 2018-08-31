@@ -1122,7 +1122,8 @@ classdef beam < handle
                 (obj.indicator.trial, 2:obj.no.pm + 1);
             obj.err.store.magicIdx = obj.pmVal.comb.space...
                 (obj.indicator.trial, 1);
-            obj.err.store.realLoc = [];
+            obj.err.store.realLoc = obj.pmVal.comb.space...
+                (obj.indicator.trial, 2:obj.no.pm + 1);
             obj.err.store.allSurf = {};
             obj.err.store.redInfo = cell(1, 6);
             reductionText = {'magic point (mp)' 'mp parameter value' ...
@@ -1965,6 +1966,7 @@ classdef beam < handle
                     obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
                 c = pmIter(2) * obj.sti.re.mtxCell{1};
             end
+            
             f = phiInpt' * obj.fce.val;
             dT = obj.time.step;
             maxT = obj.time.max;
@@ -2778,6 +2780,78 @@ classdef beam < handle
             
         end
         %%
+        function obj = residual0(obj, damSwitch)
+            % this method computes the initial residual to be used as fixed
+            % denominator.
+            % compute at pm0: 1. system matrices; 2. reduced variables.
+            pm0 = obj.pmVal.trial;
+            % 1. system matrices.
+            M = obj.mas.mtx;
+            K = sparse(obj.no.dof, obj.no.dof);
+            
+            if damSwitch == 0
+                K0 = K + obj.sti.mtxCell{1} * pm0 + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C0 = obj.dam.mtx;
+            elseif damSwitch == 1
+                K0 = K + obj.sti.mtxCell{1} * pm0(1) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C0 = pm0(2) * obj.sti.mtxCell{1};
+            end
+            % 2. reduced variables.
+            phiInpt = obj.phi.val;
+            m = obj.mas.re.mtx;
+            if damSwitch == 0
+                k0 = obj.sti.re.mtxCell{1} * pm0 + ...
+                    obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
+                c0 = obj.dam.re.mtx;
+            elseif damSwitch == 1
+                k0 = obj.sti.re.mtxCell{1} * pm0(1) + ...
+                    obj.sti.re.mtxCell{2} * obj.pmVal.s.fix;
+                c0 = pm0(2) * obj.sti.re.mtxCell{1};
+            end
+            f = phiInpt' * obj.fce.val;
+            dT = obj.time.step;
+            maxT = obj.time.max;
+            u0 = zeros(obj.no.rb, 1);
+            v0 = zeros(obj.no.rb, 1);
+            [rvDis0, rvVel0, rvAcc0, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+                (phiInpt, m, c0, k0, f, 'average', dT, maxT, u0, v0);
+            % residual at pm0.
+            obj.dis.resi0 = obj.fce.val - M * obj.phi.val * rvAcc0 - ...
+                C0 * obj.phi.val * rvVel0 - K0 * obj.phi.val * rvDis0;
+            obj.dis.qoi.resi0 = obj.dis.resi0(obj.qoi.dof, obj.qoi.t);
+        end
+        %% 
+        function obj = residualAsError(obj, damSwitch)
+            % this method evaluates norm of residual (not relative, due to 
+            % relative is not a constant) as error indicator,
+            % no need to use Newmark at all, thus cheaper than original.            
+            pmIter = obj.pmVal.iter;
+            M = obj.mas.mtx;
+            K = sparse(obj.no.dof, obj.no.dof);
+            
+            if damSwitch == 0
+                K = K + obj.sti.mtxCell{1} * pmIter + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = obj.dam.mtx;
+            elseif damSwitch == 1
+                K = K + obj.sti.mtxCell{1} * pmIter(1) + ...
+                    obj.sti.mtxCell{2} * obj.pmVal.s.fix;
+                C = pmIter(2) * obj.sti.mtxCell{1};
+            end
+            
+            R = obj.fce.val - ...
+                M * obj.phi.val * obj.acc.re.reVar - ...
+                C * obj.phi.val * obj.vel.re.reVar - ...
+                K * obj.phi.val * obj.dis.re.reVar;
+            Rqoi = R(obj.qoi.dof, obj.qoi.t);
+            
+            obj.err.val = (norm(Rqoi, 2)) ^ 2;
+            % obj.err.val = (norm(Rqoi, 'fro')) ^ 2;
+            % results of 30082018_1554 using 2-norm or Fro norm are same. 
+        end
+        %%
         function obj = residualfromForceStatic(obj)
             
             relativeErrSq = @(xNum, xInit) ...
@@ -2991,8 +3065,8 @@ classdef beam < handle
                 qoiDof = obj.node.dof.cs';
             end
 %             qoiT = [10 20 30 40 50]';
-%             qoiT = [3 5 7]';
-            qoiT = (45:55)';
+            qoiT = [3 5 7]';
+%             qoiT = (45:55)';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
