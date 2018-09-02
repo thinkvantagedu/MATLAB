@@ -53,18 +53,19 @@ elseif damSwitch == 1
     txtMax = sprintf('[%d %d %.2g]', eMaxLocReal, eMax);
     text(obj.pmVal.realMax(1), obj.pmVal.realMax(2), eMax, ...
         txtMax, 'color', '[0 0 0]', 'Fontsize', 30);
-    set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
-        'dataaspectratio', [length(ey) length(ex) 1])
+%     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log', ...
+%         'dataaspectratio', [length(ey) length(ex) 1])
+    set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log')
     shading interp
-    view(2)
+    view(3)
     
-    colorbar
+%     colorbar
     ylabel('Damping coefficient')
     zlabel('Maximum relative error')
     colormap(jet)
-    
+    axis square
 end
 xlabel('Youngs Modulus')
 
 grid on
-set(gca,'fontsize',30)
+set(gca,'fontsize',20)

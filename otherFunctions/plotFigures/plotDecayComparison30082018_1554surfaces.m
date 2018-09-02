@@ -1,10 +1,31 @@
 plotData;
-cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/;
+cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/trial=289/;
 
-load('errOriginalTrial1.mat', 'errOriginalTrial1');
-load('errProposedTrial1.mat', 'errProposedTrial1');
-load('errResidualTrial1.mat', 'errResidualTrial1');
+load('errOriginal.mat', 'errOriginal');
+load('errProposed.mat', 'errProposed');
+load('errResidual.mat', 'errResidual');
 
-pm1 = logspace(-1, 1, 17);
-pm2 = logspace(-1, 1, 17);
+ex = logspace(-1, 1, 17);
+ey = logspace(-1, 1, 17);
 
+eoSurfAll = errOriginal.store.allSurf;
+epSurfAll = errProposed.store.allSurf.hhat;
+
+for ip = 1:10
+    
+    eoSurf = eoSurfAll{ip};
+    epSurf = epSurfAll{ip};
+    eDiff = abs(eoSurf - epSurf);
+    figure
+    surf(ex, ey, eDiff');
+    set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log')
+    shading interp
+    view(3)
+    
+    xlabel('Youngs Modulus')
+    ylabel('Damping coefficient')
+    zlabel('Maximum relative error')
+    colormap(jet)
+    set(gca,'fontsize', 20)
+    axis square
+end

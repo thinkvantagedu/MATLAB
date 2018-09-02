@@ -1,9 +1,9 @@
 plotData;
-cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/;
+cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/trial=289;
 
-load('errOriginalTrial1.mat', 'errOriginalTrial1');
-load('errProposedTrial1.mat', 'errProposedTrial1');
-load('errResidualTrial1.mat', 'errResidualTrial1');
+load('errOriginal.mat', 'errOriginal');
+load('errProposed.mat', 'errProposed');
+load('errResidual.mat', 'errResidual');
 
 nPhiIni = 2;
 nPhiAdd = 2;
@@ -11,15 +11,15 @@ nRb = 20;
 
 %% plot decay value curve.
 errx = (nPhiIni:nPhiAdd:nRb);
-errOriMax = errOriginalTrial1.store.realMax;
-errProMax = errProposedTrial1.store.max.verify;
+errOriMax = errOriginal.store.realMax;
+errProMax = errProposed.store.max.verify;
 
 % residual needs to find related magic points location, this is done by
 % re-calculating all response surfaces.
-resLoc = errResidualTrial1.store.realLoc;
-resSurf = errOriginalTrial1.store.allSurf;
+resLoc = errResidual.store.realLoc;
+resSurf = errOriginal.store.allSurf;
 errResMax = zeros(10, 1);
-phi = errResidualTrial1.phi.val;
+phi = errResidual.phi.val;
 K1 = fixie.sti.mtxCell{1};
 K2 = fixie.sti.mtxCell{2};
 M = fixie.mas.mtx;
