@@ -60,4 +60,4 @@ set(gca,'fontsize',fsAll)
 grid on
 xlabel('Young''s Modulus', 'FontSize', fsAll);
 ylabel('Damping Coefficient', 'FontSize', fsAll);
-legend({'$P^{train}, 33 \times 33$', '$P^{i}, 3\times 3$', }, 'Interpreter', 'latex')
+legend({'$P^{train}, 17 \times 17$', '$P^{i}, 3\times 3$', }, 'Interpreter', 'latex')
