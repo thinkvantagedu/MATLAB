@@ -59,7 +59,7 @@ refiThres = 10;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 10;
+drawCol = 20;
 nPhiInitial = 2;
 nPhiEnrich = 2;
 
@@ -98,7 +98,7 @@ AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
 % uiTujSwitch shuts uiTuj off to increase speed.
-uiTujSwitch = 1;
+uiTujSwitch = 0;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
