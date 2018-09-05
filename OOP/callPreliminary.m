@@ -17,8 +17,8 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 17;
-damLeng = 17;
+% domLengi = 17;
+% damLeng = 17;
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -42,7 +42,7 @@ ftime = 0.2;
 fRange = 10;
 
 %% parameter data for trial iteration.
-trial = 1;
+% trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -58,10 +58,10 @@ cntInit = 0;
 refiThres = 10;
 
 %% plot surfaces and grids. (frequently changes in debugging) ==========
-drawRow = 1;
-drawCol = 20;
-nPhiInitial = 2;
-nPhiEnrich = 2;
+% drawRow = 1;
+% drawCol = 20;
+% nPhiInitial = 2;
+% nPhiEnrich = 2;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -78,7 +78,7 @@ reductionRatio = 0.6;
 
 %% SVD ranks
 % number of vectors taking when applying SVD to pre-computed resps.
-nRespSVD = 10; 
+nRespSVD = 20; 
 % ratio of SVD error reduction for POD on rv. ==========
 rvSVDreRatio = 1;
 
@@ -92,7 +92,7 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 0;
+ratioSwitch = 1;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.

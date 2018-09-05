@@ -2,7 +2,7 @@ clc; clf;
 plotData;
 % this script plots figures of I beam 3146 nodes.
 %% part 1:convergence.
-cd ~/Desktop/Temp/thesisResults/13082018_0949_Ibeam/3146nodes/trial=1089;
+cd ~/Desktop/Temp/thesisResults/13082018_0949_Ibeam/3146nodes/trial=1;
 load('errOriginalIter20Add4.mat', 'errOriginalIter20Add4')
 load('errProposedNouiTujIter20Add4.mat', 'errProposedNouiTujIter20Add4')
 
