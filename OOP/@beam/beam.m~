@@ -3067,9 +3067,9 @@ classdef beam < handle
                 qoiDof = obj.node.dof.cs';
             end
 %                         qoiT = [10 20 30 40 50]';
-                qoiT = [3 5 7]';
+%                 qoiT = [3 5 7]';
 %             qoiT = (45:55)';
-%                 qoiT = [5 10 15 20]';
+                qoiT = [5 10 15 20]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';
                 obj.qoi.t = (1:obj.no.t_step)';
@@ -3450,24 +3450,6 @@ classdef beam < handle
             pmExpoPass = obj.pmExpo.block.hat;
             pmExpoPass(iRec) = [];
             obj.pmExpo.block.hhat = [pmExpoPass; obj.pmExpo.temp.otpt];
-            obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
-            % sort obj.pmExpo.block.hhat according to pm values, ascending
-            % order. Only for 1 parameter.
-            if obj.no.pm == 1
-                
-                pmBlk = cell(obj.no.block.hhat, 1);
-                pmExpoBlkExpand = cell2mat(obj.pmExpo.block.hhat);
-                [pmSort, pmIx_] = sort(pmExpoBlkExpand(:, 2));
-                pmIx = pmExpoBlkExpand(pmIx_, 1);
-                pmExpoBlkExpandSort = [pmIx, pmSort];
-                for ib = 1:obj.no.block.hhat
-                    
-                    pmBlk(ib) = {pmExpoBlkExpandSort(ib * 2 - 1:ib * 2, :)};
-                    
-                end
-                obj.pmExpo.block.hhat = pmBlk;
-                
-            end
             
             % find the pm with indices in asending order.
             pmExpOtptPm = cell2mat(obj.pmExpo.block.hhat);
@@ -3478,7 +3460,7 @@ classdef beam < handle
             obj.pmVal.hat = 10 .^ obj.pmExpo.hat(:, 2:obj.no.pm + 1);
             obj.pmVal.hat = [obj.pmExpo.hat(:, 1) obj.pmVal.hat];
             obj.no.pre.hhat = size(obj.pmVal.hhat, 1);
-            
+            obj.no.block.hhat = size(obj.pmExpo.block.hhat, 1);
             % generate same cell blocks for pmVal (hhat and hat).
             pmValhat = cell(length(obj.pmExpo.block.hat), 1);
             for ip = 1:length(pmValhat)
@@ -3499,11 +3481,26 @@ classdef beam < handle
                 
             end
             obj.pmVal.block.hhat = pmValhhat;
-            
+            % sort obj.pmExpo.block.hhat according to pm values, ascending
+            % order. Only for 1 parameter.
+            if obj.no.inc == 1 || obj.no.pm == 1
+                
+                pmBlk = cell(obj.no.block.hhat, 1);
+                pmExpoBlkExpand = cell2mat(obj.pmExpo.block.hhat);
+                [pmSort, pmIx_] = sort(pmExpoBlkExpand(:, 2));
+                pmIx = pmExpoBlkExpand(pmIx_, 1);
+                pmExpoBlkExpandSort = [pmIx, pmSort];
+                for ib = 1:obj.no.block.hhat
+                    
+                    pmBlk{ib} = {pmExpoBlkExpandSort(ib * 2 - 1:ib * 2, :)};
+                    
+                end
+                keyboard
+            end
             % no.refBlk records the no of block being refined, being used
             % in uiTujDamping.
             obj.no.refBlk = iRec;
-            
+            keyboard
         end
         %%
         function obj = refinedInit(obj)

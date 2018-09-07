@@ -157,7 +157,7 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.errStoreAllSurfs('hhat');
         
         fixie.plotSurfGrid('hhat', 'b-.', 1);
-%         fixie.plotSurfGrid('hat', 'r--', 1);
+        fixie.plotSurfGrid('hat', 'r--', 1);
         
         if fixie.countGreedy == drawRow * drawCol
             % put here to stop any uncessary computations.
@@ -186,22 +186,22 @@ fixie.savePhi;
 toc
 %% verification by computing e(\mu) = U(\mu) - \bPhi\alpha(\mu).
 % All Greedy iterations are included here.
-fixie.verifyPrepare;
-for iGre = 1:fixie.countGreedy
-    fixie.verifyExtractBasis(iGre);
-    for iIter = 1:nIter
-
-        fixie.pmIter(iIter, 1);
-
-        fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 1);
-        fixie.verifyExactError(iGre, iIter);
-        CmdWinTool('statusText', ...
-            sprintf('verification stage progress: %d of %d', iIter, nIter));
-
-    end
-    fixie.verifyExtractMaxErr(iGre);
-%     fixie.verifyPlotSurf(iGre, 'r-^');
-end
+% fixie.verifyPrepare;
+% for iGre = 1:fixie.countGreedy
+%     fixie.verifyExtractBasis(iGre);
+%     for iIter = 1:nIter
+% 
+%         fixie.pmIter(iIter, 1);
+% 
+%         fixie.exactSolutionDynamic('verify', AbaqusSwitch, trialName, 1);
+%         fixie.verifyExactError(iGre, iIter);
+%         CmdWinTool('statusText', ...
+%             sprintf('verification stage progress: %d of %d', iIter, nIter));
+% 
+%     end
+%     fixie.verifyExtractMaxErr(iGre);
+% %     fixie.verifyPlotSurf(iGre, 'r-^');
+% end
 
 %%
 % fixie.plotMaxErrorDecayVal('verify', 'b-*', 2, 0); % randomSwitch

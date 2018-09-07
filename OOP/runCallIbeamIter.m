@@ -3,9 +3,9 @@ clear; clc;
 trial = 1;
 
 drawRow = 1;
-drawCol = 10;
-nPhiInitial = 3;
-nPhiEnrich = 3;
+drawCol = 15;
+nPhiInitial = 4;
+nPhiEnrich = 4;
 % proposed.
 domLengi = 33;
 damLeng = 33;

@@ -17,8 +17,17 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-% domLengi = 17;
-% damLeng = 17;
+domLengi = 65;
+damLeng = 17;
+%% parameter data for trial iteration.
+trial = 1;
+%% plot surfaces and grids. (frequently changes in debugging) ==========
+drawRow = 1;
+drawCol = 1;
+nPhiInitial = 1;
+nPhiEnrich = 1;
+
+
 damBond = [-1 1];
 
 nIter = prod(domLengi);
@@ -33,16 +42,13 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 9.9;
+tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
 ftime = 0.2;
 fRange = 10;
-
-%% parameter data for trial iteration.
-% trial = 1;
 
 %% error informations.
 errLowBond = 1e-20;
@@ -55,13 +61,7 @@ errRbCtrlTNo = 1;
 cntInit = 0;
 
 %% refinement threshold. ==========
-refiThres = 10;
-
-%% plot surfaces and grids. (frequently changes in debugging) ==========
-% drawRow = 1;
-% drawCol = 20;
-% nPhiInitial = 2;
-% nPhiEnrich = 2;
+refiThres = 0.002;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -92,13 +92,13 @@ qoiSwitchTime = 1;
 % SVD on responses.
 respSVDswitch = 1;
 % ratioSwitch iteratively add basis vector based on RB error,
-ratioSwitch = 1;
+ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
 % uiTujSwitch shuts uiTuj off to increase speed.
-uiTujSwitch = 0;
+uiTujSwitch = 1;
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];

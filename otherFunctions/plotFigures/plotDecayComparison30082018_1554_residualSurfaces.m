@@ -1,5 +1,5 @@
 plotData;
-cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/trial=289/;
+cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/trial=1/;
 
 load('errOriginal.mat', 'errOriginal');
 load('errProposed.mat', 'errProposed');

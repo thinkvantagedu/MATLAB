@@ -1,5 +1,9 @@
-clc; 
+clc; clf;
 % exact solution.
+cd ~/Desktop/Temp/thesisResults/13082018_0949_Ibeam/3146nodes/trial=1/fixrb;
+load('errOriginalIter20Add4.mat', 'errOriginalIter20Add4')
+load('errProposedNouiTujIter20Add4.mat', 'errProposedNouiTujIter20Add4')
+phi = errOriginalIter20Add4.phi.val;
 plotData;
 dt = canti.time.step;
 maxt = canti.time.max;
@@ -17,29 +21,32 @@ disMaxq = disMax(canti.qoi.dof, canti.qoi.t);
 funcN = @() NewmarkBetaReducedMethod(eye(nd), ...
     M, C, K, F, 'average', dt, maxt, u0, v0);
 te = timeit(funcN);
-
+%%
 % approximation;
-phi = canti.phi.val;
-al = canti.dis.re.reVar;
-ur = phi * al;
-urq = ur(canti.qoi.dof, canti.qoi.t);
-tratio = zeros(10, 1);
-for it = 1:10
-    
-    phic = phi(:, 1:2 * it);
-    alc = al(1:2 * it, :);
-    func = @() phic * alc;
-    tr = timeit(func);
-    tratio(it) = tratio(it) + te / tr;
-    
+al = rand(size(phi, 2), canti.no.t_step);
+ntest = 30;
+tratio = zeros(20, ntest);
+for ic = 1:ntest % repeat ntest times and take average.
+    for it = 1:20
+        
+        nit = 3 * it;
+        phic = phi(:, 1:nit);
+        alc = al(1:nit, :);
+        func = @() phic * alc;
+        tr = timeit(func);
+        tratio(it, ic) = tratio(it, ic) + te / tr;
+        
+    end
+    trav = sum(tratio, 2) / ntest;
 end
 %%
-xA = 2:2:20;
+xA = 3:3:60;
 plotData;
 
-semilogy(xA, tratio, 'b-o', 'MarkerSize', msAll, 'lineWidth', lwAll);
+plot(xA, trav, 'b-o', 'MarkerSize', msAll, 'lineWidth', lwAll);
 grid on
 set(gca,'fontsize',fsAll)
 xlabel(xLab, 'FontSize', fsAll);
 ylabel('Speed-up', 'FontSize', fsAll);
 axis square
+xlim([0 60])
