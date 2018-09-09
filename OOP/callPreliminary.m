@@ -17,19 +17,27 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 65;
+domLengi = 17;
 damLeng = 17;
 %% parameter data for trial iteration.
 trial = 1;
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 1;
+drawCol = 10;
 nPhiInitial = 1;
 nPhiEnrich = 1;
-
+% uiTujSwitch shuts uiTuj off to increase speed.
+uiTujSwitch = 0;
+tMax = 9.9;
+% refCeaseSwitch ceases refinement when refines more than once.
+refCeaseSwitch = 0;
+% QOI!!!
 
 damBond = [-1 1];
+%% refinement threshold. ==========
+refiThres = 10;
 
+%%
 nIter = prod(domLengi);
 bondL1 = -1;
 bondR1 = 1;
@@ -42,7 +50,6 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tMax = 0.9;
 tStep = 0.1;
 
 %% data for external nodal force.
@@ -59,9 +66,6 @@ errRbCtrlTNo = 1;
 
 %% count Greedy.
 cntInit = 0;
-
-%% refinement threshold. ==========
-refiThres = 0.002;
 
 %% debug mode for generating nodal force.
 debugMode = 0;
@@ -95,10 +99,8 @@ respSVDswitch = 1;
 ratioSwitch = 0;
 % randomSwtich randomly select magic points, works for original only.
 AbaqusSwitch = 0;
-% refCeaseSwitch ceases refinement when refines more than once.
-refCeaseSwitch = 0;
-% uiTujSwitch shuts uiTuj off to increase speed.
-uiTujSwitch = 1;
+
+
 %% Abaqus route and preliminaries.
 abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];

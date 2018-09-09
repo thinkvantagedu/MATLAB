@@ -33,7 +33,7 @@
 % load nodes.dat ; nodes = nodes(:,2:end) ;
 % load displacements.dat ;
 coordinates = canti.node.all(:, 2:end);
-nodes = canti.elem(:, 2:end);
+nodes = canti.elem.all(:, 2:5);
 %--------------------------------------------------------------------------
 % Sorting the values accordingly
 %--------------------------------------------------------------------------

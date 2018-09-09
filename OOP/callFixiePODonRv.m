@@ -158,8 +158,8 @@ while fixie.err.max.val.hhat > fixie.err.lowBond
         fixie.greedyInfoDisplay('hhat', 0);
         fixie.errStoreAllSurfs('hhat');
         %%
-        fixie.plotSurfGrid('hhat', 'k', 0);
-        fixie.plotSurfGrid('hat', 'r', 0);
+%         fixie.plotSurfGrid('hhat', 'k', 0);
+%         fixie.plotSurfGrid('hat', 'r', 0);
         %%
         if fixie.countGreedy == drawRow * drawCol
             % put here to stop any uncessary computations.
@@ -199,7 +199,7 @@ for iGre = 1:fixie.countGreedy
         
     end
     fixie.verifyExtractMaxErr(iGre);
-    fixie.verifyPlotSurf(iGre, 'b');
+%     fixie.verifyPlotSurf(iGre, 'b');
     
 end
 % legend({'$\hat{\hat{e}}$ (slave)', '$\hat{e}$ (master)', ...
