@@ -2,13 +2,14 @@
 
 % clear; clc;
 % trialName = 'Ibeam_8295nodes';
-trialName = 'Ibeam_3146nodes';
+% trialName = 'Ibeam_3146nodes';
+trialName = 'Ibeam_1978nodes';
 rvSVDswitch = 1;
 callPreliminary;
 noPm = 2;
 nConsEnd = 1;
 nDofPerNode = 3;
-fNode = 22;
+fNode = 17;
 tic
 %% trial solution.
 % use subclass: canbeam to create beam.

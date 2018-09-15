@@ -2,7 +2,7 @@ function obj = uiTujDamping(obj)
 % an IMPORTANT difference from uiTui: no of calculations relates to no of
 % blocks, not no of sample points.
 disp('uiTuj starts')
-
+tic
 pmExpoBlkhat = obj.pmExpo.block.hat;
 nBlkhat = obj.no.block.hat;
 
@@ -183,6 +183,6 @@ elseif obj.indicator.enrich == 0 && obj.indicator.refine == 1
     % check: uiTujhhat here is not clockwise, in order to match condition
     % in interpolation, see inpolyItplExpo.
 end
-
+toc
 disp('uiTuj ends')
 end

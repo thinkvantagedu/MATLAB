@@ -197,6 +197,20 @@ switch trialName
         locStartCons = {'nset=Set-root'};
         locEndCons = {'elset=Set-root'};
         noIncl = 1;
+    case 'Ibeam_1978nodes'
+        if lin == 1
+            route = '/home/xiaohan/Desktop/Temp/AbaqusModels/Ibeam/1978nodes_seed13/';
+        elseif lin == 0
+            route = '/Users/kevin/GoogleDrive/AbaqusModels/Ibeam/1978nodes_seed13/';
+        end
+        INPname = strcat(route, '1978nodes_seed13.inp');
+        mas = strcat(route, '1978nodes_seed13_MASS1.mtx');
+        sti1 = strcat(route, '1978nodes_seed13_I1S0_STIF1.mtx');
+        stis = strcat(route, '1978nodes_seed13_I0S1_STIF1.mtx');
+        sti = {sti1; stis};
+        locStartCons = {'nset=Set-root'};
+        locEndCons = {'elset=Set-root'};
+        noIncl = 1;
     case 'Ibeam_8295nodes'
         if lin == 1
             route = '/home/xiaohan/Desktop/Temp/AbaqusModels/Ibeam/8295nodes_seed15/';

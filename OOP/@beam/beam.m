@@ -1567,6 +1567,7 @@ classdef beam < handle
                                 obj.resp.store.tDiff...
                                     {iPreRef, iPhy, iTdiff, iRb} = ...
                                     {ul; usig; ur};
+                                
                             end
                         end
                     end

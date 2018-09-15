@@ -1,5 +1,5 @@
 clear; clc; clf;
-cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=129/;
+cd ~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=1/;
 plotData;
 load('errOriginalStore80.mat', 'errOriginalStore80')
 load('~/Desktop/Temp/thesisResults/12052018_2024+rbEnrichRatio/trial=129/nouiTuj/errProposedNouiTujN30Redu80.mat', ...

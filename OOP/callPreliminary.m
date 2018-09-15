@@ -17,18 +17,20 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 17;
-damLeng = 17;
-%% parameter data for trial iteration.
-trial = 1;
-%% plot surfaces and grids. (frequently changes in debugging) ==========
-drawRow = 1;
-drawCol = 10;
-nPhiInitial = 1;
-nPhiEnrich = 1;
+% domLengi = 5;
+% damLeng = 5;
+% %% parameter data for trial iteration.
+% trial = 1;
+% %% plot surfaces and grids. (frequently changes in debugging) ==========
+% drawRow = 1;
+% drawCol = 3;
+% nPhiInitial = 2;
+% nPhiEnrich = 2;
+
+
 % uiTujSwitch shuts uiTuj off to increase speed.
 uiTujSwitch = 0;
-tMax = 9.9;
+tMax = 99;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
 % QOI!!!
@@ -50,11 +52,11 @@ domMid = cellfun(@(v) (v(1) + v(2)) / 2, domBondi, 'un', 0);
 domMid = domMid';
 
 %% data for time. ==========
-tStep = 0.1;
+tStep = 1;
 
 %% data for external nodal force.
 % fNode needs to be manually updated.
-ftime = 0.2;
+ftime = 2;
 fRange = 10;
 
 %% error informations.
