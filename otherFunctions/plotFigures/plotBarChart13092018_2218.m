@@ -11,18 +11,27 @@ load errOriginalIter10Add2Profiler.mat
 % original: pm sweep = NM, basis processing.
 % proposed: impulse response = NM, construct Wa, pm sweep, basis processing.
 % proposed.
-tpall = 26343; % total
-tpNM = 1924; % exact solution
-tpMTM = 5476;
-tpSweep = 18357;
-tpRB = tpall - tpNM - tpMTM - tpSweep;
+% case 1.
+tpall1 = 26343; % total
+tpNM1 = 1924; % exact solution
+tpMTM1 = 5476;
+tpSweep1 = 18357;
+tpRB1 = tpall1 - tpNM1 - tpMTM1 - tpSweep1;
+
+% case 2.
+tpall2 = 41038; % total
+tpNM2 = 7629; % exact solution
+tpMTM2 = 23031;
+tpSweep2 = 9585;
+tpRB2 = tpall2 - tpNM2 - tpMTM2 - tpSweep2;
 
 toRB = 2035 - 1980;
 toNMsweep = 1980;
 ttNMsweep = toNMsweep / 810 * 65^2 * 10;
 plotData;
 
-tall = [ toRB toNMsweep   0 0;  toRB ttNMsweep   0 0; tpRB tpSweep tpNM tpMTM ];
+tall = [ toRB toNMsweep   0 0;  toRB ttNMsweep   0 0; ...
+    tpRB2 tpSweep2 tpNM2 tpMTM2; tpRB1 tpSweep1 tpNM1 tpMTM1];
 
 h = barh(tall, 'stacked');
 set(h, {'facecolor'}, {'b'; 'r'; 'y'; 'g'})

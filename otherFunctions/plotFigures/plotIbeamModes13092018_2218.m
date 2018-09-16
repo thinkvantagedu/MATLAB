@@ -9,16 +9,16 @@ load('phiOri.mat', 'phiOri')
 load('phiPro.mat', 'phiPro')
 nd = length(phiOri) / 3;
 ne = length(elem);
-% load('phiPro.mat', 'phiPro')
-nv = 4;
+nv = 1;
 disOri = reshape(phiOri(:, nv), [3, nd]);
 disPro = reshape(phiPro(:, nv), [3, nd]);
-scaleFactor = 500;
+scaleFactor = 1000;
 node = node(:, 2:end);
 elem = [elem(:, 2:end), zeros(ne, 1)];
 figure(1)
 pdeplot3D(node' + scaleFactor * disOri, elem', 'ColorMapData', disOri(2, :)');
-view([90, 0])
+% view([90, 0])
+view(3)
 colormap jet
 axis image
 set(gca, 'Ydir', 'reverse')
@@ -35,7 +35,8 @@ cb = colorbar();
 %     '$10^{-6}$', '$10^{-5}$', '$10^{-4}$', '$10^{-3}$', '$10^{-2}$', ...
 %     '$10^{-1}$'}, ...
 %     'TickLabelInterpreter', 'latex')
-view([90, 0])
+% view([90, 0])
+view(3)
 colormap jet
 axis image
 set(gca, 'Ydir', 'reverse')

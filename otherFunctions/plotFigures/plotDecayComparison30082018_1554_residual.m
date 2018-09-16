@@ -1,5 +1,6 @@
+clf;
 plotData;
-cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/trial=289;
+cd ~/Desktop/Temp/thesisResults/30082018_1554_residual/trial=1;
 
 load('errOriginal.mat', 'errOriginal');
 load('errProposed.mat', 'errProposed');
@@ -18,7 +19,7 @@ errProMax = errProposed.store.max.verify;
 % re-calculating true RB-errors.
 resLoc = errResidual.store.realLoc;
 errResMax = zeros(10, 1);
-phi = errResidual.phi.val;
+phiRes = errResidual.phi.val;
 
 
 K1 = fixie.sti.mtxCell{1};
@@ -38,9 +39,10 @@ pm2 = logspace(-1, 1, 17);
 for ic = 1:10
     % knowing magic point.
     % calculate 1 reduced variable --> approximation --> error.
-    phiv = phi(:, 1:ic);
+    nic = 2 * ic;
+    phiv = phiRes(:, 1:nic);
     
-    pm = [pm1(resLoc(ic, 1)) pm2(resLoc(ic, 2))];
+    pm = [pm1(resLoc(ic + 1, 1)) pm2(resLoc(ic + 1, 2))];
     K = K1 * pm(1) + K2 * 1;
     C = K1 * pm(2);
     m = phiv' * M * phiv;
@@ -54,8 +56,7 @@ for ic = 1:10
     [U, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
         (phiid, M, C, K, F, 'average', dt, maxt, U0, V0);
     
-    Ur = phiv * rvDis;
-    Uerr = U - Ur;
+    Uerr = U - phiv * rvDis;
     err = norm(Uerr(qd, qt), 'fro') / fixie.dis.norm.trial;
     errResMax(ic) = errResMax(ic) + err;
 end

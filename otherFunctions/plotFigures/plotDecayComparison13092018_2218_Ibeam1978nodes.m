@@ -2,9 +2,9 @@ clc; clf;
 plotData;
 % this script plots figures of I beam 3146 nodes.
 %% part 1:convergence.
-cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=1;
+cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=4225;
 load('errOriginalIter10Add2.mat', 'errOriginalIter10Add2')
-load('nouiTuj/errProposedNouiTujN20Iter10Add2.mat', 'errProposedNouiTujN20Iter10Add2')
+load('errProposedNouiTujN20Iter10Add2.mat', 'errProposedNouiTujN20Iter10Add2')
 
 nInit = 2;
 nAdd = 2;
@@ -16,8 +16,9 @@ errx = (nInit:nAdd:nRb);
 
 % errProLoc = [1 1; 5 1; 1 1; 1 1; 1 1; 9 1; 1 1; 1 1; 1 1; 1 1; 1 1]; 
 % for trial = 1, with uiTuj.
-errProLoc = [1 1; 5 1; 1 1; 1 1; 1 1; 6 1; 5 1; 2 1; 2 1; 3 1; 4 1];
+% errProLoc = [1 1; 5 1; 1 1; 1 1; 1 1; 6 1; 5 1; 2 1; 2 1; 3 1; 4 1];
 % for trial = 1, no uiTuj.
+errProLoc = [9 9; 1 1; 1 1; 5 1; 1 1; 2 1; 3 1; 2 1; 2 1; 4 1; 2 1];
 
 errOriLoc = errOriginalIter10Add2.store.realLoc;
 errProMax = zeros(length(errProLoc) - 1, 1);
@@ -39,6 +40,8 @@ qd = canti.qoi.dof;
 qt = canti.qoi.t;
 pm1 = logspace(-1, 1, 9);
 pm2 = logspace(-1, 1, 9);
+
+errOriMax = zeros(10, 1);
 for ic = 1:10
     % knowing magic point.
     % calculate 1 reduced variable --> approximation --> error.
@@ -46,23 +49,43 @@ for ic = 1:10
     
     % proposed.
     phivPro = phiPro(:, 1:nic);
-    pmpro = [pm1(errProLoc(ic + 1, 1)) pm2(errProLoc(ic + 1, 2))];
-    Kpro = K1 * pmpro(1) + K2 * 1;
-    Cpro = K1 * pmpro(2);
-    mpro = phivPro' * M * phivPro;
-    kpro = phivPro' * Kpro * phivPro;
-    cpro = phivPro' * Cpro * phivPro;
-    fpro = phivPro' * F;
-    u0 = zeros(length(kpro), 1);
-    v0 = zeros(length(kpro), 1);
+    pmPro = [pm1(errProLoc(ic + 1, 1)) pm2(errProLoc(ic + 1, 2))];
+    KPro = K1 * pmPro(1) + K2 * 1;
+    CPro = K1 * pmPro(2);
+    mPro = phivPro' * M * phivPro;
+    kPro = phivPro' * KPro * phivPro;
+    cPro = phivPro' * CPro * phivPro;
+    fPro = phivPro' * F;
+    u0 = zeros(length(kPro), 1);
+    v0 = zeros(length(kPro), 1);
     [rvDisPro, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-        (phivPro, mpro, cpro, kpro, fpro, 'average', dt, maxt, u0, v0);
-    [Upro, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
-        (phiid, M, Cpro, Kpro, F, 'average', dt, maxt, U0, V0);
+        (phivPro, mPro, cPro, kPro, fPro, 'average', dt, maxt, u0, v0);
+    [UPro, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+        (phiid, M, CPro, KPro, F, 'average', dt, maxt, U0, V0);
     
-    UerrPro = Upro - phivPro * rvDisPro;
+    UerrPro = UPro - phivPro * rvDisPro;
     errPro = norm(UerrPro(qd, qt), 'fro') / canti.dis.norm.trial;
     errProMax(ic) = errProMax(ic) + errPro;
+    
+    % original.
+    phivOri = phiOri(:, 1:nic);
+    pmOri = [pm1(errOriLoc(ic + 1, 1)) pm2(errOriLoc(ic + 1, 2))];
+    KOri = K1 * pmOri(1) + K2 * 1;
+    COri = K1 * pmOri(2);
+    mOri = phivOri' * M * phivOri;
+    kOri = phivOri' * KOri * phivOri;
+    cOri = phivOri' * COri * phivOri;
+    fOri = phivOri' * F;
+    u0 = zeros(length(kOri), 1);
+    v0 = zeros(length(kOri), 1);
+    [rvDisOri, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+        (phivOri, mOri, cOri, kOri, fOri, 'average', dt, maxt, u0, v0);
+    [UOri, ~, ~, ~, ~, ~, ~, ~] = NewmarkBetaReducedMethod...
+        (phiid, M, COri, KOri, F, 'average', dt, maxt, U0, V0);
+    
+    UerrOri = UOri - phivOri * rvDisOri;
+    errOri = norm(UerrOri(qd, qt), 'fro') / canti.dis.norm.trial;
+    errOriMax(ic) = errOriMax(ic) + errOri;
     
     disp(ic)
 end

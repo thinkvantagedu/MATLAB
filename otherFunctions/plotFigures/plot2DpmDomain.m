@@ -21,9 +21,9 @@ xycor = combvec(xcor', ycor')';
 xAxisCor = [0.1 10];
 yAxisCor = [0.1 10];
 
-scatter(xAxisAll, yAxisAll, 40, 'filled', 'MarkerFaceColor', 'b')
+scatter(xAxisAll, yAxisAll, 20, 'filled', 'MarkerFaceColor', 'b')
 hold on
-scatter(xAxisCo, yAxisCo, 200, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'k')
+scatter(xAxisCo, yAxisCo, 100, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'k')
 scatter(xAxisCor, yAxisCor, 320, 'd', 'MarkerFaceColor', 'y', 'MarkerEdgeColor', 'g')
 axis square
 set(gca, 'xscale', 'log')

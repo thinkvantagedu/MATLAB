@@ -23,7 +23,7 @@ fixie.readMasMTX2DOF(nDofPerNode);
 fixie.readINPconsFixie(nDofPerNode);
 
 % read geometric information.
-fixie.readINPgeoMultiInc;
+fixie.readINPgeoMultiInc(nDofPerNode);
 
 % generate parameter space.
 fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
@@ -44,7 +44,7 @@ fixie.disInpt;
 fixie.generateNodalFce(nDofPerNode, 0.3, debugMode);
 
 % quantity of interest.
-fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime);
+fixie.qoiSpaceTime(qoiSwitchSpace, qoiSwitchTime, nDofPerNode);
 fixie.errPrepareRemainOriginal;
 
 if any([greedySwitch randomSwitch sobolSwitch latinSwitch haltonSwitch]) == 1
