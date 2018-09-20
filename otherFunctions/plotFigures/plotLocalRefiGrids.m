@@ -1,4 +1,4 @@
-clear variables; clc; clf;
+clc; clf;
 % this script plot coarse and refined sample sets shown in chapter 'error
 % in the error estimate'.
 

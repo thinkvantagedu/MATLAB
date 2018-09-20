@@ -17,15 +17,15 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-% domLengi = 5;
-% damLeng = 5;
-% %% parameter data for trial iteration.
-% trial = 1;
-% %% plot surfaces and grids. (frequently changes in debugging) ==========
-% drawRow = 1;
-% drawCol = 3;
-% nPhiInitial = 2;
-% nPhiEnrich = 2;
+domLengi = 129;
+damLeng = 5;
+%% parameter data for trial iteration.
+trial = 1;
+%% plot surfaces and grids. (frequently changes in debugging) ==========
+drawRow = 1;
+drawCol = 1;
+nPhiInitial = 2;
+nPhiEnrich = 2;
 
 
 % uiTujSwitch shuts uiTuj off to increase speed.
@@ -37,7 +37,7 @@ refCeaseSwitch = 0;
 
 damBond = [-1 1];
 %% refinement threshold. ==========
-refiThres = 10;
+refiThres = 100;
 
 %%
 nIter = prod(domLengi);

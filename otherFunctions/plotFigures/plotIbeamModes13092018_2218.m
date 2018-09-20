@@ -9,37 +9,39 @@ load('phiOri.mat', 'phiOri')
 load('phiPro.mat', 'phiPro')
 nd = length(phiOri) / 3;
 ne = length(elem);
-nv = 1;
+nv = 8;
 disOri = reshape(phiOri(:, nv), [3, nd]);
 disPro = reshape(phiPro(:, nv), [3, nd]);
-scaleFactor = 1000;
+scaleFactor = 500;
 node = node(:, 2:end);
 elem = [elem(:, 2:end), zeros(ne, 1)];
 figure(1)
+pdeplot3D(node' + scaleFactor * disOri, elem')
+hold on
 pdeplot3D(node' + scaleFactor * disOri, elem', 'ColorMapData', disOri(2, :)');
-% view([90, 0])
-view(3)
+
+view([90, 0])
+% view(3)
 colormap jet
 axis image
 set(gca, 'Ydir', 'reverse')
 set(gca,'fontsize', 25)
+caxis([-0.05, 0.07])
+camroll(-90)
+colorbar off
+
+
 figure(2)
+pdeplot3D(node' + scaleFactor * disPro, elem')
+hold on
 pdeplot3D(node' + scaleFactor * disPro, elem', 'ColorMapData', disPro(2, :)');
 cb = colorbar();
-% cb.Ruler.Scale = 'log';
-% set(cb, 'TickLabels', {'$10^{-14}$', '$10^{-12}$', '$10^{-10}$', ...
-%     '$10^{-8}$', '$10^{-6}$', '$10^{-4}$', '$10^{-2}$'}, ...
-%     'TickLabelInterpreter', 'latex')
-
-% set(cb, 'TickLabels', {'$10^{-9}$', '$10^{-8}$', '$10^{-7}$', ...
-%     '$10^{-6}$', '$10^{-5}$', '$10^{-4}$', '$10^{-3}$', '$10^{-2}$', ...
-%     '$10^{-1}$'}, ...
-%     'TickLabelInterpreter', 'latex')
-% view([90, 0])
-view(3)
+view([90, 0])
+% view(3)
 colormap jet
 axis image
 set(gca, 'Ydir', 'reverse')
 set(gca,'fontsize', 25)
-% caxis([-9.5, -0.5])
-% colorbar off
+caxis([-0.05, 0.07])
+colorbar off
+camroll(-90)
