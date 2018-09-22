@@ -2,13 +2,13 @@ clc; clf;
 plotData;
 % this script plots figures of I beam 3146 nodes.
 %% part 1:convergence.
-cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=1;
+cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=4225;
 load('errOriginalIter20Add2.mat', 'errOriginalIter20Add2')
 load('errProposedNouiTujN20Iter20Add2.mat', 'errProposedNouiTujN20Iter20Add2')
 
 nInit = 2;
 nAdd = 2;
-nIter = 20;
+nIter = 15;
 nRb = nAdd * nIter;
 errx = (nInit:nAdd:nRb);
 
@@ -17,10 +17,11 @@ errx = (nInit:nAdd:nRb);
 % for trial = 1, with uiTuj.
 % errProLoc = [1 1; 5 1; 1 1; 1 1; 1 1; 9 1; 1 1; 1 1; 1 1; 1 1; 1 1]; 
 % for trial = 1, no uiTuj.
-errProLoc = [1 1; 5 1; 1 1; 1 1; 1 1; 6 1; 5 1; 2 1; 2 1; 3 1; 4 1; ...
-    4 1; 2 1; 4 1; 4 1; 5 1; 3 1; 3 1; 5 1; 6 1; 5 1];
+% errProLoc = [1 1; 5 1; 1 1; 1 1; 1 1; 6 1; 5 1; 2 1; 2 1; 3 1; 4 1; ...
+%     4 1; 2 1; 4 1; 4 1; 5 1; 3 1; 3 1; 5 1; 6 1; 5 1];
 % for trial = 4225, no uiTuj.
-% errProLoc = [9 9; 1 1; 1 1; 5 1; 1 1; 2 1; 3 1; 2 1; 2 1; 4 1; 2 1];
+errProLoc = [9 9; 1 1; 1 1; 5 1; 1 1; 2 1; 3 1; 2 1; 2 1; 4 1; 2 1; ...
+    4 1; 3 1; 5 1; 1 1; 4 1];
 
 errOriLoc = errOriginalIter20Add2.store.realLoc;
 errProMax = zeros(length(errProLoc) - 1, 1);

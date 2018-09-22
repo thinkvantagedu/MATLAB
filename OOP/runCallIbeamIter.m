@@ -37,11 +37,11 @@
 % disp('trial = 1 finish')
 
 %% trial = 4225.
-clear; clc;
+% clear; clc;
 trial = 4225;
 
 drawRow = 1;
-drawCol = 15;
+drawCol = 20;
 nPhiInitial = 2;
 nPhiEnrich = 2;
 % proposed.

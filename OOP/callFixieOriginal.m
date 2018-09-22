@@ -1,5 +1,5 @@
 % this is the original callFixie without damping.
-clear; clc;
+clc;
 trialName = 'l9h2SingleInc';
 rvSVDswitch = 0;
 callPreliminary;
