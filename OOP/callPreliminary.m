@@ -37,7 +37,7 @@ refCeaseSwitch = 0;
 
 damBond = [-1 1];
 %% refinement threshold. ==========
-refiThres = 100;
+refiThres = 110;
 
 %%
 nIter = prod(domLengi);
