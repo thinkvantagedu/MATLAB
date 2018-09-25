@@ -31,7 +31,7 @@ toNMsweep = 4396;
 ttNMsweep = toNMsweep / 1620 * 65^2 * 20;
 
 tall = [toRB toNMsweep 0 0;  toRB ttNMsweep 0 0; ...
-    0 tpall2 0 0;...
+    tpall;...
     tpRB2 tpSweep2 tpNM2 tpMTM2; tpRB1 tpSweep1 tpNM1 tpMTM1];
 
 h = barh(tall, 'stacked');
@@ -39,7 +39,7 @@ set(h, {'facecolor'}, {'b'; 'r'; 'y'; 'g'})
 axis normal
 grid on
 legend('Basis generation', 'Parameter sweep', 'Computation of U^{imp}', ...
-    'Computation of M_i^{trans}', 'Interpreter', 'latex', 'Location', 'northeast')
+    'Computation of M_i^{trans}', 'Interpreter', 'latex', 'Location', 'southeast')
 set(gca,'fontsize', fsAll)
 % set(gca,'xscale','log')
 xlabel('Execution time (seconds)', 'FontSize', fsAll)

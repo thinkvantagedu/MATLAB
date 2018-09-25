@@ -1,4 +1,4 @@
-clc; clf; 
+clf; 
 %% cantilever domain.
 plotData;
 % all x y points.
@@ -11,12 +11,13 @@ yAxis = canti.pmVal.damp.space(:, 2);
 % plot interpolation samples for trial = 1 and 4225.
 cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=4225;
 load('pmValHhat', 'pmValHhat')
-xhhat = pmValHhat(:, 2);
-yhhat = pmValHhat(:, 3);
+np = 19;
+xhhat = pmValHhat(1:np, 2);
+yhhat = pmValHhat(1:np, 3);
 
 scatter(xAxisAll, yAxisAll, 15, 'filled', 'MarkerFaceColor', '[0.4 0.6 0.7]')
 hold on
-scatter(xhhat, yhhat, 20, 'filled', 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'y')
+scatter(xhhat, yhhat, 40, 'filled', 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'y')
 
 axis square
 set(gca, 'xscale', 'log')

@@ -17,10 +17,10 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 9;
-damLeng = 9;
+domLengi = 65;
+damLeng = 65;
 %% parameter data for trial iteration.
-trial = 81;
+trial = 1;
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
 drawCol = 20;
@@ -108,10 +108,10 @@ abaInpFile = ['/home/xiaohan/Desktop/Temp/AbaqusModels/fixBeam/', ...
     trialName, '.inp'];
 
 %% test cases. 1 at a time. Only 1 switch equals to 1 each test. 
-greedySwitch = 0; % Greedy procedure
+greedySwitch = 1; % Greedy procedure
 randomSwitch = 0; % pseudorandom
 structSwitch = 0; % uniform structure
 sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
 haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
 latinSwitch = 0; % Latin Hypercube
-validSwitch = 1;
+validSwitch = 0;

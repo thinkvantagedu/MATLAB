@@ -1,9 +1,8 @@
-clc; clf;
+clf;
 % exact solution.
 cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=1;
-load('errOriginalIter10Add2.mat', 'errOriginalIter10Add2')
-load('nouiTuj/errProposedNouiTujN20Iter10Add2.mat', 'errProposedNouiTujN20Iter10Add2')
-phi = errOriginalIter10Add2.phi.val;
+load('errOriginalIter20Add2.mat', 'errOriginalIter20Add2')
+phi = errOriginalIter20Add2.phi.val;
 plotData;
 dt = canti.time.step;
 maxt = canti.time.max;
@@ -25,9 +24,10 @@ te = timeit(funcN);
 % approximation;
 al = rand(size(phi, 2), canti.no.t_step);
 ntest = 30;
-tratio = zeros(10, ntest);
+nIter = 20;
+tratio = zeros(nIter, ntest);
 for ic = 1:ntest % repeat ntest times and take average.
-    for it = 1:10
+    for it = 1:nIter
         
         nit = 2 * it;
         phic = phi(:, 1:nit);
@@ -40,13 +40,13 @@ for ic = 1:ntest % repeat ntest times and take average.
     trav = sum(tratio, 2) / ntest;
 end
 %%
-xA = 2:2:20;
+xA = 2:2:2 * nIter;
 plotData;
 
-plot(xA, trav, 'b-o', 'MarkerSize', msAll, 'lineWidth', lwAll);
+plot(xA, trav, 'b-+', 'MarkerSize', msAll, 'lineWidth', lwAll);
 grid on
 set(gca,'fontsize',fsAll)
 xlabel(xLab, 'FontSize', fsAll);
 ylabel('Speed-up', 'FontSize', fsAll);
 axis square
-xlim([0 20])
+xlim([0 2 * nIter])

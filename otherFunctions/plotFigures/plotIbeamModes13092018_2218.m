@@ -9,10 +9,10 @@ load('phiOri.mat', 'phiOri')
 load('phiPro.mat', 'phiPro')
 nd = length(phiOri) / 3;
 ne = length(elem);
-nv = 8;
+nv = 14;
 disOri = reshape(phiOri(:, nv), [3, nd]);
 disPro = reshape(phiPro(:, nv), [3, nd]);
-scaleFactor = 500;
+scaleFactor = 150;
 node = node(:, 2:end);
 elem = [elem(:, 2:end), zeros(ne, 1)];
 figure(1)
