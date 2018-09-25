@@ -30,11 +30,11 @@ canti.readINPgeoMultiInc(nDofPerNode);
 
 % generate parameter space.
 canti.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
-    haltonSwitch, latinSwitch);
+    haltonSwitch, latinSwitch, validSwitch);
 
 % generate damping coefficient space, the combination is stiffness then damping.
 canti.generateDampingSpace(damLeng, damBond, randomSwitch, sobolSwitch, ...
-    haltonSwitch, latinSwitch);
+    haltonSwitch, latinSwitch, validSwitch);
 
 % read stiffness matrices.
 canti.readStiMTX2DOFBCMod(nDofPerNode);
@@ -91,7 +91,7 @@ while canti.err.max.realVal > canti.err.lowBond
     end
     
     canti.extractMaxErrorInfo('original', greedySwitch, randomSwitch,...
-        sobolSwitch, haltonSwitch, latinSwitch, 1); % greedy + 1
+        sobolSwitch, haltonSwitch, latinSwitch, 1, validSwitch); % greedy + 1
     disp({'Greedy iteration no' canti.countGreedy})
     
     canti.extractMaxPmInfo('original');    

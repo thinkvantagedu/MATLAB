@@ -1,30 +1,30 @@
 clear;
-greedySwitch = 1; % Greedy procedure
-randomSwitch = 0; % pseudorandom
-structSwitch = 0; % uniform structure
-sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
-haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
-latinSwitch = 0; % Latin Hypercube
-
-runCallIbeamIter;
-
-
-
-% domLengi = 9;
-% damLeng = 9;
-% %% parameter data for trial iteration.
-% trial = 81;
-% %% plot surfaces and grids. (frequently changes in debugging) ==========
-% drawRow = 1;
-% drawCol = 25;
-% %% random
-% greedySwitch = 0;
-% randomSwitch = 1; % pseudorandom
+% greedySwitch = 1; % Greedy procedure
+% randomSwitch = 0; % pseudorandom
 % structSwitch = 0; % uniform structure
 % sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
 % haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
 % latinSwitch = 0; % Latin Hypercube
-% callIbeamOriginalDamping;
+% 
+% runCallIbeamIter;
+
+
+
+domLengi = 9;
+damLeng = 9;
+%% parameter data for trial iteration.
+trial = 81;
+%% plot surfaces and grids. (frequently changes in debugging) ==========
+drawRow = 1;
+drawCol = 25;
+%% random
+greedySwitch = 0;
+randomSwitch = 1; % pseudorandom
+structSwitch = 0; % uniform structure
+sobolSwitch = 0; % Sobol sequence, for 1 and 2 parameters.
+haltonSwitch = 0; % Halton sequence, for 1 and 2 parameters.(1d Halton = Sobol).
+latinSwitch = 0; % Latin Hypercube
+callIbeamOriginalDamping;
 % errRandom1 = canti.err;
 % save('/home/xiaohan/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=4225/errRandom1.mat', ...
 %     'errRandom1');

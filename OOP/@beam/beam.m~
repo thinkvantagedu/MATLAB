@@ -469,15 +469,10 @@ classdef beam < handle
                 obj.err.store.quasiVal = [pmIdx pmIdx 10 .^ pmQuasi(:, 3)];
             elseif validSwitch == 1
                 % trial = 1.
-                % eMloc = [5 1; 1 1; 1 1; 1 1; ...
-                    % 6 1; 5 1; 2 1; 2 1; 3 1; 4 1; ...
-                    % 4 1; 2 1; 4 1; 4 1; 5 1; 3 1; ...
-                    % 3 1; 5 1; 6 1; 5 1];
-                % trial = 81.
-                eMloc = [1 1; 1 1; 5 1; 1 1; 2 1; ...
-                    3 1; 2 1; 2 1; 4 1; 2 1; ...
-                    4 1; 3 1; 5 1; 1 1; 4 1; ...
-                    4 1; 4 1; 7 1; 7 1; 7 1];
+                eMloc = [1 1; 5 1; 1 1; 1 1; 1 1; ...
+                    6 1; 5 1; 2 1; 2 1; 3 1; 4 1; ...
+                    4 1; 2 1; 4 1; 4 1; 5 1; 3 1; ...
+                    3 1; 5 1; 6 1; 5 1];
                 eMloc = eMloc(:, 1);
                 pmExpoImp = obj.pmExpo.i{:};
                 obj.err.store.quasiExpo = [eMloc eMloc pmExpoImp(eMloc)];
@@ -486,8 +481,7 @@ classdef beam < handle
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond, ...
-                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch, ...
-                validSwitch)
+                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch)
             % this method adds damping as a parameter.
             % sequence is: [index loc1 loc2 value1 value2].
             % If there is damping, the sampling examples are regenerated
@@ -554,24 +548,10 @@ classdef beam < handle
                 obj.err.store.quasiExpo = pmQuasi;
                 obj.err.store.quasiVal = ...
                     [pmQuasi(:, 1:3) 10 .^ pmQuasi(:, 4:5)];
-                
+                keyboard
             elseif validSwitch == 1
                 
-                % trial = 1
-%                 idx = [5 1 1 1 6 5 2 2 3 4 4 2 4 4 5 3 3 5 6 5]';
-%                 loc = [5 1; 1 1; 1 1; 1 1; ...
-%                     6 1; 5 1; 2 1; 2 1; 3 1; ...
-%                     4 1; 4 1; 2 1; 4 1; 4 1; ...
-%                     5 1; 3 1; 3 1; 5 1; 6 1; 5 1];
-                idx = [1 1 5 1 2 3 2 2 4 2 4 3 5 1 4 4 4 7 7 7]';
-                loc = [1 1; 1 1; 5 1; 1 1; ...
-                    2 1; 3 1; 2 1; 2 1; 4 1; ...
-                    2 1; 4 1; 3 1; 5 1; 1 1; ...
-                    4 1; 4 1; 4 1; 7 1; 7 1; 7 1];
-                pmExpoImp = obj.pmExpo.i{:};
-                expo = pmExpoImp(loc);
-                obj.err.store.quasiExpo = [idx loc expo];
-                obj.err.store.quasiVal = [idx loc 10 .^ expo];
+                obj.err.store.quasiExpo = []
                 
             end
             
@@ -2571,8 +2551,7 @@ classdef beam < handle
         end
         %%
         function obj = extractMaxErrorInfo(obj, type, greedySwitch, ...
-                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch, ...
-                damSwitch, validSwitch)
+                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch, damSwitch)
             % extract error max and location from surfaces, greedy + 1.
             % magicLoc = magic point location, realLoc = real max error
             % location.
@@ -2644,11 +2623,6 @@ classdef beam < handle
                                 obj.err.store.quasiVal(nRep + 1, 1)];
                             
                         end
-                        
-                    elseif validSwitch == 1
-                        
-                        magicIdxStore = [magicIdxStore; ...
-                            obj.err.store.quasiVal(nRep, 1)];
                         
                     elseif greedySwitch == 1
                         magicIdxStore = [magicIdxStore; ...
