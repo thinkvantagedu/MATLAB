@@ -4,8 +4,8 @@ plotData;
 %% part 1:convergence.
 cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=4225;
 load('errOriginalIter20Add2.mat', 'errOriginalIter20Add2')
-load('errProposedNouiTujN20Iter20Add2Validation.mat', ...
-    'errProposedNouiTujN20Iter20Add2Validation')
+load('errProposedNouiTujN20Iter20Add2PhiValid.mat', ...
+    'errProposedNouiTujN20Iter20Add2PhiValid')
 
 nInit = 2;
 nAdd = 2;
@@ -72,7 +72,7 @@ errOriMax = errOriginalIter20Add2.store.realMax;
 %     disp(ic)
 % end
 
-errProMax = errProposedNouiTujN20Iter20Add2Validation.store.realMax;
+errProMax = errProposedNouiTujN20Iter20Add2PhiValid;
 figure(1)
 semilogy(errx, errOriMax, 'b-o', 'MarkerSize', msAll, 'lineWidth', lwAll);
 hold on

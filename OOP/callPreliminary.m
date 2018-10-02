@@ -17,8 +17,8 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 65;
-damLeng = 65;
+domLengi = 9;
+damLeng = 9;
 %% parameter data for trial iteration.
 trial = 1;
 %% plot surfaces and grids. (frequently changes in debugging) ==========

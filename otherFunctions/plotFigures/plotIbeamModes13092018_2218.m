@@ -3,16 +3,21 @@ plotData;
 % this script plots deformations of modes.
 %% part 1:convergence.
 cd ~/Desktop/Temp/thesisResults/13092018_2218_Ibeam/trial=1;
+load('errOriginalIter20Add2.mat', 'errOriginalIter20Add2')
+load('errProposedNouiTujN20Iter20Add2.mat', ...
+    'errProposedNouiTujN20Iter20Add2')
 load('node.mat', 'node');
 load('elem.mat', 'elem');
-load('phiOri.mat', 'phiOri')
-load('phiPro.mat', 'phiPro')
+phiOri = errOriginalIter20Add2.phi.val;
+phiPro = errProposedNouiTujN20Iter20Add2.phi.val;
+% load('phiOri.mat', 'phiOri')
+% load('phiPro.mat', 'phiPro')
 nd = length(phiOri) / 3;
 ne = length(elem);
-nv = 14;
+nv = 4;
 disOri = reshape(phiOri(:, nv), [3, nd]);
 disPro = reshape(phiPro(:, nv), [3, nd]);
-scaleFactor = 150;
+scaleFactor = 500;
 node = node(:, 2:end);
 elem = [elem(:, 2:end), zeros(ne, 1)];
 figure(1)
