@@ -321,7 +321,7 @@ classdef beam < handle
             
             if nDofPerNode == 2
                 dofInc = [nodeNoInc * nDofPerNode - 1 nodeNoInc * nDofPerNode];
-                keyboard
+            
             elseif nDofPerNode == 3
                 dofInc = [nodeNoInc * nDofPerNode - 2 ...
                     nodeNoInc * nDofPerNode - 1 nodeNoInc * nDofPerNode];

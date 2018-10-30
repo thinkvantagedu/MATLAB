@@ -102,6 +102,8 @@ classdef fixbeam < beam
             fid = fopen(obj.INPname);
             tline = fgetl(fid);
             lineNo = 1;
+            celltext = cell(1);
+            
             % find the line no of constraints.
             while ischar(tline)
                 lineNo = lineNo + 1;
@@ -120,8 +122,8 @@ classdef fixbeam < beam
                     if location == 0
                         lineConsEnd = [lineConsEnd; lineNo];
                     end
-                    
                 end
+                
             end
             
             strtext = char(celltext(2:(length(celltext)-1)));
@@ -129,6 +131,7 @@ classdef fixbeam < beam
             fclose(fid);
             obj.cons.node = cell(1, obj.no.consEnd);
             obj.cons.dof = cell(1, obj.no.consEnd);
+            
             for i = 1:obj.no.consEnd
                 txtCons = strtext((lineConsStart(i, 1) : ...
                     lineConsEnd(i, 1) - 2), :);
@@ -156,6 +159,7 @@ classdef fixbeam < beam
                 obj.cons.dof(i) = {consDof};
                 
             end
+            
         end
     end
 end

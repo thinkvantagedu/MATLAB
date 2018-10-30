@@ -1,4 +1,4 @@
-clear; clc; clf;
+clear; clc;
 % this script tests adding damping in a SDOF dynamic model.
 phi = eye(2);
 
@@ -21,5 +21,5 @@ v0 = [0; 0];
 [~, ~, ~, u, v, a, ~, ~] = NewmarkBetaReducedMethod...
     (phi, m, c, k, f, 'average', dT, mT, u0, v0);
 
-x = (0:dT:mT);
-plot(x, u(1, :));
+% x = (0:dT:mT);
+% plot(x, u(1, :));
