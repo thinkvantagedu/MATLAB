@@ -30,11 +30,11 @@ canti.readINPgeoMultiInc(nDofPerNode);
 
 % generate parameter space.
 canti.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
-    haltonSwitch, latinSwitch, validSwitch);
+    haltonSwitch, latinSwitch);
 
 % generate damping coefficient space, the combination is stiffness then damping.
 canti.generateDampingSpace(damLeng, damBond, randomSwitch, sobolSwitch, ...
-    haltonSwitch, latinSwitch, validSwitch);
+    haltonSwitch, latinSwitch);
 
 % read stiffness matrices.
 canti.readStiMTX2DOFBCMod(nDofPerNode);

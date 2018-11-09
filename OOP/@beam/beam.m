@@ -321,7 +321,7 @@ classdef beam < handle
             
             if nDofPerNode == 2
                 dofInc = [nodeNoInc * nDofPerNode - 1 nodeNoInc * nDofPerNode];
-                keyboard
+                
             elseif nDofPerNode == 3
                 dofInc = [nodeNoInc * nDofPerNode - 2 ...
                     nodeNoInc * nDofPerNode - 1 nodeNoInc * nDofPerNode];
@@ -396,9 +396,7 @@ classdef beam < handle
         end
         %%
         function obj = generatePmSpaceSingleDim(obj, randomSwitch, ...
-                structSwitch, sobolSwitch, haltonSwitch, latinSwitch, ...
-                validSwitch)
-            % generate n-D parameter space, n = number of inclusions.
+                structSwitch, sobolSwitch, haltonSwitch, latinSwitch)            % generate n-D parameter space, n = number of inclusions.
             % sequence is: [index loc value].
             
             pmValIspace(1) = {logspace(obj.domBond.i{1}(1), ...
@@ -469,28 +467,12 @@ classdef beam < handle
                 
                 obj.err.store.quasiExpo = pmQuasi;
                 obj.err.store.quasiVal = [pmIdx pmIdx 10 .^ pmQuasi(:, 3)];
-            elseif validSwitch == 1
-                % trial = 1.
-                % eMloc = [5 1; 1 1; 1 1; 1 1; ...
-                    % 6 1; 5 1; 2 1; 2 1; 3 1; 4 1; ...
-                    % 4 1; 2 1; 4 1; 4 1; 5 1; 3 1; ...
-                    % 3 1; 5 1; 6 1; 5 1];
-                % trial = 81.
-                eMloc = [1 1; 1 1; 5 1; 1 1; 2 1; ...
-                    3 1; 2 1; 2 1; 4 1; 2 1; ...
-                    4 1; 3 1; 5 1; 1 1; 4 1; ...
-                    4 1; 4 1; 7 1; 7 1; 7 1];
-                eMloc = eMloc(:, 1);
-                pmExpoImp = obj.pmExpo.i{:};
-                obj.err.store.quasiExpo = [eMloc eMloc pmExpoImp(eMloc)];
-                obj.err.store.quasiVal = [eMloc eMloc 10.^pmExpoImp(eMloc)];
+            
             end
         end
         %%
         function obj = generateDampingSpace(obj, damLeng, damBond, ...
-                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch, ...
-                validSwitch)
-            % this method adds damping as a parameter.
+                randomSwitch, sobolSwitch, haltonSwitch, latinSwitch)            % this method adds damping as a parameter.
             % sequence is: [index loc1 loc2 value1 value2].
             % If there is damping, the sampling examples are regenerated
             % here for the 2D case, i.e. generatePmSpaceSingleDim output is
@@ -556,25 +538,6 @@ classdef beam < handle
                 obj.err.store.quasiExpo = pmQuasi;
                 obj.err.store.quasiVal = ...
                     [pmQuasi(:, 1:3) 10 .^ pmQuasi(:, 4:5)];
-                
-            elseif validSwitch == 1
-                
-                % trial = 1
-%                 idx = [5 1 1 1 6 5 2 2 3 4 4 2 4 4 5 3 3 5 6 5]';
-%                 loc = [5 1; 1 1; 1 1; 1 1; ...
-%                     6 1; 5 1; 2 1; 2 1; 3 1; ...
-%                     4 1; 4 1; 2 1; 4 1; 4 1; ...
-%                     5 1; 3 1; 3 1; 5 1; 6 1; 5 1];
-                idx = [1 1 5 1 2 3 2 2 4 2 4 3 5 1 4 4 4 7 7 7]';
-                loc = [1 1; 1 1; 5 1; 1 1; ...
-                    2 1; 3 1; 2 1; 2 1; 4 1; ...
-                    2 1; 4 1; 3 1; 5 1; 1 1; ...
-                    4 1; 4 1; 4 1; 7 1; 7 1; 7 1];
-                pmExpoImp = obj.pmExpo.i{:};
-                expo = pmExpoImp(loc);
-                obj.err.store.quasiExpo = [idx loc expo];
-                obj.err.store.quasiVal = [idx loc 10 .^ expo];
-                
             end
             
         end
@@ -3109,8 +3072,8 @@ classdef beam < handle
                 qoiDof = obj.node.dof.cs';
             end
 %                         qoiT = [10 20 30 40 50]';
-%                 qoiT = [3 5 7]';
-            qoiT = (45:55)';
+                qoiT = [3 5 7]';
+%             qoiT = (45:55)';
 %                 qoiT = [5 10 15 20]';
             if qoiSwitchSpace == 0 && qoiSwitchTime == 0
                 obj.qoi.dof = (1:obj.no.dof)';

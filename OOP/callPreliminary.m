@@ -17,20 +17,20 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 9;
-damLeng = 9;
+domLengi = 5;
+damLeng = 5;
 %% parameter data for trial iteration.
 trial = 1;
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 20;
-nPhiInitial = 2;
+drawCol = 3;
+nPhiInitial = 1;
 nPhiEnrich = 2;
 
 
 % uiTujSwitch shuts uiTuj off to increase speed.
 uiTujSwitch = 0;
-tMax = 99;
+tMax = 9;
 % refCeaseSwitch ceases refinement when refines more than once.
 refCeaseSwitch = 0;
 % QOI!!!

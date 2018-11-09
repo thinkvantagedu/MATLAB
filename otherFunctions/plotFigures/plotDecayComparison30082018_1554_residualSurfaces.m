@@ -11,13 +11,13 @@ ey = logspace(-1, 1, 17);
 eoSurfAll = errOriginal.store.allSurf;
 epSurfAll = errProposed.store.allSurf.hhat;
 
-for ip = 1:10
+for ip = 1:2
     
     eoSurf = eoSurfAll{ip};
     epSurf = epSurfAll{ip};
     eDiff = abs(eoSurf - epSurf);
     figure
-    surf(ex, ey, eDiff');
+    surf(ex, ey, eoSurf');
     set(gca, 'XScale', 'log', 'YScale', 'log', 'ZScale','log')
     shading interp
     view(3)
@@ -28,4 +28,5 @@ for ip = 1:10
     colormap(jet)
     set(gca,'fontsize', 20)
     axis square
+    zlim([0 0.15])
 end
