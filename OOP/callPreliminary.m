@@ -86,7 +86,7 @@ reductionRatio = 0.6;
 % number of vectors taking when applying SVD to pre-computed resps.
 nRespSVD = 20; 
 % ratio of SVD error reduction for POD on rv. ==========
-rvSVDreRatio = 1;
+rvSVDreRatio = 0.99;
 
 %% set types
 timeType = 'allTime';
