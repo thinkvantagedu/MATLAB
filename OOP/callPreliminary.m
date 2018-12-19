@@ -17,13 +17,13 @@ noDam = 1;
 dam = 0;
 
 %% data for parameter class. ==========
-domLengi = 5;
-damLeng = 5;
+domLengi = 129;
+damLeng = 129;
 %% parameter data for trial iteration.
-trial = 1;
+trial = 65;
 %% plot surfaces and grids. (frequently changes in debugging) ==========
 drawRow = 1;
-drawCol = 3;
+drawCol = 5;
 nPhiInitial = 1;
 nPhiEnrich = 2;
 

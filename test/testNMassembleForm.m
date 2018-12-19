@@ -4,10 +4,10 @@ clear; clc;
 phi = eye(2);
 k = [6 -2; -2 4];
 m = [2 0; 0 1];
-c = zeros(2);
-% c = 0.1 * m + 0.1 * k;
-dT = 28;
-mT = 280;
+% c = zeros(2);
+c = 0.1 * m + 0.1 * k;
+dT = 0.28;
+mT = 28;
 u0 = [0; 0];
 v0 = [0; 0];
 
@@ -17,10 +17,10 @@ nr = size(phi, 2);
 t = 0:dT:mT;
 nT = length(t);
 f = zeros(2, nT);
-for i = 1:nT        
-    f(:, i) = f(:, i) + [0; 10];
-end
-f(:, 1) = [0; 0];
+% for i = 1:nT        
+%     f(:, i) = f(:, i) + [0; 10];
+% end
+f(:, 1) = [0; 10];
 [~, ~, ~, u, v, a, ~, ~] = NewmarkBetaReducedMethod...
     (phi, m, c, k, f, 'average', dT, mT, u0, v0);
 beta = 1/4; gamma = 1/2;
@@ -89,3 +89,11 @@ A = cell2mat(A);
 
 X = A \ fVec;
 X = reshape(X, [6, nT]);
+%%
+plot(t, u(2, :), 'k', 'LineWidth', 2);
+grid on
+
+xlabel('Time')
+ylabel('Amplitude')
+xlim([0, 28])
+set(gca,'FontSize',20)

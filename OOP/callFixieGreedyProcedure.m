@@ -21,7 +21,7 @@ fixie = fixbeam(abaInpFile, mas, dam, sti, locStartCons, locEndCons, ...
 fixie.readINPconsFixie(nDofPerNode);
 
 % read geometric information.
-fixie.readINPgeoMultiInc;
+fixie.readINPgeoMultiInc(nDofPerNode);
 
 % generate parameter space.
 fixie.generatePmSpaceSingleDim(randomSwitch, structSwitch, sobolSwitch, ...
@@ -37,7 +37,7 @@ fixie.pmTrial(0);
 fixie.generateNodalFceStatic(nDofPerNode);
 
 % quantity of interest. Time is not varied in this case. 
-fixie.qoiSpaceTime(qoiSwitchSpace, 0);
+fixie.qoiSpaceTime(qoiSwitchSpace, 0, nDofPerNode);
 fixie.errPrepareRemainStatic;
 if any([greedySwitch randomSwitch sobolSwitch latinSwitch haltonSwitch]) == 1
     % compute initial exact solution.
@@ -77,12 +77,12 @@ while fixie.err.max.realVal > fixie.err.lowBond
     end
     
     fixie.extractMaxErrorInfo('original', greedySwitch, randomSwitch, ...
-        sobolSwitch, haltonSwitch, latinSwitch, 0); % greedy + 1
+        sobolSwitch, haltonSwitch, latinSwitch, 0, 0); % greedy + 1
     disp({'Greedy iteration no' fixie.countGreedy})
     
     fixie.extractMaxPmInfo('original');
     fixie.storeErrorInfoOriginal;
-    fixie.greedyInfoDisplay('original');
+    fixie.greedyInfoDisplay('original', 0);
     fixie.errStoreAllSurfs('original');
     
     fixie.plotSurfGrid('original', 'b', 0);
